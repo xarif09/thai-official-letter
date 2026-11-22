@@ -264,7 +264,8 @@ const NOBRK=/[0-9๐-๙][0-9๐-๙.,:]*\s+(?:น\.|นาฬิกา|บา�
 const NOBRK2=/(?:พ\.ศ\.|ค\.ศ\.|เวลา|วันที่|ที่|จำนวน|ข้อ|ลำดับที่)\s*[0-9๐-๙][0-9๐-๙./,:]*/g;
 function segWords(t){
  const parts=SEG?[...SEG.segment(t)].map(x=>x.segment):t.split(/(\s+)/);
- const R=[];for(const re of [NOBRK,NOBRK2])for(const m of t.matchAll(re))R.push([m.index,m.index+m[0].length]);
+ const NOBRK3=/สิ่งที่ส่งมาด้วย|อ้างถึง|ลงวันที่|ผู้ว่าราชการจังหวัด|สำนักงานจังหวัด/g;
+ const R=[];for(const re of [NOBRK,NOBRK2,NOBRK3])for(const m of t.matchAll(re))R.push([m.index,m.index+m[0].length]);
  if(!R.length)return parts;
  const out=[];let pos=0;
  for(const x of parts){const a=pos;pos+=x.length;
