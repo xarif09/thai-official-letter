@@ -259,14 +259,13 @@ const lspF=()=>AUTOF||({"0.95 เท่า (กระชับ)":0.95,"0.9 เ�
 const lineH=()=>(FONT_LH[D.font]||1.2)*lspF();
 const blockH=f=>f.lines.length*lineH()*16*25.4/72+(f.qr?QR+1:0)+0.5;   // ความสูงส่วนท้าย (มม.)
 const SEG=(typeof Intl!=="undefined"&&Intl.Segmenter)?new Intl.Segmenter("th",{granularity:"word"}):null;
-// ห้ามตัดบรรทัดกลางกลุ่มคำเหล่านี้ เช่น "๐๙.๓๐ น." "พ.ศ. ๒๕๖๙" "๑ ธันวาคม" "จำนวน ๑ ฉบับ"
-const NOBRK=/[0-9๐-๙][0-9๐-๙.,:]*\s+(?:น\.|นาฬิกา|บาท|คน|ราย|ฉบับ|ชุด|แผ่น|เล่ม|วัน|เดือน|ปี|ครั้ง|มกราคม|กุมภาพันธ์|มีนาคม|เมษายน|พฤษภาคม|มิถุนายน|กรกฎาคม|สิงหาคม|กันยายน|ตุลาคม|พฤศจิกายน|ธันวาคม)/g;
-const NOBRK2=/(?:พ\.ศ\.|ค\.ศ\.|เวลา|วันที่|ที่|จำนวน|ข้อ|ลำดับที่)\s*[0-9๐-๙][0-9๐-๙./,:]*/g;
+// พยายามไม่ตัดกลางกลุ่ม ตัวเลข+หน่วย ("๐๙.๓๐ น." "๑ ฉบับ") และ "พ.ศ. ๒๕๖๙" (ยอมแยกถ้าทำให้ยืดมาก)
+const NOBRK=/[0-9๐-๙][0-9๐-๙.,:]*\s+(?:น\.|นาฬิกา|บาท|คน|ราย|ฉบับ|ชุด|แผ่น|เล่ม|ครั้ง)/g;
+const NOBRK2=/(?:พ\.ศ\.|ค\.ศ\.)\s*[0-9๐-๙]+/g;
 const nbsp=t=>t.replace(NOBRK,m=>m.replace(/ /g,"\u00A0")).replace(NOBRK2,m=>m.replace(/ /g,"\u00A0"));  // Word: ใช้ช่องว่างไม่ตัดบรรทัด
 function segWords(t){
  const parts=SEG?[...SEG.segment(t)].map(x=>x.segment):t.split(/(\s+)/);
- const NOBRK3=/สิ่งที่ส่งมาด้วย|อ้างถึง|ลงวันที่|ผู้ว่าราชการจังหวัด|สำนักงานจังหวัด/g;
- const R=[];for(const re of [NOBRK,NOBRK2,NOBRK3])for(const m of t.matchAll(re))R.push([m.index,m.index+m[0].length]);
+ const R=[];for(const re of [NOBRK,NOBRK2])for(const m of t.matchAll(re))R.push([m.index,m.index+m[0].length]);
  if(!R.length)return parts;
  const out=[];let pos=0;
  for(const x of parts){const a=pos;pos+=x.length;
@@ -441,7 +440,7 @@ function tokens(runs){const out=[];
   const parts=segWords(t);
   for(const x of parts){if(!x)continue;
    if(/^\s+$/.test(x)){out.push({t:x,r,sp:true});continue;}
-   out.push({t:x,r,sp:false});}}  // กลุ่มคำที่ห้ามแยก (เช่น "เวลา ๐๙.๓๐ น.") เก็บเป็นชิ้นเดียว
+   out.push({t:x,r,sp:false,sub:/\s/.test(x)?(SEG?[...SEG.segment(x)].map(y=>y.segment):x.split(/(\s+)/)).filter(y=>y).map(y=>({t:y,r,sp:/^\s+$/.test(y)})):null});}}  // กลุ่มคำที่ห้ามแยก (เช่น "เวลา ๐๙.๓๐ น.") เก็บเป็นชิ้นเดียว
  return out;}
 function tokW(k){return measure(k.t,k.r.sz||16,!!k.r.b);}
 function distHTML(p,st){
@@ -453,8 +452,10 @@ function distHTML(p,st){
  const W=CW-p.indL-p.indR, W0=(p.kind==="label"||p.kind==="num")?W:W-ml0;
  const tk=tokens(runs);const lines=[];let cur=[],w=0,lim=W0;
  const push=()=>{while(cur.length&&cur[cur.length-1].sp)cur.pop();lines.push({tk:cur,w:lim});cur=[];w=0;lim=W;};
- for(const k of tk){const kw=tokW(k);
+ for(let q=0;q<tk.length;q++){const k=tk[q];const kw=tokW(k);
   if(!cur.length&&k.sp)continue;
+  // กลุ่มห้ามแยก: ถ้าปัดทั้งกลุ่มลงบรรทัดใหม่แล้วบรรทัดนี้เหลือที่ว่างเกิน 3% (ตัวอักษรจะห่างเกินไป) ยอมแยกกลุ่ม
+  if(w+kw>lim&&cur.length&&k.sub&&(lim-w)>lim*0.03){tk.splice(q,1,...k.sub);q--;continue;}
   if(w+kw>lim&&cur.length){push();if(k.sp)continue;}
   if(kw>lim&&!cur.length&&!k.sp){ // คำยาวเกินบรรทัด ตัดทีละตัวอักษร
    let piece="";for(const ch of (GSEG?[...GSEG.segment(k.t)].map(x=>x.segment):[...k.t])){
