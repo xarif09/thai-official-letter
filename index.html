@@ -262,6 +262,7 @@ const SEG=(typeof Intl!=="undefined"&&Intl.Segmenter)?new Intl.Segmenter("th",{g
 // ห้ามตัดบรรทัดกลางกลุ่มคำเหล่านี้ เช่น "๐๙.๓๐ น." "พ.ศ. ๒๕๖๙" "๑ ธันวาคม" "จำนวน ๑ ฉบับ"
 const NOBRK=/[0-9๐-๙][0-9๐-๙.,:]*\s+(?:น\.|นาฬิกา|บาท|คน|ราย|ฉบับ|ชุด|แผ่น|เล่ม|วัน|เดือน|ปี|ครั้ง|มกราคม|กุมภาพันธ์|มีนาคม|เมษายน|พฤษภาคม|มิถุนายน|กรกฎาคม|สิงหาคม|กันยายน|ตุลาคม|พฤศจิกายน|ธันวาคม)/g;
 const NOBRK2=/(?:พ\.ศ\.|ค\.ศ\.|เวลา|วันที่|ที่|จำนวน|ข้อ|ลำดับที่)\s*[0-9๐-๙][0-9๐-๙./,:]*/g;
+const nbsp=t=>t.replace(NOBRK,m=>m.replace(/ /g,"\u00A0")).replace(NOBRK2,m=>m.replace(/ /g,"\u00A0"));  // Word: ใช้ช่องว่างไม่ตัดบรรทัด
 function segWords(t){
  const parts=SEG?[...SEG.segment(t)].map(x=>x.segment):t.split(/(\s+)/);
  const NOBRK3=/สิ่งที่ส่งมาด้วย|อ้างถึง|ลงวันที่|ผู้ว่าราชการจังหวัด|สำนักงานจังหวัด/g;
@@ -573,7 +574,7 @@ function pXML(p,extraRuns="",next=null){
  const tabs=(p.tabAt!=null||p.rtab)?`<w:tabs>${p.tabAt!=null?`<w:tab w:val="left" w:pos="${TW(p.tabAt)}"/>`:""}${p.tabAt2!=null?`<w:tab w:val="left" w:pos="${TW(p.tabAt2)}"/>`:""}${p.rtab?`<w:tab w:val="right" w:pos="${TW(CW)}"/>`:""}</w:tabs>`:"";
  const kp=(p.keep&&next&&next.keep)?"<w:keepNext/><w:keepLines/>":(p.keep?"<w:keepLines/>":"");
  const ppr=`<w:pPr>${kp}${tabs}<w:spacing w:before="${Math.round(p.before*20)}" w:after="0" w:line="${Math.round(240*lspF())}" w:lineRule="auto"/>${ind}<w:jc w:val="${jc}"/>${rPr({})}</w:pPr>`;
- const runs=p.runs.map(r=>(r.tab||r.rtab)?`<w:r>${rPr({})}<w:tab/></w:r>`:`<w:r>${rPr(r)}<w:t xml:space="preserve">${xe(r.t)}</w:t></w:r>`).join("");
+ const runs=p.runs.map(r=>(r.tab||r.rtab)?`<w:r>${rPr({})}<w:tab/></w:r>`:`<w:r>${rPr(r)}<w:t xml:space="preserve">${xe(nbsp(r.t))}</w:t></w:r>`).join("");
  return `<w:p>${ppr}${extraRuns}${runs}</w:p>`;
 }
 function anchorXML(f,id,img){
