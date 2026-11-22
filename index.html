@@ -264,16 +264,20 @@ const NOBRK=/[0-9๐-๙][0-9๐-๙.,:]*\s+(?:น\.|นาฬิกา|บา�
 const NOBRK2=/(?:พ\.ศ\.|ค\.ศ\.)\s*[0-9๐-๙]+/g;
 const nbsp=t=>t.replace(NOBRK,m=>m.replace(/ /g,"\u00A0")).replace(NOBRK2,m=>m.replace(/ /g,"\u00A0"));  // Word: ใช้ช่องว่างไม่ตัดบรรทัด
 const NOBRK3=/ลงวันที่|สิ่งที่ส่งมาด้วย|ผู้ว่าราชการจังหวัด|(?:มกราคม|กุมภาพันธ์|มีนาคม|เมษายน|พฤษภาคม|มิถุนายน|กรกฎาคม|สิงหาคม|กันยายน|ตุลาคม|พฤศจิกายน|ธันวาคม)\s+[0-9๐-๙]{4}/g;  // วลีคงที่ (แยกได้ถ้าทำให้ยืดมาก)
-function segWords(t){
- let parts=SEG?[...SEG.segment(t)].map(x=>x.segment):t.split(/(\s+)/);
- // "ผู้"/"นัก" ต้องติดกับคำถัดไปเสมอ (ผู้แทน ผู้อำนวยการ นักวิชาการ)
- parts=parts.reduce((o,x)=>{const l=o[o.length-1];if((l==='ผู้'||l==='นัก')&&!/^\s/.test(x))o[o.length-1]+=x;else o.push(x);return o;},[]);
- const R=[];for(const re of [NOBRK,NOBRK2,NOBRK3])for(const m of t.matchAll(re))R.push([m.index,m.index+m[0].length]);
- if(!R.length)return parts;
+// คำ/คำย่อที่ห้ามแยกเด็ดขาด (ตัวตัดคำของเบราว์เซอร์แยกผิด)
+const HARD=/ผู้อำนวยการ|ผู้ว่าราชการ|ผู้บัญชาการ|ผู้บังคับการ|ผู้กำกับการ|ผู้ช่วย|ผู้แทน|นักวิชาการ|นักวิเคราะห์|นักจัดการ|ราชการ|อัยการ|พร้อมเพรียง|กากีคอพับ|(?:[ก-ฮ]{1,4}\.){1,}[ก-ฮ]{1,4}\.?/g;
+function mergeRanges(t,parts,res){const R=[];for(const re of res)for(const m of t.matchAll(re))R.push([m.index,m.index+m[0].length]);
+ if(!R.length)return parts.map(x=>[x]);
  const out=[];let pos=0;
  for(const x of parts){const a=pos;pos+=x.length;
-  if(out.length&&R.some(([s,e])=>a>s&&a<e))out[out.length-1]+=x;else out.push(x);}
- return out;
+  if(out.length&&R.some(([s,e])=>a>s&&a<e))out[out.length-1].push(x);else out.push([x]);}
+ return out;}
+function segWords(t){   // คืน [{t, sub}] — sub = ชิ้นย่อยที่ยอมแยกได้ถ้าจำเป็น
+ let parts=SEG?[...SEG.segment(t)].map(x=>x.segment):t.split(/(\s+)/);
+ parts=mergeRanges(t,parts,[HARD]).map(g=>g.join(""));
+ // "ผู้"/"นัก" ต้องติดกับคำถัดไปเสมอ
+ parts=parts.reduce((o,x)=>{const l=o[o.length-1];if((l==='ผู้'||l==='นัก')&&!/^\s/.test(x))o[o.length-1]+=x;else o.push(x);return o;},[]);
+ return mergeRanges(t,parts,[NOBRK,NOBRK2,NOBRK3]).map(g=>({t:g.join(""),sub:g.length>1?g:null}));
 }
 function splitFirst(t,w){            // ตัดข้อความไทยตามคำ ให้บรรทัดแรกกว้างไม่เกิน w มม.
  if(measure(t)<=w)return [t,""];
@@ -281,7 +285,7 @@ function splitFirst(t,w){            // ตัดข้อความไทย�
  const sp=t.split(/(\s+)/); let c2="",k2=0;
  for(;k2<sp.length;k2++){if(measure(c2+sp[k2])>w)break;c2+=sp[k2];}
  if(c2.trim()&&measure(c2)>w*0.6)return [c2.trimEnd(),sp.slice(k2).join("").trimStart()];
- const parts=SEG?segWords(t):sp;
+ const parts=SEG?segWords(t).map(x=>x.t):sp;
  let cur="",k=0;
  for(;k<parts.length;k++){if(measure(cur+parts[k])>w)break;cur+=parts[k];}
  if(!cur){for(const ch of t){if(measure(cur+ch)>w)break;cur+=ch;}return [cur,t.slice(cur.length).trimStart()];}
@@ -440,10 +444,9 @@ function runHTML(r){if(r.tab||r.rtab)return "";return `<span style="${r.sz?`font
 const GSEG=(typeof Intl!=="undefined"&&Intl.Segmenter)?new Intl.Segmenter("th",{granularity:"grapheme"}):null;
 function tokens(runs){const out=[];
  for(const r of runs){if(r.tab||r.rtab)continue;const t=r.t||"";
-  const parts=segWords(t);
-  for(const x of parts){if(!x)continue;
+  for(const g of segWords(t)){const x=g.t;if(!x)continue;
    if(/^\s+$/.test(x)){out.push({t:x,r,sp:true});continue;}
-   out.push({t:x,r,sp:false,sub:(/\s/.test(x)||(SEG&&[...SEG.segment(x)].length>1))?(SEG?[...SEG.segment(x)].map(y=>y.segment):x.split(/(\s+)/)).filter(y=>y).map(y=>({t:y,r,sp:/^\s+$/.test(y)})):null});}}  // กลุ่มคำที่ห้ามแยก (เช่น "เวลา ๐๙.๓๐ น.") เก็บเป็นชิ้นเดียว
+   out.push({t:x,r,sp:false,sub:g.sub?g.sub.map(y=>({t:y,r,sp:/^\s+$/.test(y)})):null});}}  // กลุ่มคำที่พยายามไม่แยก เก็บเป็นชิ้นเดียว
  return out;}
 function tokW(k){return measure(k.t,k.r.sz||16,!!k.r.b);}
 function distHTML(p,st){
