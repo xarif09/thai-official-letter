@@ -44,6 +44,9 @@ body{margin:0;font-family:var(--ui);background:#e9edf2;color:#1d2530}
 .doc p.dist{text-align:justify;text-justify:inter-character}
 .fl{position:absolute;white-space:pre;line-height:normal;font-family:var(--docfont)}
 .guide{position:absolute;pointer-events:none}
+.page.multi{background:transparent;box-shadow:none}
+.sheet{position:absolute;left:0;width:210mm;height:297mm;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.18)}
+.pgno{position:absolute;left:0;width:210mm;text-align:center;font-size:16pt;line-height:1}
 .pb{position:absolute;left:0;right:0;border-top:2px dashed #e33;pointer-events:none}
 .pb span{position:absolute;right:4px;top:-18px;font:12px var(--ui);color:#e33;background:#fff}
 #print{display:none}
@@ -529,11 +532,27 @@ function floatHTML(f,dx=0,dy=0){
  if(f.kind==="block")return `<div class="fl doc" style="left:${30-dx}mm;top:${f.by-dy-blockH(f)-1.5}mm;white-space:pre">${f.qr?`<img src="${f.qr}" style="width:${QR}mm;height:${QR}mm;display:block;margin-bottom:1mm">`:""}${f.lines.map(x=>esc(x)||"&nbsp;").join("<br>")}</div>`;
  return `<div class="fl doc" style="${box};text-align:${f.align};font-size:${f.pt}pt;${f.b?"font-weight:bold;":""}${f.color?`color:#${f.color}`:""}">${esc(f.text)}</div>`;
 }
-function guidesHTML(){
- const L=(x,c="#d33",dash=false)=>`<div class="guide" style="left:${x}mm;top:12mm;bottom:12mm;border-left:1px ${dash?"dashed":"solid"} ${c};opacity:.55"></div>`;
+function guidesHTML(off=0){
+ const L=(x,c="#d33",dash=false)=>`<div class="guide" style="left:${x}mm;top:${12+off}mm;height:273mm;border-left:1px ${dash?"dashed":"solid"} ${c};opacity:.55"></div>`;
  return L(30)+L(190)+L(105,"#d33",true)+L(55,"#900",true)+
-  `<div class="guide" style="left:20mm;right:12mm;top:277mm;border-top:1px solid #d33;opacity:.55"></div>`;
+  `<div class="guide" style="left:20mm;right:12mm;top:${277+off}mm;border-top:1px solid #d33;opacity:.55"></div>`;
 }
+// ---- แบ่งหน้าในพรีวิวให้เหมือนตอนพิมพ์: แต่ละหน้าเป็นกระดาษ A4 แยกกัน ----
+const PGAP=8, PSTEP=297+PGAP;
+function paginate(pg){
+ const c=document.getElementById("content"); if(!c)return 1;
+ const z=pg.getBoundingClientRect().height/pg.offsetHeight||1, mm=px=>px/z*25.4/96, top0=pg.getBoundingClientRect().top;
+ const units=[];
+ for(const ch of c.children){
+  if(ch.classList.contains("jp"))units.push(...ch.children); else units.push(ch);}
+ let k=0;
+ for(const u of units){
+  const r=u.getBoundingClientRect(), t=mm(r.top-top0), b=mm(r.bottom-top0);
+  const bot=k*PSTEP+25+252;
+  if(b>bot+0.3&&t>k*PSTEP+25+1){k++;
+   const sp=document.createElement("div");sp.className="pgsp";sp.style.height=(k*PSTEP+25-t)+"mm";u.before(sp);}
+ }
+ return k+1;}
 function update(){
  document.documentElement.style.setProperty("--lh",String(lineH()));
  document.documentElement.style.setProperty("--docfont",`"${D.font}","TH SarabunPSK","TH Sarabun New",sans-serif`);
@@ -550,14 +569,18 @@ function update(){
  if(D.fit1&&hmm>LIM&&hmm<252*1.15){const base=lspF();
   for(const f of [0.97,0.95,0.93,0.9]){if(f>=base)continue;AUTOF=f;hmm=render();if(hmm<=LIM){fitMsg=`บีบระยะบรรทัดเป็น ${f} เท่า เพื่อให้จบในหน้าเดียว`;break;}}
   if(hmm>LIM){AUTOF=0;hmm=render();}}
- const pages=Math.max(1,Math.ceil(hmm/252)), last=pages-1;
+ const pages=hmm>252.3?paginate(pg):1, last=pages-1;
  LASTPAGE=last;
- for(const f of F)if(f.kind==="initials")f.by=25+252*(last+1);
- for(const f of F)if(f.kind==="block"&&f.mode==="bottom"){f.by=25+252*(last+1);
-  const bh=blockH(f); if(hmm-252*last>252-bh-4)WARN.push("ส่วนราชการเจ้าของเรื่องอาจชิดหรือทับลายมือชื่อ — ลดข้อความ หรือปิดตัวเลือก 'ชิดขอบล่าง'");}
+ const endB=(()=>{const c=document.getElementById("content");const r=c.getBoundingClientRect(),z=pg.getBoundingClientRect().height/pg.offsetHeight||1;return (r.bottom-pg.getBoundingClientRect().top)/z*25.4/96;})();
+ for(const f of F)if(f.kind==="initials")f.by=last*PSTEP+25+252;
+ for(const f of F)if(f.kind==="block"&&f.mode==="bottom"){f.by=last*PSTEP+25+252;
+  const bh=blockH(f); if(endB-last*PSTEP-25>252-bh-4)WARN.push("ส่วนราชการเจ้าของเรื่องอาจชิดหรือทับลายมือชื่อ — ลดข้อความ หรือปิดตัวเลือก 'ชิดขอบล่าง'");}
  pg.insertAdjacentHTML("beforeend",F.filter(f=>f.mode!=="side").map(f=>floatHTML(f)).join(""));
- pg.style.height=(pages>1?25+hmm+20:297)+"mm";
- for(let k=1;k<pages;k++){const d=el("div",{class:"pb",style:`top:${25+252*k}mm`},`<span>ขึ้นหน้า ${k+1} (โดยประมาณ)</span>`);pg.appendChild(d);}
+ pg.style.height=(pages*297+(pages-1)*PGAP)+"mm"; pg.classList.toggle("multi",pages>1);
+ if(pages>1){let h="";const gOn=document.getElementById("gOn").checked;
+  for(let k=0;k<pages;k++){h+=`<div class="sheet" style="top:${k*PSTEP}mm"></div>`;
+   if(k>0){h+=`<div class="pgno doc" style="top:${k*PSTEP+12}mm">- ${D.thai?thaiNum(String(k+1)):k+1} -</div>`;if(gOn)h+=guidesHTML(k*PSTEP);}}
+  pg.insertAdjacentHTML("afterbegin",h);}
  document.getElementById("warn").textContent=[...(fitMsg?[fitMsg]:[]),...WARN,...(pages>1?[`เนื้อหาเกิน 1 หน้า: หน้าถัดไปมีเลขหน้าให้อัตโนมัติ · อย่าลืมพิมพ์คำต่อเนื่อง "คำ.../" มุมขวาล่างใน Word`]:[])].join(" · ");
  scale();
  window._model={P,F};
