@@ -176,7 +176,7 @@ function save(){store.set("thdoc_"+TYPE, D); store.set("thdoc_type",TYPE);}
 // ---------- ฟอร์ม ----------
 function el(tag,attrs={},html=""){const e=document.createElement(tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(html)e.innerHTML=html;return e;}
 function renderTabs(){const t=document.getElementById("tabs");t.innerHTML="";
- for(const k in TYPES){const b=el("button",{},TYPES[k].name);if(k===TYPE)b.className="on";b.onclick=()=>{TYPE=k;load();renderTabs();renderForm();setView(VIEW);save();};t.appendChild(b);}}
+ for(const k in TYPES){const b=el("button",{},TYPES[k].name);if(k===TYPE)b.className="on";b.onclick=()=>{TYPE=k;load();document.documentElement.style.setProperty("--docfont",`"${D.font}","TH SarabunPSK","TH Sarabun New",sans-serif`);renderTabs();renderForm();setView(VIEW);save();};t.appendChild(b);}}
 function renderForm(){
  const f=document.getElementById("form");f.innerHTML="";
  let fields=TYPES[TYPE].fields.concat(COMMON);
@@ -239,7 +239,13 @@ let GARUDA = (()=>{try{return localStorage.getItem("thdoc_garuda")||GARUDA_DEFAU
 const TH="๐๑๒๓๔๕๖๗๘๙";
 const thaiNum=s=>String(s).replace(/[0-9]/g,d=>TH[d]);
 let cvs=document.createElement("canvas").getContext("2d");
-function measure(t,pt=16,b=false){if(D.thai)t=thaiNum(t);cvs.font=`${b?"bold ":""}${pt}pt "${D.font}"`;return cvs.measureText(t).width*25.4/96;}
+// วัดความกว้างข้อความด้วย DOM จริง (canvas บางเครื่องหาฟอนต์ไทยในเครื่องไม่เจอ แล้ววัดด้วยฟอนต์อื่นแทน ทำให้ตัดบรรทัดผิด)
+let MS=null; const MCACHE=new Map();
+function measure(t,pt=16,b=false){if(D.thai)t=thaiNum(t);
+ const k=D.font+"|"+pt+"|"+(b?1:0)+"|"+t; if(MCACHE.has(k))return MCACHE.get(k);
+ if(!MS){MS=document.createElement("span");MS.style.cssText="position:absolute;left:-10000px;top:0;visibility:hidden;white-space:pre;line-height:1;font-family:var(--docfont)";document.body.appendChild(MS);}
+ MS.style.fontSize=pt+"pt";MS.style.fontWeight=b?"bold":"normal";MS.textContent=t;
+ const w=MS.getBoundingClientRect().width*25.4/96; if(MCACHE.size>20000)MCACHE.clear(); MCACHE.set(k,w); return w;}
 function thaiDate(s,ps=false){
  if(!s)return "";const [y,m,d]=s.split("-").map(Number);
  const day=D.blankday?"        ":String(d);
@@ -634,8 +640,8 @@ document.getElementById("bSample").onclick=()=>{Object.assign(D,SAMPLE[TYPE]);sa
 document.getElementById("bClear").onclick=()=>{const f=D.font,t=D.thai;D=Object.assign(defaults(),{font:f,thai:t,refList:[],enclList:[]});save();renderForm();update();};
 document.getElementById("gOn").onchange=update;
 document.getElementById("zoom").oninput=scale;
-load();renderTabs();renderForm();
-(document.fonts?document.fonts.ready:Promise.resolve()).then(update);update();
+load();document.documentElement.style.setProperty("--docfont",`"${D.font}","TH SarabunPSK","TH Sarabun New",sans-serif`);renderTabs();renderForm();
+(document.fonts?document.fonts.ready:Promise.resolve()).then(()=>{MCACHE.clear();update();});update();
 </script>
 </body>
 </html>
