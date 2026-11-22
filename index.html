@@ -263,9 +263,11 @@ const SEG=(typeof Intl!=="undefined"&&Intl.Segmenter)?new Intl.Segmenter("th",{g
 const NOBRK=/[0-9๐-๙][0-9๐-๙.,:]*\s+(?:น\.|นาฬิกา|บาท|คน|ราย|ฉบับ|ชุด|แผ่น|เล่ม|ครั้ง)/g;
 const NOBRK2=/(?:พ\.ศ\.|ค\.ศ\.)\s*[0-9๐-๙]+/g;
 const nbsp=t=>t.replace(NOBRK,m=>m.replace(/ /g,"\u00A0")).replace(NOBRK2,m=>m.replace(/ /g,"\u00A0"));  // Word: ใช้ช่องว่างไม่ตัดบรรทัด
-const NOBRK3=/ลงวันที่|สิ่งที่ส่งมาด้วย|ผู้ว่าราชการจังหวัด/g;  // วลีคงที่ (แยกได้ถ้าทำให้ยืดมาก)
+const NOBRK3=/ลงวันที่|สิ่งที่ส่งมาด้วย|ผู้ว่าราชการจังหวัด|(?:มกราคม|กุมภาพันธ์|มีนาคม|เมษายน|พฤษภาคม|มิถุนายน|กรกฎาคม|สิงหาคม|กันยายน|ตุลาคม|พฤศจิกายน|ธันวาคม)\s+[0-9๐-๙]{4}/g;  // วลีคงที่ (แยกได้ถ้าทำให้ยืดมาก)
 function segWords(t){
- const parts=SEG?[...SEG.segment(t)].map(x=>x.segment):t.split(/(\s+)/);
+ let parts=SEG?[...SEG.segment(t)].map(x=>x.segment):t.split(/(\s+)/);
+ // "ผู้"/"นัก" ต้องติดกับคำถัดไปเสมอ (ผู้แทน ผู้อำนวยการ นักวิชาการ)
+ parts=parts.reduce((o,x)=>{const l=o[o.length-1];if((l==='ผู้'||l==='นัก')&&!/^\s/.test(x))o[o.length-1]+=x;else o.push(x);return o;},[]);
  const R=[];for(const re of [NOBRK,NOBRK2,NOBRK3])for(const m of t.matchAll(re))R.push([m.index,m.index+m[0].length]);
  if(!R.length)return parts;
  const out=[];let pos=0;
@@ -456,6 +458,8 @@ function distHTML(p,st){
  for(let q=0;q<tk.length;q++){const k=tk[q];const kw=tokW(k);
   if(!cur.length&&k.sp)continue;
   // กลุ่มห้ามแยก: ถ้าปัดทั้งกลุ่มลงบรรทัดใหม่แล้วบรรทัดนี้เหลือที่ว่างเกิน 3% (ตัวอักษรจะห่างเกินไป) ยอมแยกกลุ่ม
+  // ยอมบีบเล็กน้อย (≤1.5% ของบรรทัด ≈ 0.1 px ต่อตัวอักษร มองไม่เห็น) แทนการปัดคำสั้นๆ ลงไปเป็นบรรทัดใหม่
+  if(w+kw>lim&&w+kw<=lim*1.015&&cur.length&&!k.sp){cur.push(k);w+=kw;continue;}
   if(w+kw>lim&&cur.length&&k.sub&&(lim-w)>lim*0.03){tk.splice(q,1,...k.sub);q--;continue;}
   if(w+kw>lim&&cur.length){push();if(k.sp)continue;}
   if(kw>lim&&!cur.length&&!k.sp){ // คำยาวเกินบรรทัด ตัดทีละตัวอักษร
@@ -477,7 +481,7 @@ function justify(root){   // เพิ่มระยะ "ระหว่าง�
   const runs=[...sp.childNodes];
   const gs=runs.map(r=>GSEG?[...GSEG.segment(r.textContent)].map(x=>x.segment):[...r.textContent]);
   const n=gs.reduce((a,g)=>a+g.length,0); if(n<2)continue;
-  const ls=(tgt-nat-1)/(n-1); if(!(ls>-1&&ls<12))continue;   // เผื่อ 1px ไม่ให้ล้นจนตัดบรรทัด
+  const ls=(tgt-nat-2)/(n-1); if(!(ls>-1&&ls<12))continue;   // เผื่อ 2px ไม่ให้ล้นจนตัดบรรทัด
   let k=0;
   runs.forEach((r,i)=>{const el=r.nodeType===1?r:null; const html=gs[i].map(g=>{k++;return k<n?`<span style="margin-right:${ls}px">${esc(g)}</span>`:esc(g);}).join("");
    if(el)el.innerHTML=html; else {const w=document.createElement("span");w.innerHTML=html;r.replaceWith(w);}});
