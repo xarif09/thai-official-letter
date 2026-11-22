@@ -439,7 +439,7 @@ function tokens(runs){const out=[];
   const parts=segWords(t);
   for(const x of parts){if(!x)continue;
    if(/^\s+$/.test(x)){out.push({t:x,r,sp:true});continue;}
-   const sub=x.split(/(\s+)/).filter(y=>y);for(const y of sub)out.push({t:y,r,sp:/^\s+$/.test(y)});}}
+   out.push({t:x,r,sp:false});}}  // กลุ่มคำที่ห้ามแยก (เช่น "เวลา ๐๙.๓๐ น.") เก็บเป็นชิ้นเดียว
  return out;}
 function tokW(k){return measure(k.t,k.r.sz||16,!!k.r.b);}
 function distHTML(p,st){
