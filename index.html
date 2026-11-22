@@ -330,7 +330,7 @@ function build(){
   else mode={"ต่อจากตำแหน่ง (เว้น 1 บรรทัด)":"after","ข้างลายมือชื่อ (ซ้าย)":"side","ชิดขอบล่าง":"bottom"}[mode]||"after";
   if(stamp&&mode==="side")mode="after";
   if(mode==="after"&&qr)mode="side";
-  if(mode==="after"){blank(1);L.forEach(x=>x?para({runs:[R(x)]}):blank(1));}
+  if(mode==="after"){blank(stamp?4:1);L.forEach(x=>x?para({runs:[R(x)]}):blank(1));}   // หนังสือประทับตรา: เว้นที่ให้ตราชื่อส่วนราชการ
   else F.push({kind:"block",lines:L,qr,mode});
   const sb=F.find(f=>f.kind==="block"&&f.mode==="side");
   if(sb&&SIG0>=0){const LHmm=lineH()*16*25.4/72, n=P.length-SIG0, sigH=n*LHmm;
@@ -444,7 +444,7 @@ function distHTML(p,st){
  if(cur.length)push();
  const body=lines.map((ln,i)=>{const last=i===lines.length-1;
   const html=ln.tk.map(k=>runHTML(Object.assign({},k.r,{t:k.t}))).join("");
-  return `<div style="white-space:pre;margin-left:${i===0?ml0:0}mm">${i===0?pre:""}<span class="jt" data-w="${ln.w}" data-last="${last?1:0}">${html}</span></div>`;}).join("");
+  return `<div style="white-space:pre;overflow:visible;height:${lineH()*16}pt;margin-left:${i===0?ml0:0}mm">${i===0?pre:""}<span class="jt" data-w="${ln.w}" data-last="${last?1:0}">${html}</span></div>`;}).join("");
  const st2=st.filter(x=>!/^text-indent|^text-align/.test(x));
  return `<div class="jp" style="${st2.join(";")}">${body}</div>`;}
 function justify(root){   // เพิ่มระยะ "ระหว่างกลุ่มตัวอักษร" (ไม่แยกสระ/วรรณยุกต์ออกจากพยัญชนะ) ให้บรรทัดชนขอบขวาพอดี
@@ -455,7 +455,7 @@ function justify(root){   // เพิ่มระยะ "ระหว่าง�
   const runs=[...sp.childNodes];
   const gs=runs.map(r=>GSEG?[...GSEG.segment(r.textContent)].map(x=>x.segment):[...r.textContent]);
   const n=gs.reduce((a,g)=>a+g.length,0); if(n<2)continue;
-  const ls=(tgt-nat)/(n-1); if(!(ls>-1&&ls<12))continue;
+  const ls=(tgt-nat-1)/(n-1); if(!(ls>-1&&ls<12))continue;   // เผื่อ 1px ไม่ให้ล้นจนตัดบรรทัด
   let k=0;
   runs.forEach((r,i)=>{const el=r.nodeType===1?r:null; const html=gs[i].map(g=>{k++;return k<n?`<span style="margin-right:${ls}px">${esc(g)}</span>`:esc(g);}).join("");
    if(el)el.innerHTML=html; else {const w=document.createElement("span");w.innerHTML=html;r.replaceWith(w);}});
@@ -490,7 +490,7 @@ function parasHTML(P,F){let h="",grp="",side=sideHTML(F);
 function floatHTML(f,dx=0,dy=0){
  const box=`left:${f.x-dx}mm;top:${f.y-dy}mm;width:${f.w}mm;height:${f.h}mm`;
  if(f.kind==="img")return `<img class="fl" src="${GARUDA}" style="${box}">`;
- if(f.kind==="initials")return `<div class="fl doc" style="left:${150-dx}mm;width:40mm;top:${f.by-dy-INIH}mm;font-size:14pt;white-space:pre;text-align:left">${f.lines.map(esc).join("<br>")}</div>`;
+ if(f.kind==="initials")return `<div class="fl doc" style="left:${150-dx}mm;width:40mm;top:${f.by-dy-INIH-3}mm;font-size:14pt;white-space:pre;text-align:left">${f.lines.map(esc).join("<br>")}</div>`;
  if(f.kind==="block")return `<div class="fl doc" style="left:${30-dx}mm;top:${f.by-dy-blockH(f)-1.5}mm;white-space:pre">${f.qr?`<img src="${f.qr}" style="width:${QR}mm;height:${QR}mm;display:block;margin-bottom:1mm">`:""}${f.lines.map(x=>esc(x)||"&nbsp;").join("<br>")}</div>`;
  return `<div class="fl doc" style="${box};text-align:${f.align};font-size:${f.pt}pt;${f.b?"font-weight:bold;":""}${f.color?`color:#${f.color}`:""}">${esc(f.text)}</div>`;
 }
