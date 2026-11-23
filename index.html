@@ -245,7 +245,7 @@ let TYPE = store.get("thdoc_type") || "ext";
 let D = {};
 function defaults(){return {v:DATA_VERSION,fit1:true,font:"TH SarabunIT๙",thai:true,ownerPos:"อัตโนมัติ",sal:"เรียน",kind:"คำสั่ง",date:new Date().toISOString().slice(0,10)}}
 // รุ่นของระบบ (แสดงบนหน้าจอ) และรุ่นโครงข้อมูลที่เก็บในเครื่อง — เพิ่มเลขทุกครั้งที่กฎเปลี่ยนจนค่าเก่าอาจขัดกับกฎใหม่
-const APP_VERSION="2026.11.23o", DATA_VERSION=4;
+const APP_VERSION="2026.11.23p", DATA_VERSION=4;
 function migrate(x){   // ปรับค่าที่เก็บไว้ในเครื่องให้เข้ากับกฎปัจจุบัน (ดู REQUIREMENTS.md)
  if(!x||typeof x!=="object")return {};
  const v=x.v||1;
@@ -557,6 +557,7 @@ function renderForm(){
    w.appendChild(inp);w.appendChild(rb);f.appendChild(w);continue;}
   else {inp=el("input",{type:"text",spellcheck:"true",lang:"th"});inp.value=D[key]||"";}
   inp.oninput=inp.onchange=()=>{D[key]=inp.value;save();update();};
+  if(["tel","fax","org","owner"].includes(key))inp.addEventListener("change",()=>{const v=normTel(inp.value);if(v!==inp.value){inp.value=v;D[key]=v;save();update();}});   // R-68 จัดรูปแบบเบอร์โทรเมื่อออกจากช่อง
   if(inp.tagName==="TEXTAREA"||(inp.tagName==="INPUT"&&inp.type==="text"))histAttach(w,inp,key);   // R-67: จำข้อมูลที่เคยกรอก
   w.appendChild(inp);f.appendChild(w);
  }
@@ -578,6 +579,13 @@ function measure(t,pt=16,b=false){if(D.thai)t=thaiNum(t);
  MS.style.fontSize=pt+"pt";MS.style.fontWeight=b?"bold":"normal";MS.textContent=t;
  const w=MS.getBoundingClientRect().width*25.4/96; if(MCACHE.size>20000)MCACHE.clear(); MCACHE.set(k,w); return w;}
 // เลขที่หนังสือ: เว้นวรรคระหว่างตัวย่อกับตัวเลขให้อัตโนมัติ เช่น "ยล0017.2/ว123" → "ยล 0017.2/ว 123"
+// R-68: เบอร์โทรศัพท์ — กรอกติดกัน/เว้นวรรค/มีขีด/+66 ก็ได้ ระบบจัดเป็นรูปแบบเดียว: บ้าน/สำนักงาน 9 หลัก "0 XXXX XXXX" · มือถือ 10 หลัก "0XX XXX XXXX"
+function normTel(x){const AR=t=>t.replace(/[๐-๙]/g,d=>"๐๑๒๓๔๕๖๗๘๙".indexOf(d));
+ return String(x||"").split(/(\s+-\s+)/).map(seg=>/^\s+-\s+$/.test(seg)?seg:seg.replace(/(^|[^0-9๐-๙.])((?:\+\s*66|\(?[0๐])[\s\-()0-9๐-๙]{7,16}[0-9๐-๙])(?![0-9๐-๙])/g,(m,pre,num)=>{
+  let d=AR(num).replace(/[^0-9+]/g,"");if(d.startsWith("+66"))d="0"+d.slice(3);d=d.replace(/\+/g,"");
+  if(/^0\d{8}$/.test(d))return pre+d[0]+" "+d.slice(1,5)+" "+d.slice(5);
+  if(/^0\d{9}$/.test(d))return pre+d.slice(0,3)+" "+d.slice(3,6)+" "+d.slice(6);
+  return m;})).join("").replace(/\s+-\s+|\s*,\s*/g,m=>m.includes(",")?", ":" - ");}
 function normNo(x){return String(x||"").trim().replace(/\s+/g," ").replace(/([ก-ฮ]\.?)(?=[0-9๐-๙])/g,"$1 ");}
 function thaiDate(s,ps=false){   // ลงเฉพาะเดือนและปี — เว้นที่ว่างให้เขียนวันที่ตอนลงนาม
  if(!s)return "";const [y,m]=s.split("-").map(Number);
@@ -700,8 +708,9 @@ function build(){
  };
  const owner=(stamp)=>{
   const L=[...lines(D.owner)];
-  if(D.tel&&D.fax&&D.tel.trim()===D.fax.trim())L.push("โทร./โทรสาร "+D.tel);
-  else{if(D.tel)L.push("โทร. "+D.tel);if(D.fax)L.push("โทรสาร "+D.fax);}
+  const tel=normTel(D.tel).trim(),fax=normTel(D.fax).trim();
+  if(tel&&fax&&tel===fax)L.push("โทร./โทรสาร "+tel);
+  else{if(tel)L.push("โทร. "+tel);if(fax)L.push("โทรสาร "+fax);}
   if(D.email)L.push("ไปรษณีย์อิเล็กทรอนิกส์ "+D.email);
   const cc=stamp?[]:lines(D.cc);
   if(!L.length)return;
@@ -768,7 +777,7 @@ function build(){
   F.push({kind:"text",x:55,y:16,w:100,h:14,text:"บันทึกข้อความ",pt:29,b:true,align:"center"});
   const tw=measure("บันทึกข้อความ",29,true), xd=105-tw/2+measure("บันทึก",29,true)-30; // ตำแหน่ง "ข" เทียบขอบซ้ายระยะพิมพ์
   { const H=measure("ส่วนราชการ",20,true)+measure("  ");
-    para({runs:[R("ส่วนราชการ",{sz:20,b:true}),TAB,R(D.org||"")],indL:H,hang:H,tabAt:H,kind:"label",before:mm2pt(6)}); }
+    para({runs:[R("ส่วนราชการ",{sz:20,b:true}),TAB,R(normTel(D.org||""))],indL:H,hang:H,tabAt:H,kind:"label",before:mm2pt(6)}); }
   para({runs:[R("ที่",{sz:20,b:true}),R("  "+normNo(D.no)),TAB,R("วันที่",{sz:20,b:true}),R("  "+thaiDate(D.date))],tabAt:xd,kind:"abs"});
   labelList("เรื่อง",[D.subject||""],0,false,20,true);
   labelList(D.sal||"เรียน",[D.to||""],6,false);
