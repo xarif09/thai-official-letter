@@ -22,7 +22,7 @@ body{margin:0;font-family:var(--ui);background:#e9edf2;color:#1d2530}
 .f input[type=text],.f input[type=date],.f select,.f textarea{width:100%;font:inherit;font-size:14px;padding:6px 8px;border:1px solid #c5cfdb;border-radius:6px;background:#fff}
 .f textarea{resize:vertical;min-height:54px}
 .f textarea.big{min-height:220px}
-.frow{display:flex;gap:10px;align-items:flex-end}.frow>.f{flex:1 1 0;min-width:0}.frow>.f[data-k="date"]{flex:1.3 1 0}
+.frow{display:flex;gap:10px;align-items:flex-end}.frow>.f{flex:1 1 0;min-width:0}.frow>.f[data-k="date"]{flex:1.4 1 0}.frow>.f[data-k="speed"],.frow>.f[data-k="sal"],.frow>.f[data-k="kind"]{flex:0 0 auto;min-width:110px}.frow>.f[data-k="to"],.frow>.f[data-k="org"]{flex:3 1 0}.frow label small{display:none}.frow>.f[data-k="date"] select:last-child{min-width:112px;flex:0 0 auto!important}.f.inl{display:flex;align-items:center;gap:10px}.f.inl>label{margin:0;white-space:nowrap}.f.inl>input{flex:1}
 textarea.docta{font-family:var(--docfont);line-height:1.3;padding:6px 8px}
 .row{display:flex;gap:8px}.row>.f{flex:1}
 .chk{display:flex;align-items:center;gap:6px;font-size:13px;margin:4px 0}
@@ -892,8 +892,12 @@ document.getElementById("gOn").onchange=update;
 document.getElementById("zoom").oninput=scale;
 const _rf=renderForm; renderForm=function(){_rf();
  // วาง "เดือนและปี" ไว้บรรทัดเดียวกับ "ที่" ให้ฟอร์มกระชับ
- const f=document.getElementById("form"),a=f.querySelector('.f[data-k="no"]'),b=f.querySelector('.f[data-k="date"]');
- if(a&&b){const r=el("div",{class:"frow"});a.before(r);r.appendChild(a);r.appendChild(b);}
+ const f=document.getElementById("form");
+ // จัดช่องสั้น ๆ ไว้บรรทัดเดียวกัน ให้ฟอร์มกระชับ (ตำแหน่งในหนังสือไม่เปลี่ยน)
+ for(const g of [["speed","no","date"],["sal","to"],["kind","org"],["tel","fax"],["email","ownerPos"],["sender"],["font","lsp"],["drafter","typist","checker"]]){
+  const ws=g.map(k=>f.querySelector(`.f[data-k="${k}"]`)).filter(x=>x); if(ws.length<2)continue;
+  const r=el("div",{class:"frow"});ws[0].before(r);ws.forEach(w=>{r.appendChild(w);w.classList.add("k-"+w.dataset.k);});}
+ const sj=f.querySelector('.f[data-k="subject"]');if(sj)sj.classList.add("inl");   // "เรื่อง" ป้ายอยู่หน้าช่อง บรรทัดเดียว
  requestAnimationFrame(fitTA);};
 load();document.documentElement.style.setProperty("--docfont",`"${D.font}","TH SarabunPSK","TH Sarabun New",sans-serif`);renderTabs();renderForm();
 (document.fonts?document.fonts.ready:Promise.resolve()).then(()=>{MCACHE.clear();update();});update();
