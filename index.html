@@ -245,7 +245,7 @@ let TYPE = store.get("thdoc_type") || "ext";
 let D = {};
 function defaults(){return {v:DATA_VERSION,fit1:true,font:"TH SarabunIT๙",thai:true,ownerPos:"อัตโนมัติ",sal:"เรียน",kind:"คำสั่ง",date:new Date().toISOString().slice(0,10)}}
 // รุ่นของระบบ (แสดงบนหน้าจอ) และรุ่นโครงข้อมูลที่เก็บในเครื่อง — เพิ่มเลขทุกครั้งที่กฎเปลี่ยนจนค่าเก่าอาจขัดกับกฎใหม่
-const APP_VERSION="2026.11.23n", DATA_VERSION=4;
+const APP_VERSION="2026.11.23o", DATA_VERSION=4;
 function migrate(x){   // ปรับค่าที่เก็บไว้ในเครื่องให้เข้ากับกฎปัจจุบัน (ดู REQUIREMENTS.md)
  if(!x||typeof x!=="object")return {};
  const v=x.v||1;
@@ -713,8 +713,16 @@ function build(){
   if(stamp&&mode==="side")mode="after";
   if(mode==="after"&&qr)mode="side";
   if(mode!=="side"&&cc.length){L.push("");L.push("สำเนาส่ง  "+cc[0]);cc.slice(1).forEach(x=>L.push("              "+x));}
+  if(mode==="side"){   // R-44: มี QR → วาง QR + "สิ่งที่ส่งมาด้วย" ไว้ซ้ายข้างลายมือชื่อ ส่วนราชการเจ้าของเรื่องลงต่อใต้ตำแหน่ง (เว้น 1 บรรทัด) ไม่เบียดชื่อผู้ลงนาม
+   const Lq=L[0]==="สิ่งที่ส่งมาด้วย"?L.splice(0,1):[];
+   if(qr||Lq.length)F.push({kind:"block",lines:Lq,qr,mode,at:P.length-1});
+   const sb0=F.find(f=>f.kind==="block"&&f.mode==="side");
+   if(sb0&&SIG0>=0){const LHmm=lineH()*16*25.4/72, n=P.length-SIG0, sigH=n*LHmm;const need=blockH(sb0)+2-sigH; if(need>0)P[SIG0].before+=mm2pt(need);}
+   KEEP=true;blank(1);L.forEach(x=>x?para({runs:[R(x)],keep:true}):blank(1));
+   if(cc.length){KEEP=false;blank(1);labelList("สำเนาส่ง",cc,0,false);}
+   return;}
   if(mode==="after"){blank(stamp?4:1);L.forEach(x=>x?para({runs:[R(x)]}):blank(1));}   // หนังสือประทับตรา: เว้นที่ให้ตราชื่อส่วนราชการ
-  else F.push({kind:"block",lines:L,qr,mode,at:mode==="side"?P.length-1:undefined});
+  else F.push({kind:"block",lines:L,qr,mode,at:undefined});
   const sb=F.find(f=>f.kind==="block"&&f.mode==="side");
   if(sb&&SIG0>=0){const LHmm=lineH()*16*25.4/72, n=P.length-SIG0, sigH=n*LHmm;
    const need=blockH(sb)+2-sigH; if(need>0)P[SIG0].before+=mm2pt(need);}
@@ -889,10 +897,13 @@ function paraHTML(p){
 function sideHTML(F){const f=(F||[]).find(x=>x.kind==="block"&&x.mode==="side");if(!f)return "";
  return `<div style="position:absolute;left:0;bottom:0;white-space:pre;text-indent:0;text-align:left">${f.qr?`<img src="${f.qr}" style="width:${QR}mm;height:${QR}mm;display:block;margin-bottom:1mm">`:""}${f.lines.map(x=>esc(x)||"&nbsp;").join("<br>")}</div>`;}
 function parasHTML(P,F){let h="",grp="",side=sideHTML(F);
+ const sf=(F||[]).find(x=>x.kind==="block"&&x.mode==="side"), at=sf&&sf.at!=null?sf.at:-1;   // QR ข้างลายมือชื่อ: ยึดใต้ย่อหน้าบรรทัดตำแหน่ง (at)
  const close=()=>{if(grp){h+=`<div style="break-inside:avoid;position:relative">${grp}${side}</div>`;grp="";side="";}};
- let kn="";for(const p of P){if(p.keep){if(kn){close();h+=`<div style="break-inside:avoid">${kn}</div>`;kn="";}grp+=paraHTML(p);continue;}
-  close();if(p.kn){kn+=paraHTML(p);continue;}
-  if(kn){h+=`<div style="break-inside:avoid">${kn}${paraHTML(p)}</div>`;kn="";}else h+=paraHTML(p);}
+ let kn="";P.forEach((p,i)=>{
+  if(p.keep){if(kn){close();h+=`<div style="break-inside:avoid">${kn}</div>`;kn="";}grp+=paraHTML(p);
+   if(i===at&&side){grp=`<div style="position:relative">${grp}${side}</div>`;side="";}return;}
+  close();if(p.kn){kn+=paraHTML(p);return;}
+  if(kn){h+=`<div style="break-inside:avoid">${kn}${paraHTML(p)}</div>`;kn="";}else h+=paraHTML(p);});
  if(kn)h+=kn;
  close();return h;}
 function floatHTML(f,dx=0,dy=0){

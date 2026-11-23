@@ -47,7 +47,7 @@ with sync_playwright() as p:
     check("R-35", ev("()=>document.querySelectorAll('#form .pbox').length>0&&!document.querySelector('#form textarea.big')&&!/\\*\\*/.test(document.querySelector('#form .pbed').textContent)"), "ไม่แสดง ** ในช่องข้อความ")
     check("R-37", ev("()=>!!document.querySelector('#form .combo')&&!document.querySelector('[data-k=endpX]')"))
     check("R-40", ev("()=>{const {P}=build();const c=P.find(p=>p.runs.length===1&&p.runs[0].t==='ขอแสดงความนับถือ');return c&&c.before>=12}"))
-    check("R-41", ev("()=>{const {P,F}=build();const b=F.find(f=>f.kind==='block'&&f.mode==='side');return b&&!b.lines.some(l=>/สำเนาส่ง/.test(l))&&P.some(p=>p.runs.some(r=>r.t==='สำเนาส่ง'))}"))
+    check("R-41", ev("()=>{const {P,F}=build();const b=F.find(f=>f.kind==='block'&&f.mode==='side');const iPos=b?b.at:-1,iOwn=P.findIndex(p=>p.runs.some(r=>r.t==='สำนักงานจังหวัด'));return b&&b.qr&&b.lines.join()==='สิ่งที่ส่งมาด้วย'&&iOwn>iPos&&P.some(p=>p.runs.some(r=>r.t==='สำเนาส่ง'))}"), "QR ข้างลายมือชื่อ ส่วนราชการเจ้าของเรื่องอยู่ใต้ตำแหน่ง")
     check("R-50", ev("()=>document.querySelectorAll('#page .sheet').length===2&&/๒/.test(document.querySelector('#page .pgno').textContent)"))
     check("R-51", ev("()=>{const {P}=build();const i=P.findIndex(p=>p.runs.length===1&&p.runs[0].t==='ขอแสดงความนับถือ');let n=0;for(let j=i-1;j>=0&&P[j].keep;j--)n+=Math.ceil((measure(P[j].runs.map(r=>r.t||'').join(''))+(P[j].first||0))/(CW-P[j].indL-P[j].indR));return n>=2}"))
     check("R-52", ev("()=>{const {P}=build();return P.filter(p=>p.runs.some(r=>/ดังนี้\\s*$/.test(r.t||''))).every(p=>p.kn)}"))
