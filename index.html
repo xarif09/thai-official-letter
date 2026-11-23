@@ -214,7 +214,15 @@ function renderForm(){
   if(kind==="select"){inp=el("select");for(const o of extra){const op=el("option",{value:o},o||"— ไม่มี —");inp.appendChild(op);} inp.value=D[key]??extra[0];}
   else if(kind==="area"||kind==="bigarea"){inp=el("textarea",{spellcheck:"true",lang:"th"});if(kind==="bigarea"){inp.className="big";shiftEnter(inp);}inp.value=D[key]||"";}
   else if(kind==="date"){inp=el("input",{type:"date"});inp.value=D[key]||"";}
-  else if(kind==="month"){inp=el("input",{type:"month"});inp.value=(D[key]||"").slice(0,7);}
+  else if(kind==="month"){   // เลือกเดือน (ภาษาไทย) + ปี พ.ศ.
+   const [y0,m0]=((D[key]||new Date().toISOString().slice(0,7)).split("-")).map(Number);
+   const st="font:inherit;padding:6px;border:1px solid #c5cfdb;border-radius:6px";
+   const ms=el("select",{style:st+";flex:1"}),ys=el("select",{style:st});
+   MON.forEach((n,i)=>ms.appendChild(el("option",{value:i+1},n)));ms.value=m0;
+   const cy=new Date().getFullYear();for(let y=cy-3;y<=cy+3;y++)ys.appendChild(el("option",{value:y},"พ.ศ. "+(y+543)));
+   if(![...ys.options].some(o=>+o.value===y0))ys.appendChild(el("option",{value:y0},"พ.ศ. "+(y0+543)));ys.value=y0;
+   const upd=()=>{D[key]=`${ys.value}-${String(ms.value).padStart(2,"0")}`;save();update();};ms.onchange=ys.onchange=upd;
+   const r=el("div",{style:"display:flex;gap:6px"});r.appendChild(ms);r.appendChild(ys);w.appendChild(r);f.appendChild(w);continue;}
   else if(kind==="reflist"||kind==="encllist"){
    const isRef=kind==="reflist"; const arr=D[key]=D[key]||[];
    const box=el("div",{style:"display:flex;flex-direction:column;gap:6px"});
