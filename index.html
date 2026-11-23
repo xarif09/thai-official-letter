@@ -179,6 +179,7 @@ const TYPES = {
   ["endp","ย่อหน้าสุดท้าย","combo",ENDP],
   ["closing","คำลงท้าย","text","ว่าง = ตามคำขึ้นต้นอัตโนมัติ"],
   ["sec","ผู้ลงนามและส่วนท้าย"],
+  ["sigMode","การลงนาม","signer"],
   ["name","ชื่อเต็มผู้ลงนาม","text","ไม่ต้องใส่วงเล็บ"],
   ["pos","ตำแหน่ง","area","หลายบรรทัดได้ เช่น ปฏิบัติราชการแทน..."],
   ["owner","ส่วนราชการเจ้าของเรื่อง","area","หลายบรรทัดได้ เช่น สำนักงานจังหวัดยะลา / กลุ่มงาน..."],
@@ -198,6 +199,7 @@ const TYPES = {
   ["secs","ข้อความ","seclist"],
   ["endp","ย่อหน้าสุดท้าย","combo",ENDP],
   ["sec","ผู้ลงนาม"],
+  ["sigMode","การลงนาม","signer"],
   ["name","ชื่อเต็มผู้ลงนาม","text"],
   ["pos","ตำแหน่ง","area"]]},
  stamp:{name:"หนังสือประทับตรา", fields:[
@@ -226,6 +228,7 @@ const TYPES = {
   
   ["date","สั่ง ณ / ประกาศ ณ เดือนและปี (วันที่เว้นว่าง)","month"],
   ["sec","ผู้ลงนาม"],
+  ["sigMode","การลงนาม","signer"],
   ["name","ชื่อเต็มผู้ลงนาม","text"],
   ["pos","ตำแหน่ง","area"]]}
 };
@@ -241,7 +244,7 @@ let TYPE = store.get("thdoc_type") || "ext";
 let D = {};
 function defaults(){return {v:DATA_VERSION,fit1:true,font:"TH SarabunIT๙",thai:true,ownerPos:"อัตโนมัติ",sal:"เรียน",kind:"คำสั่ง",date:new Date().toISOString().slice(0,10)}}
 // รุ่นของระบบ (แสดงบนหน้าจอ) และรุ่นโครงข้อมูลที่เก็บในเครื่อง — เพิ่มเลขทุกครั้งที่กฎเปลี่ยนจนค่าเก่าอาจขัดกับกฎใหม่
-const APP_VERSION="2026.11.23j", DATA_VERSION=4;
+const APP_VERSION="2026.11.23k", DATA_VERSION=4;
 function migrate(x){   // ปรับค่าที่เก็บไว้ในเครื่องให้เข้ากับกฎปัจจุบัน (ดู REQUIREMENTS.md)
  if(!x||typeof x!=="object")return {};
  const v=x.v||1;
@@ -415,6 +418,21 @@ function renderForm(){
   else if(kind==="bigarea"){w.appendChild(fmtBarPB());w.appendChild(paraEditor(()=>D[key]||"",v=>{D[key]=v;}));f.appendChild(w);continue;}
   else if(kind==="area"){inp=el("textarea",{spellcheck:"true",lang:"th"});inp.value=D[key]||"";}
   else if(kind==="date"){inp=el("input",{type:"date"});inp.value=D[key]||"";}
+  else if(kind==="signer"){   // R-43: 2 แบบ — ระบุชื่อ/ตำแหน่ง (เลือกจากรายชื่อที่บันทึกไว้) หรือ เว้นว่างไว้ประทับตรายางเอง
+   const SG=()=>store.get("thdoc_signers")||[];
+   const row=el("div",{style:"display:flex;gap:6px;flex-wrap:wrap;align-items:center"});
+   const md=el("select",{style:"flex:0 0 auto"});[["name","ระบุชื่อและตำแหน่ง"],["blank","เว้นว่างไว้ ประทับตรายางเอง"]].forEach(([v,t])=>md.appendChild(el("option",{value:v},t)));
+   md.value=D.sigMode==="blank"?"blank":"name";md.onchange=()=>{D.sigMode=md.value;save();renderForm();update();};row.appendChild(md);
+   if(md.value==="name"){const L=SG();const ps=el("select",{style:"flex:1;min-width:180px"});ps.appendChild(el("option",{value:""},L.length?"— เลือกผู้ลงนามที่บันทึกไว้ —":"— ยังไม่มีรายชื่อ (กรอกแล้วกด ＋ บันทึก) —"));
+    L.forEach((x,i)=>ps.appendChild(el("option",{value:i},esc(x.name+" · "+(lines(x.pos)[0]||"")))));
+    const cur=L.findIndex(x=>x.name===(D.name||"").trim()&&x.pos===(D.pos||"").trim());ps.value=cur>=0?String(cur):"";
+    ps.onchange=()=>{const x=L[+ps.value];if(!x)return;D.name=x.name;D.pos=x.pos;save();renderForm();update();};row.appendChild(ps);
+    const ad=el("button",{type:"button",title:"เก็บชื่อและตำแหน่งที่กรอกอยู่ไว้ในรายชื่อ ใช้ได้ทุกประเภทหนังสือ",style:"font-size:12.5px;padding:3px 8px;border:1px solid #1f5fbf;color:#1f5fbf;background:#f3f7fd;border-radius:6px;cursor:pointer"},"＋ บันทึกรายชื่อนี้");
+    ad.onclick=()=>{const nm=(D.name||"").trim(),po=(D.pos||"").trim();if(!nm){msgFlash("กรอกชื่อผู้ลงนามก่อน");return;}const a=SG().filter(x=>x.name!==nm);a.push({name:nm,pos:po});a.sort((x,y)=>x.name.localeCompare(y.name,"th"));store.set("thdoc_signers",a);msgFlash(`บันทึก ${nm} ในรายชื่อแล้ว`);renderForm();};row.appendChild(ad);
+    if(cur>=0){const dl=el("button",{type:"button",style:"font-size:12.5px;padding:3px 8px;border:1px solid #e0b4b4;color:#a33;background:#fff5f5;border-radius:6px;cursor:pointer"},"ลบจากรายชื่อ");
+     dl.onclick=()=>{if(!dl.dataset.ok){dl.dataset.ok=1;dl.textContent="ยืนยันลบ";return;}store.set("thdoc_signers",SG().filter((x,i)=>i!==cur));renderForm();};row.appendChild(dl);}}
+   else row.appendChild(el("span",{style:"font-size:12.5px;color:#6b7684"},"เว้นที่ว่างสำหรับลายมือชื่อ ชื่อ และตำแหน่งไว้ให้ประทับตราเอง"));
+   w.appendChild(row);f.appendChild(w);continue;}
   else if(kind==="combo"){   // ช่องเดียว: กด ▾ เลือกข้อความสำเร็จรูป แล้วแก้ต่อในช่องเดิมได้ · เว้นว่าง = ไม่ใช้
    const opts=extra.slice(1,-1); let v=D[key]||""; if(v===extra[0])v=""; if(v===extra[extra.length-1])v=D.endpX||"";
    if(v!==(D[key]||"")){D[key]=v;save();}
@@ -656,6 +674,7 @@ function build(){
   if(SIG0<0)SIG0=P.length;
   blank(extraBlank);
   const half=Math.min(cx,CW-cx)-0.5, iL=cx-half, iR=CW-cx-half;
+  if(D.sigMode==="blank"){blank(1+Math.max(2,lines(D.pos).length));return;}   // R-43: เว้นที่ว่างเท่าชื่อ + ตำแหน่ง (อย่างน้อย 2 บรรทัด) ไว้ประทับตรายาง
   const nm=(D.name||"").trim();
   if(nm)para({runs:[R(`(${nm})`)],jc:"center",indL:iL,indR:iR});
   for(const l of lines(D.pos))para({runs:[R(l)],jc:"center",indL:iL,indR:iR});
@@ -1155,6 +1174,7 @@ const _rf=renderForm; renderForm=function(){const _st=document.getElementById("f
  for(const g of [["speed","no","date"],["sal","to"],["kind","org"],["pos","owner"],["tel","fax"],["email","ownerPos"],["sender"],["font","lsp"],["drafter","typist","checker"]]){
   const ws=g.map(k=>f.querySelector(`.f[data-k="${k}"]`)).filter(x=>x); if(ws.length<2)continue;
   const r=el("div",{class:"frow"});ws[0].before(r);ws.forEach(w=>{r.appendChild(w);w.classList.add("k-"+w.dataset.k);});}
+ if(D.sigMode==="blank")for(const k of ["name","pos"]){const x=f.querySelector(`.f[data-k="${k}"]`);if(x)x.style.display="none";}
  const sj=f.querySelector('.f[data-k="subject"]');if(sj)sj.classList.add("inl");   // "เรื่อง" ป้ายอยู่หน้าช่อง บรรทัดเดียว
  requestAnimationFrame(()=>{fitTA();fitPB();liveSpellSoon();});document.getElementById("form").scrollTop=_st;};
 load();document.documentElement.style.setProperty("--docfont",`"${D.font}","TH SarabunPSK","TH Sarabun New",sans-serif`);renderTabs();renderForm();

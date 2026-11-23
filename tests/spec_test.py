@@ -104,6 +104,12 @@ with sync_playwright() as p:
     check("R-72", ev("()=>/ชฎา/.test(spDiff('ปรากฎ','ปรากฏ'))&&/ปฏัก/.test(spDiff('ปรากฎ','ปรากฏ'))"), "บอกตัวอักษรที่ต่าง")
     ev("()=>{localStorage.removeItem('thdoc_drafts');document.querySelectorAll('#tabs button')[1].click();document.getElementById('bSample').click();document.getElementById('bDrafts').click();document.getElementById('drSave').click();document.getElementById('drSave').click();document.getElementById('drClose').click();document.querySelectorAll('#tabs button')[0].click();document.getElementById('bClear').click();}"); pg.wait_for_timeout(300)
     check("R-73", ev("()=>{const a=drGet();if(a.length!==1||a[0].type!=='memo')return false;document.getElementById('bDrafts').click();document.querySelector('#drList .it button.pri').click();const ok=TYPE==='memo'&&/ขออนุมัติ/.test(D.subject)&&document.getElementById('drafts').style.display==='none';localStorage.removeItem('thdoc_drafts');return ok}"), "บันทึก (ชื่อซ้ำ = ทับ) แล้วเปิดต่อในประเภทเดิม")
+    tab(1)
+    nm0 = ev("()=>D.name")
+    ev("()=>{localStorage.removeItem('thdoc_signers');const s=document.querySelector('#form [data-k=sigMode] select');s.value='blank';s.onchange();}"); pg.wait_for_timeout(300)
+    check("R-43", ev("()=>{const n=build().P.length;return !document.getElementById('page').textContent.includes(D.name)&&document.querySelector('#form [data-k=name]').style.display==='none'}"), "เว้นว่าง: ไม่มีชื่อในหนังสือ ซ่อนช่องชื่อ")
+    ev("()=>{const s=document.querySelector('#form [data-k=sigMode] select');s.value='name';s.onchange();[...document.querySelectorAll('#form [data-k=sigMode] button')][0].click();D.name='ก ข';D.pos='ค';save();renderForm();[...document.querySelectorAll('#form [data-k=sigMode] button')][0].click();}"); pg.wait_for_timeout(200)
+    check("R-43", ev("()=>{const ps=document.querySelectorAll('#form [data-k=sigMode] select')[1];const i=[...ps.options].findIndex(o=>o.textContent.startsWith('"+nm0+"'));ps.value=ps.options[i].value;ps.onchange();const ok=D.name==='"+nm0+"'&&document.getElementById('page').textContent.includes('"+nm0+"')&&store.get('thdoc_signers').length===2;localStorage.removeItem('thdoc_signers');return ok}"), "รายชื่อผู้ลงนาม dropdown")
     check("ERR", not errs, "; ".join(errs[:3]))
     b.close()
 
