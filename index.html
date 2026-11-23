@@ -163,8 +163,7 @@ const TYPES = {
   ["refList","อ้างถึง","reflist"],
   ["enclList","สิ่งที่ส่งมาด้วย","encllist"],
   ["sec","ข้อความ"],
-  ["body","ข้อความ","bigarea","หนึ่งกล่อง = หนึ่งย่อหน้า · Enter = ย่อหน้าใหม่ · Shift+Enter = ตัดบรรทัด (บรรทัดนั้นยืด/หดให้ชนขอบขวา) · ⇤⇥ เลื่อนเข้า/ออก 0.5 ซม. · ↕ เว้นภาค +6 pt · คลุมคำแล้วกด ตัวหนา / ขีดเส้นใต้"],
-  ["secs","หัวข้อ / ข้อความเพิ่มเติม (ถ้ามี)","seclist"],
+  ["secs","ข้อความ","seclist"],
   ["endp","ย่อหน้าสุดท้าย","combo",ENDP],
   ["closing","คำลงท้าย","text","ว่าง = ตามคำขึ้นต้นอัตโนมัติ"],
   ["sec","ผู้ลงนามและส่วนท้าย"],
@@ -184,8 +183,7 @@ const TYPES = {
   ["refList","อ้างถึง (ถ้ามี)","reflist"],
   ["enclList","สิ่งที่ส่งมาด้วย (ถ้ามี)","encllist"],
   ["sec","ข้อความ"],
-  ["body","ข้อความนำ (ถ้ามี)","bigarea","หนึ่งกล่อง = หนึ่งย่อหน้า · Enter = ย่อหน้าใหม่ · Shift+Enter = ตัดบรรทัด (บรรทัดนั้นยืด/หดให้ชนขอบขวา) · ⇤⇥ เลื่อนเข้า/ออก 0.5 ซม. · ↕ เว้นภาค +6 pt · คลุมคำแล้วกด ตัวหนา / ขีดเส้นใต้"],
-  ["secs","หัวข้อในบันทึก","seclist"],
+  ["secs","ข้อความ","seclist"],
   ["endp","ย่อหน้าสุดท้าย","combo",ENDP],
   ["sec","ผู้ลงนาม"],
   ["name","ชื่อเต็มผู้ลงนาม","text"],
@@ -196,8 +194,7 @@ const TYPES = {
   ["no","ที่","text"],
   ["to","ถึง","text"],
   ["sec","ข้อความ"],
-  ["body","ข้อความ","bigarea","หนึ่งกล่อง = หนึ่งย่อหน้า · Enter = ย่อหน้าใหม่ · Shift+Enter = ตัดบรรทัด (บรรทัดนั้นยืด/หดให้ชนขอบขวา) · ⇤⇥ เลื่อนเข้า/ออก 0.5 ซม. · ↕ เว้นภาค +6 pt · คลุมคำแล้วกด ตัวหนา / ขีดเส้นใต้"],
-  ["secs","หัวข้อ / ข้อความเพิ่มเติม (ถ้ามี)","seclist"],
+  ["secs","ข้อความ","seclist"],
   ["endp","ย่อหน้าสุดท้าย","combo",STPP],
   
   ["sec","ส่วนท้าย"],
@@ -212,8 +209,7 @@ const TYPES = {
   ["no","ที่ (เฉพาะคำสั่ง)","text","เช่น 123/2569"],
   ["subject","เรื่อง","text"],
   ["sec","ข้อความ"],
-  ["body","ข้อความ","bigarea","หนึ่งกล่อง = หนึ่งย่อหน้า · Enter = ย่อหน้าใหม่ · Shift+Enter = ตัดบรรทัด (บรรทัดนั้นยืด/หดให้ชนขอบขวา) · ⇤⇥ เลื่อนเข้า/ออก 0.5 ซม. · ↕ เว้นภาค +6 pt · คลุมคำแล้วกด ตัวหนา / ขีดเส้นใต้"],
-  ["secs","หัวข้อ / ข้อความเพิ่มเติม (ถ้ามี)","seclist"],
+  ["secs","ข้อความ","seclist"],
   ["endp","ย่อหน้าสุดท้าย","combo",ORDP],
   
   ["date","สั่ง ณ / ประกาศ ณ เดือนและปี (วันที่เว้นว่าง)","month"],
@@ -233,13 +229,14 @@ let TYPE = store.get("thdoc_type") || "ext";
 let D = {};
 function defaults(){return {v:DATA_VERSION,fit1:true,font:"TH SarabunIT๙",thai:true,ownerPos:"อัตโนมัติ",sal:"เรียน",kind:"คำสั่ง",date:new Date().toISOString().slice(0,10)}}
 // รุ่นของระบบ (แสดงบนหน้าจอ) และรุ่นโครงข้อมูลที่เก็บในเครื่อง — เพิ่มเลขทุกครั้งที่กฎเปลี่ยนจนค่าเก่าอาจขัดกับกฎใหม่
-const APP_VERSION="2026.11.23b", DATA_VERSION=2;
+const APP_VERSION="2026.11.23c", DATA_VERSION=3;
 function migrate(x){   // ปรับค่าที่เก็บไว้ในเครื่องให้เข้ากับกฎปัจจุบัน (ดู REQUIREMENTS.md)
  if(!x||typeof x!=="object")return {};
  const v=x.v||1;
  if(v<2){delete x.blankday;   // R-14: วันที่ลงเฉพาะเดือนปีเสมอ
   if(x.endp&&/^อื่น ๆ/.test(x.endp)){x.endp=x.endpX||"";} if(/^— ไม่ใช้/.test(x.endp||""))x.endp=""; delete x.endpX;   // R-37
   (x.refList||[]).forEach(r=>delete r._f);}
+ if(v<3&&(x.body||"").trim()){x.secs=[{h:"— ไม่มีหัวข้อ —",name:"",text:x.body},...(x.secs||[])];x.body="";}   // R-38: ข้อความทั้งหมดอยู่ในการ์ดหัวข้อ (ค่าเริ่มต้น ไม่มีหัวข้อ)
  x.v=DATA_VERSION;return x;}
 function load(){D = Object.assign(defaults(), migrate(store.get("thdoc_"+TYPE)||{}));
  if(D.copy){VIEW="copy";delete D.copy;}
@@ -429,7 +426,7 @@ function renderForm(){
    w.querySelector("label").insertAdjacentHTML("beforeend",` <span class="hint" title="มีมากกว่า 1 รายการ ระบบใส่เลข ๑. ๒. ให้อัตโนมัติ${isRef?" · ✎ พิมพ์เอง = พิมพ์ข้อความอ้างถึงทั้งหมดเอง":" · จำนวนว่าง = ไม่แสดง"}">ⓘ</span>`);
    w.appendChild(box);w.appendChild(add);f.appendChild(w);continue;}
   else if(kind==="seclist"){   // หัวข้อบันทึก: ต้นเรื่อง / เรื่องเดิม / ข้อเท็จจริง / ข้อกฎหมาย / ข้อพิจารณา / อื่น ๆ
-   const arr=D.secs=D.secs||[]; const box=el("div",{style:"display:flex;flex-direction:column;gap:6px"});
+   const arr=D.secs=D.secs||[]; if(!arr.length)arr.push({h:MSEC[0],name:"",text:""}); const box=el("div",{style:"display:flex;flex-direction:column;gap:6px"});
    const used=i=>arr.filter((x,j)=>j!==i&&x.h!==MSEC[0]&&x.h!==MSEC[MSEC.length-1]).map(x=>x.h);
    arr.forEach((it,i)=>{
     const card=el("div",{style:"border:1px solid #d5dce5;border-radius:7px;padding:6px 7px;background:#fafbfd"});
@@ -445,11 +442,11 @@ function renderForm(){
     del.onclick=()=>{arr.splice(i,1);save();renderForm();update();};hd.appendChild(del);card.appendChild(hd);
     if(it.h===MSEC[MSEC.length-1]){const c=el("input",{type:"text",placeholder:"ชื่อหัวข้อ เช่น ข้อเสนอ",spellcheck:"true",lang:"th",style:"width:100%;font:inherit;font-size:13.5px;padding:4px 6px;border:1px solid #c5cfdb;border-radius:5px;margin-bottom:4px"});
      c.value=it.name||"";c.oninput=()=>{it.name=c.value;save();update();};card.appendChild(c);}
-    card.appendChild(fmtBarPB());card.appendChild(paraEditor(()=>it.text||"",v=>{it.text=v;},"ข้อความในหัวข้อนี้"));box.appendChild(card);});
+    card.appendChild(paraEditor(()=>it.text||"",v=>{it.text=v;},"ข้อความในหัวข้อนี้"));box.appendChild(card);});
    const add=el("button",{type:"button",style:"font:inherit;font-size:13px;padding:5px 10px;border:1px dashed #1f5fbf;color:#1f5fbf;background:#f3f7fd;border-radius:6px;cursor:pointer"},"＋ เพิ่มหัวข้อ / ข้อความ");
    add.onclick=()=>{arr.push({h:MSEC[0],name:"",text:""});save();renderForm();update();};
    w.querySelector("label").insertAdjacentHTML("beforeend",` <span class="hint" title="เริ่มต้นเป็น ไม่มีหัวข้อ (ย่อหน้าธรรมดา) เปลี่ยนเป็นต้นเรื่อง ฯลฯ ได้ · หัวข้อที่เลือกแล้วจะไม่แสดงในตัวเลือกถัดไป · ระบบใส่เลข ๑. ๒. เฉพาะรายการที่มีหัวข้อ · เลื่อนลำดับด้วย ▲▼">ⓘ</span>`);
-   w.appendChild(box);w.appendChild(add);
+   const fb=fmtBarPB();fb.style.cssText+="position:sticky;top:0;z-index:5;background:#fff;padding:3px 0";w.appendChild(fb);w.appendChild(box);w.appendChild(add);
    f.appendChild(w);continue;}
   else if(kind==="qrfile"){inp=el("input",{type:"file",accept:"image/png,image/jpeg"});
    inp.onchange=()=>{const fl=inp.files[0];if(!fl)return;const r=new FileReader();r.onload=()=>{D.qr=r.result;save();update();};r.readAsDataURL(fl);};
@@ -1040,8 +1037,8 @@ document.getElementById("bTypo").onclick=()=>{const d=JSON.parse(JSON.stringify(
  for(const k in d){if(typeof d[k]==="string"&&!["qr","date","font","lsp"].includes(k))d[k]=bad(d[k]);}
  (d.secs||[]).forEach(x=>x.text=bad(x.text));(d.enclList||[]).forEach(x=>x.text=bad(x.text));(d.refList||[]).forEach(x=>{if(x.free)x.free=bad(x.free);});
  if(d.body!==undefined)d.body=(d.body||"")+(d.body?"\nเพื่อให้การดำเนินงานต่างๆ เป็นไปด้วยความเรียบร้อย":"");
- D=Object.assign(defaults(),d);save();renderForm();update();spellShow();};
-document.getElementById("bSample").onclick=()=>{D=Object.assign(defaults(),JSON.parse(JSON.stringify(SAMPLE[TYPE])));save();renderForm();update();};
+ D=Object.assign(defaults(),migrate(Object.assign(d,{v:2})));save();renderForm();update();spellShow();};
+document.getElementById("bSample").onclick=()=>{D=Object.assign(defaults(),migrate(Object.assign(JSON.parse(JSON.stringify(SAMPLE[TYPE])),{v:2})));save();renderForm();update();};
 document.getElementById("bClear").onclick=()=>{const f=D.font,t=D.thai;D=Object.assign(defaults(),{font:f,thai:t,refList:[],enclList:[]});save();renderForm();update();};
 document.getElementById("gOn").onchange=update;
 document.getElementById("zoom").oninput=scale;

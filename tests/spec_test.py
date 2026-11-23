@@ -65,6 +65,7 @@ with sync_playwright() as p:
         tab(i)
         check("R-63", ev("()=>document.querySelectorAll('#page .sheet').length===2"), f"{name} ยาว 2 หน้า")
     tab(1)
+    check("R-39", ev("()=>!document.querySelector('#form [data-k=body]')&&document.querySelector('#form [data-k=secs] select')&&document.querySelectorAll('#form .fmtbar').length===1"), "การ์ดมีรายการเลือกหัวข้อ")
     check("R-04", ev("()=>document.getElementById('vCopy').disabled===true"), "บันทึกข้อความไม่มีสำเนาคู่ฉบับ")
     check("R-38", ev("()=>MSEC[0].includes('ไม่มีหัวข้อ')&&(()=>{const {P}=build();return P.some(p=>p.runs.some(r=>/^[1๑]\\. ต้นเรื่อง$/.test(r.t)&&r.b))})()"))
     tab(2)
