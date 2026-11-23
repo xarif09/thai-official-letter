@@ -229,7 +229,7 @@ let TYPE = store.get("thdoc_type") || "ext";
 let D = {};
 function defaults(){return {v:DATA_VERSION,fit1:true,font:"TH SarabunIT๙",thai:true,ownerPos:"อัตโนมัติ",sal:"เรียน",kind:"คำสั่ง",date:new Date().toISOString().slice(0,10)}}
 // รุ่นของระบบ (แสดงบนหน้าจอ) และรุ่นโครงข้อมูลที่เก็บในเครื่อง — เพิ่มเลขทุกครั้งที่กฎเปลี่ยนจนค่าเก่าอาจขัดกับกฎใหม่
-const APP_VERSION="2026.11.23c", DATA_VERSION=3;
+const APP_VERSION="2026.11.23d", DATA_VERSION=3;
 function migrate(x){   // ปรับค่าที่เก็บไว้ในเครื่องให้เข้ากับกฎปัจจุบัน (ดู REQUIREMENTS.md)
  if(!x||typeof x!=="object")return {};
  const v=x.v||1;
@@ -346,6 +346,11 @@ function growTA(ta){   // ความสูงตามเนื้อหา (�
  const y=document.getElementById("form").scrollTop;ta.style.height="auto";ta.style.minHeight="0";
  ta.style.height=Math.min(300,Math.max(ta.value.trim()?70:46,ta.scrollHeight+2))+"px";document.getElementById("form").scrollTop=y;}
 window.addEventListener("resize",()=>{fitTA();fitPB();});
+// ต้นเรื่อง / เรื่องเดิม ต้องเป็นหัวข้อลำดับแรก (เลข ๑.) เสมอ: ย้ายไปไว้ก่อนการ์ดที่มีหัวข้ออื่น
+function secOrder(arr){const FIRST=["ต้นเรื่อง","เรื่องเดิม"];
+ const k=arr.findIndex(x=>x.h&&x.h!==MSEC[0]&&!FIRST.includes(x.h)); if(k<0)return arr;
+ const mv=arr.filter((x,j)=>j>k&&FIRST.includes(x.h)); if(!mv.length)return arr;
+ const rest=arr.filter(x=>!mv.includes(x)); rest.splice(k,0,...mv.sort((a,b)=>FIRST.indexOf(a.h)-FIRST.indexOf(b.h))); arr.splice(0,arr.length,...rest); return arr;}
 function renderForm(){
  const F0=document.getElementById("form");const st0=F0.scrollTop;F0.innerHTML="";let f=F0;
  let fields=TYPES[TYPE].fields.concat(COMMON);
@@ -427,16 +432,20 @@ function renderForm(){
    w.appendChild(box);w.appendChild(add);f.appendChild(w);continue;}
   else if(kind==="seclist"){   // หัวข้อบันทึก: ต้นเรื่อง / เรื่องเดิม / ข้อเท็จจริง / ข้อกฎหมาย / ข้อพิจารณา / อื่น ๆ
    const arr=D.secs=D.secs||[]; if(!arr.length)arr.push({h:MSEC[0],name:"",text:""}); const box=el("div",{style:"display:flex;flex-direction:column;gap:6px"});
-   const used=i=>arr.filter((x,j)=>j!==i&&x.h!==MSEC[0]&&x.h!==MSEC[MSEC.length-1]).map(x=>x.h);
+   // ต้นเรื่อง / เรื่องเดิม อยู่ลำดับแรกเสมอ · ต้นเรื่อง กับ ข้อเท็จจริง ใช้ร่วมกันไม่ได้
+   const EXCL={"ต้นเรื่อง":["ข้อเท็จจริง"],"ข้อเท็จจริง":["ต้นเรื่อง"]};
+   const used=i=>{const u=arr.filter((x,j)=>j!==i&&x.h!==MSEC[0]&&x.h!==MSEC[MSEC.length-1]).map(x=>x.h);u.slice().forEach(h=>u.push(...(EXCL[h]||[])));return u;};
+   const ORDER=[...MSEC.slice(1),MSEC[0]];   // รายการเลือก: ต้นเรื่อง เรื่องเดิม ... อื่น ๆ แล้วจึง ไม่มีหัวข้อ
+   secOrder(arr);
    arr.forEach((it,i)=>{
     const card=el("div",{style:"border:1px solid #d5dce5;border-radius:7px;padding:6px 7px;background:#fafbfd"});
     const hd=el("div",{style:"display:flex;gap:5px;align-items:center;margin-bottom:4px"});
     hd.appendChild(el("b",{style:"font-size:13px"},(it.h&&it.h!==MSEC[0])?(arr.slice(0,i+1).filter(x=>x.h&&x.h!==MSEC[0]).length)+".":"•"));
     const sel=el("select",{style:"flex:1;font:inherit;font-size:13.5px;padding:4px;border:1px solid #c5cfdb;border-radius:5px"});
-    for(const o of MSEC)if(!used(i).includes(o))sel.appendChild(el("option",{value:o},o));
-    sel.value=it.h||MSEC[0];sel.onchange=()=>{it.h=sel.value;save();renderForm();update();};hd.appendChild(sel);
+    for(const o of ORDER)if(!used(i).includes(o))sel.appendChild(el("option",{value:o},o));
+    sel.value=it.h||MSEC[0];sel.onchange=()=>{it.h=sel.value;secOrder(arr);save();renderForm();update();};hd.appendChild(sel);
     const mv=(d)=>{const b=el("button",{type:"button",title:d<0?"เลื่อนขึ้น":"เลื่อนลง",style:"font-size:12px;border:1px solid #c5cfdb;background:#fff;border-radius:5px;padding:1px 6px;cursor:pointer"},d<0?"▲":"▼");
-     b.onclick=()=>{const j=i+d;if(j<0||j>=arr.length)return;[arr[i],arr[j]]=[arr[j],arr[i]];save();renderForm();update();};return b;};
+     b.onclick=()=>{const j=i+d;if(j<0||j>=arr.length)return;[arr[i],arr[j]]=[arr[j],arr[i]];secOrder(arr);save();renderForm();update();};return b;};
     hd.appendChild(mv(-1));hd.appendChild(mv(1));
     const del=el("button",{type:"button",style:"font-size:12px;border:1px solid #e0b4b4;background:#fff5f5;color:#a33;border-radius:5px;padding:1px 7px;cursor:pointer"},"ลบ");
     del.onclick=()=>{arr.splice(i,1);save();renderForm();update();};hd.appendChild(del);card.appendChild(hd);
@@ -584,7 +593,7 @@ function build(){
   if(/^(กราบเรียน)$/.test(D.sal||""))t=t.replace(/^จึงเรียน/,"จึงกราบเรียน");
   para({runs:rich(t),first:25,jc:"dist",before:6});};
  const secs=()=>{   // หัวข้อบันทึก ๑. ต้นเรื่อง ๒. ข้อเท็จจริง ...
-  let n=0;(D.secs||[]).forEach(x=>{const h=x.h||MSEC[0];
+  let n=0;secOrder(D.secs||[]).forEach(x=>{const h=x.h||MSEC[0];
    if(h===MSEC[0]){body(x.text,true);return;}   // ไม่มีหัวข้อ = ย่อหน้าธรรมดา ไม่ใส่เลข
    const nm=h===MSEC[MSEC.length-1]?(x.name||"").trim():h;if(!nm&&!(x.text||"").trim())return;
    para({runs:[R(`${++n}. ${nm}`,{b:true})],first:25,before:6,kn:true});
