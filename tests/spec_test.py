@@ -73,6 +73,9 @@ with sync_playwright() as p:
     ev("()=>{document.querySelectorAll('#tabs button')[0].click();document.getElementById('bTypo').click();}"); pg.wait_for_timeout(400)
     sc = ev("()=>spellScan().map(r=>r.w)")
     check("R-70", len(sc) >= 5 and any("พุธ" in w for w in sc), f"พบ {len(sc)} จุด")
+    pg.wait_for_timeout(400)
+    check("R-71", ev("()=>!!(CSS.highlights&&CSS.highlights.get('sp-err')&&CSS.highlights.get('sp-err').size>0)&&/\\(\\d+\\)/.test(document.getElementById('bSpell').textContent)"), "ขีดเส้นใต้แดงทันที")
+    check("R-72", ev("()=>/ชฎา/.test(spDiff('ปรากฎ','ปรากฏ'))&&/ปฏัก/.test(spDiff('ปรากฎ','ปรากฏ'))"), "บอกตัวอักษรที่ต่าง")
     check("ERR", not errs, "; ".join(errs[:3]))
     b.close()
 

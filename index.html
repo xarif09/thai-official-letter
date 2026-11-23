@@ -47,6 +47,12 @@ details.secbox>summary::before{content:"▸ ";color:#1f5fbf}details.secbox[open]
 .pbox:empty::before{content:attr(data-ph);color:#9aa4b1;font-family:var(--ui);font-size:13px}
 .pbadd{align-self:flex-start;margin:3px 0 0 26px;font:inherit;font-size:12.5px;padding:3px 9px;border:1px dashed #1f5fbf;color:#1f5fbf;background:#f3f7fd;border-radius:6px;cursor:pointer}
 .fmhint{font-size:11.5px;color:#6b7684;align-self:center;margin-left:4px;flex:1 1 200px}
+::highlight(sp-err){text-decoration:underline wavy #e02424;text-decoration-thickness:1.5px;text-underline-offset:3px}
+::highlight(sp-sug){text-decoration:underline dotted #d97706;text-underline-offset:3px}
+@media print{::highlight(sp-err),::highlight(sp-sug){text-decoration:none}}
+.f input.sperr,.f .li.sperr,.f textarea.sperr{border-color:#e02424;box-shadow:inset 0 -2px 0 #e02424}
+#spell .spw{font-family:var(--docfont);font-size:22px}#spell .spw mark{background:#fde68a;border-radius:3px;padding:0 2px}
+#spell .spw.w{color:#b42318}#spell .spw.r{color:#18794e;font-weight:600}#spell .spn{color:#6b7684;margin-left:6px}
 textarea.docta{font-family:var(--docfont);line-height:1.3;padding:6px 8px}
 .row{display:flex;gap:8px}.row>.f{flex:1}
 .chk{display:flex;align-items:center;gap:6px;font-size:13px;margin:4px 0}
@@ -89,7 +95,7 @@ textarea.docta{font-family:var(--docfont);line-height:1.3;padding:6px 8px}
 #spell .hd{padding:12px 16px;border-bottom:1px solid #e1e6ec;display:flex;justify-content:space-between;align-items:center}
 #spell .bd{padding:10px 16px;overflow:auto;font-size:14px}
 #spell .it{border:1px solid #e1e6ec;border-radius:7px;padding:7px 9px;margin-bottom:7px}
-#spell .it .w{color:#c22;text-decoration:line-through} #spell .it .r{color:#18794e;font-weight:bold}
+
 #spell .it .ctx{color:#59636e;font-size:13px;margin-top:3px} #spell .it .lv{font-size:11px;border-radius:4px;padding:1px 6px;margin-left:6px}
 #spell .err{background:#fde8e8;color:#b42318} #spell .sug{background:#fff4d6;color:#8a5a00}
 #spell button{font:inherit;font-size:13px;padding:3px 10px;border:1px solid #c5cfdb;border-radius:6px;background:#fff;cursor:pointer}
@@ -227,7 +233,7 @@ let TYPE = store.get("thdoc_type") || "ext";
 let D = {};
 function defaults(){return {v:DATA_VERSION,fit1:true,font:"TH SarabunIT๙",thai:true,ownerPos:"อัตโนมัติ",sal:"เรียน",kind:"คำสั่ง",date:new Date().toISOString().slice(0,10)}}
 // รุ่นของระบบ (แสดงบนหน้าจอ) และรุ่นโครงข้อมูลที่เก็บในเครื่อง — เพิ่มเลขทุกครั้งที่กฎเปลี่ยนจนค่าเก่าอาจขัดกับกฎใหม่
-const APP_VERSION="2026.11.23", DATA_VERSION=2;
+const APP_VERSION="2026.11.23b", DATA_VERSION=2;
 function migrate(x){   // ปรับค่าที่เก็บไว้ในเครื่องให้เข้ากับกฎปัจจุบัน (ดู REQUIREMENTS.md)
  if(!x||typeof x!=="object")return {};
  const v=x.v||1;
@@ -843,6 +849,7 @@ function update(){
  document.getElementById("warn").textContent=[...(fitMsg?[fitMsg]:[]),...WARN,...(pages>1?[`เนื้อหาเกิน 1 หน้า: หน้าถัดไปมีเลขหน้าให้อัตโนมัติ · อย่าลืมพิมพ์คำต่อเนื่อง "คำ.../" มุมขวาล่างใน Word`]:[])].join(" · ");
  scale();
  window._model={P,F};
+ liveSpellSoon();
 }
 function scale(){const z=document.getElementById("zoom").value/100;const pg=document.getElementById("page");pg.style.transform=`scale(${z})`;
  document.getElementById("stage").style.height=(pg.offsetHeight*z+20)+"px";document.getElementById("stage").style.width=(pg.offsetWidth*z)+"px";}
@@ -981,22 +988,43 @@ function spellFields(){const out=[];const lab={};for(const [k,l] of TYPES[TYPE].
  return out;}
 const TMON=["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
 const arab=t=>t.replace(/[๐-๙]/g,d=>"๐๑๒๓๔๕๖๗๘๙".indexOf(d));
-function spellScan(){const res=[];
- for(const f of spellFields()){const t=f.get();
-  for(const [re,rp,lv] of SPELL){re.lastIndex=0;let m;
-   while((m=re.exec(t))){const tail=t.slice(m.index),r2=tail.replace(new RegExp(re.source),rp),fix=r2.slice(0,r2.length-(tail.length-m[0].length));
-    if(fix!==m[0])res.push({f,re,rp,lv,w:m[0],fix,i:m.index,note:SP_NOTE[rp]||""});if(m[0].length===0)re.lastIndex++;}}
-  // วันในสัปดาห์ต้องตรงกับวันที่ เช่น "วันศุกร์ที่ 27 พฤศจิกายน 2569"
-  const wre=new RegExp(`วัน(?:\\*\\*|__)?(${WDAY.join("|")})ที่(?:\\*\\*|__)?\\s*([0-9๐-๙]{1,2})\\s*(${TMON.join("|")})\\s*(?:พ\\.ศ\\.\\s*)?([0-9๐-๙]{4})`,"g");let m;
-  while((m=wre.exec(t))){const d=+arab(m[2]),mo=TMON.indexOf(m[3]),y=+arab(m[4])-543;const dt=new Date(y,mo,d);
-   if(dt.getMonth()!==mo)res.push({f,lv:"err",w:m[0],fix:null,i:m.index,note:`ไม่มีวันที่ ${m[2]} ${m[3]}`});
-   else if(WDAY[dt.getDay()]!==m[1])res.push({f,lv:"err",w:m[0],fix:m[0].replace(m[1]+"ที่",WDAY[dt.getDay()]+"ที่"),i:m.index,note:`วันที่ ${m[2]} ${m[3]} ${m[4]} ตรงกับวัน${WDAY[dt.getDay()]}`});}}
- return res.filter(r=>!res.some(o=>o!==r&&o.f===r.f&&o.i<=r.i&&o.i+o.w.length>=r.i+r.w.length&&o.w.length>r.w.length));}
+function findIssues(t){const res=[];   // หาจุดผิดในข้อความเดียว → [{lv,w,fix,i,note}]
+ for(const [re,rp,lv] of SPELL){re.lastIndex=0;let m;
+  while((m=re.exec(t))){const tail=t.slice(m.index),r2=tail.replace(new RegExp(re.source),rp),fix=r2.slice(0,r2.length-(tail.length-m[0].length));
+   if(fix!==m[0])res.push({lv,w:m[0],fix,i:m.index,note:SP_NOTE[rp]||""});if(m[0].length===0)re.lastIndex++;}}
+ // วันในสัปดาห์ต้องตรงกับวันที่ เช่น "วันศุกร์ที่ 27 พฤศจิกายน 2569"
+ const wre=new RegExp(`วัน(?:\\*\\*|__)?(${WDAY.join("|")})ที่(?:\\*\\*|__)?\\s*([0-9๐-๙]{1,2})\\s*(${TMON.join("|")})\\s*(?:พ\\.ศ\\.\\s*)?([0-9๐-๙]{4})`,"g");let m;
+ while((m=wre.exec(t))){const d=+arab(m[2]),mo=TMON.indexOf(m[3]),y=+arab(m[4])-543;const dt=new Date(y,mo,d);
+  if(dt.getMonth()!==mo)res.push({lv:"err",w:m[0],fix:null,i:m.index,note:`ไม่มีวันที่ ${m[2]} ${m[3]}`});
+  else if(WDAY[dt.getDay()]!==m[1])res.push({lv:"err",w:m[0],fix:m[0].replace(m[1]+"ที่",WDAY[dt.getDay()]+"ที่"),i:m.index,note:`วันที่ ${m[2]} ${m[3]} ${m[4]} ตรงกับวัน${WDAY[dt.getDay()]}`});}
+ return res.filter(r=>!res.some(o=>o!==r&&o.i<=r.i&&o.i+o.w.length>=r.i+r.w.length&&o.w.length>r.w.length));}
+function spellScan(){const res=[];for(const f of spellFields())for(const r of findIssues(f.get()))res.push(Object.assign({f},r));return res;}
+// แสดงเฉพาะตัวอักษรที่ต่างกัน พร้อมชื่อตัวอักษร — ตัวที่หน้าตาคล้ายกัน (ฎ/ฏ, เเ/แ) จะเห็นชัดว่าต่างตรงไหน
+const CHNAME={"ฎ":"ฎ ชฎา","ฏ":"ฏ ปฏัก","เเ":"สระเอ 2 ตัว","แ":"สระแอ","ํา":"นิคหิต + สระอา","ำ":"สระอำ"," ":"เว้นวรรค","ณ":"ณ เณร","น":"น หนู","ศ":"ศ ศาลา","ส":"ส เสือ","ษ":"ษ ฤๅษี","ต":"ต เต่า","ท":"ท ทหาร","ใ":"ไม้ม้วน ใ","ไ":"ไม้มลาย ไ","ค":"ค ควาย","ก":"ก ไก่","บ":"บ ใบไม้","พ":"พ พาน","ย":"ย ยักษ์","ร":"ร เรือ","ร์":"ร์ (ร การันต์)","ส์":"ส์ (ส การันต์)","ค์":"ค์ (ค การันต์)","ห์":"ห์","ิ":"สระอิ","ี":"สระอี","ั":"ไม้หันอากาศ","็":"ไม้ไต่คู้","่":"ไม้เอก","้":"ไม้โท","า":"สระอา","์":"ทัณฑฆาต (การันต์)","ณ์":"ณ์ (ณ การันต์)"};
+function spDiff(a,b){let p=0;while(p<a.length&&p<b.length&&a[p]===b[p])p++;let q=0;while(q<a.length-p&&q<b.length-p&&a[a.length-1-q]===b[b.length-1-q])q++;
+ const A=a.slice(p,a.length-q),B=b.slice(p,b.length-q),nm=x=>x===""?"(ไม่มี)":(CHNAME[x]||[...x].map(c=>CHNAME[c]||c).join(" + "));
+ const show=(s,m,cls)=>`<span class="spw ${cls}">${esc(s.slice(0,p))}<mark>${esc(m.replace(/ /g,"␣"))||"∅"}</mark>${esc(s.slice(s.length-q))}</span>`;
+ return `${show(a,A,"w")} → ${show(b,B,"r")} <small class="spn">เปลี่ยน ${esc(nm(A))} เป็น ${esc(nm(B))}</small>`;}
+// ขีดเส้นใต้หยักสีแดงทันทีที่พิมพ์ ทั้งในช่องกรอกและพรีวิว (CSS Highlight API — ไม่แก้ DOM, ไม่ติดไปตอนพิมพ์/Word)
+let LS_T=0;function liveSpellSoon(){clearTimeout(LS_T);LS_T=setTimeout(liveSpell,250);}
+function liveSpell(){if(!(window.CSS&&CSS.highlights&&window.Highlight))return;
+ const H={err:new Highlight(),sug:new Highlight()};let nErr=0;
+ const scope=[...document.querySelectorAll("#form .pbox, #page .jt, #page .doc > div:not(.jp)")];
+ for(const c of scope){const nodes=[],tw=document.createTreeWalker(c,NodeFilter.SHOW_TEXT);let n,txt="";
+  while((n=tw.nextNode())){nodes.push([n,txt.length]);txt+=n.nodeValue;}
+  if(!txt.trim())continue;
+  const at=k=>{for(let x=nodes.length-1;x>=0;x--)if(nodes[x][1]<=k)return [nodes[x][0],k-nodes[x][1]];return [nodes[0][0],0];};
+  for(const r of findIssues(txt)){const [sn,so]=at(r.i),[en,eo]=at(r.i+r.w.length-1);const rg=document.createRange();
+   try{rg.setStart(sn,so);rg.setEnd(en,eo+1);}catch(e){continue;}H[r.lv].add(rg);if(r.lv==="err"&&c.closest("#form"))nErr++;}}
+ for(const f of document.querySelectorAll("#form .f input[type=text], #form .lrow .li, #form textarea")){
+  const bad=findIssues(f.value||"").filter(r=>r.lv==="err");f.classList.toggle("sperr",bad.length>0);f.title=bad.length?"คำที่อาจผิด: "+bad.map(r=>r.w+" → "+(r.fix||"?")).join(", "):"";nErr+=bad.length;}
+ CSS.highlights.set("sp-err",H.err);CSS.highlights.set("sp-sug",H.sug);
+ const b=document.getElementById("bSpell");if(b)b.textContent=nErr?`ตรวจคำผิด (${nErr})`:"ตรวจคำผิด";}
 function spellShow(){const res=spellScan(),L=document.getElementById("spList");L.innerHTML="";
  if(!res.length)L.innerHTML=`<div style="padding:18px;text-align:center;color:#18794e">✓ ไม่พบคำที่มักเขียนผิด<br><small style="color:#6b7684">ระบบตรวจจากรายการคำผิดที่พบบ่อยในหนังสือราชการ และวันในสัปดาห์กับวันที่ · คำที่ไม่อยู่ในรายการให้ดูเส้นใต้สีแดงในช่องกรอก (ตัวตรวจของเบราว์เซอร์ ถ้าเครื่องมีพจนานุกรมไทย)</small></div>`;
  res.forEach(r=>{const t=r.f.get(),a=Math.max(0,r.i-25),b=Math.min(t.length,r.i+r.w.length+25);
   const it=el("div",{class:"it"},`<div><b>${esc(r.f.label)}</b><span class="lv ${r.lv}">${r.lv==="err"?"คำผิด":"ข้อแนะนำ"}</span></div>
-   <div style="margin-top:3px"><span class="w">${esc(r.w.replace(/ /g,"␣"))}</span> → ${r.fix!==null?`<span class="r">${esc(r.fix.replace(/ /g,"␣"))}</span>`:"<i>ตรวจแก้เอง</i>"} ${r.note?`<small style="color:#6b7684">(${esc(r.note)})</small>`:""}</div>
+   <div style="margin-top:3px">${r.fix!==null?spDiff(r.w,r.fix):`<span class="spw w">${esc(r.w)}</span> → <i>ตรวจแก้เอง</i>`} ${r.note?`<small style="color:#6b7684">(${esc(r.note)})</small>`:""}</div>
    <div class="ctx">…${esc(t.slice(a,r.i))}<u>${esc(r.w)}</u>${esc(t.slice(r.i+r.w.length,b))}…</div>`);
   if(r.fix!==null){const bt=el("button",{type:"button",style:"margin-top:5px"},"แก้");bt.onclick=()=>{const v=r.f.get();if(v.substr(r.i,r.w.length)===r.w){r.f.set(v.slice(0,r.i)+r.fix+v.slice(r.i+r.w.length));save();renderForm();update();}spellShow();};it.appendChild(bt);}
   L.appendChild(it);});
@@ -1025,7 +1053,7 @@ const _rf=renderForm; renderForm=function(){const _st=document.getElementById("f
   const ws=g.map(k=>f.querySelector(`.f[data-k="${k}"]`)).filter(x=>x); if(ws.length<2)continue;
   const r=el("div",{class:"frow"});ws[0].before(r);ws.forEach(w=>{r.appendChild(w);w.classList.add("k-"+w.dataset.k);});}
  const sj=f.querySelector('.f[data-k="subject"]');if(sj)sj.classList.add("inl");   // "เรื่อง" ป้ายอยู่หน้าช่อง บรรทัดเดียว
- requestAnimationFrame(()=>{fitTA();fitPB();});document.getElementById("form").scrollTop=_st;};
+ requestAnimationFrame(()=>{fitTA();fitPB();liveSpellSoon();});document.getElementById("form").scrollTop=_st;};
 load();document.documentElement.style.setProperty("--docfont",`"${D.font}","TH SarabunPSK","TH Sarabun New",sans-serif`);renderTabs();renderForm();
 (document.fonts?document.fonts.ready:Promise.resolve()).then(()=>{MCACHE.clear();update();});update();
 </script>
