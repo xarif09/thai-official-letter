@@ -52,6 +52,7 @@ with sync_playwright() as p:
     check("R-51", ev("()=>{const {P}=build();const i=P.findIndex(p=>p.runs.length===1&&p.runs[0].t==='ขอแสดงความนับถือ');let n=0;for(let j=i-1;j>=0&&P[j].keep;j--)n+=Math.ceil((measure(P[j].runs.map(r=>r.t||'').join(''))+(P[j].first||0))/(CW-P[j].indL-P[j].indR));return n>=2}"))
     check("R-52", ev("()=>{const {P}=build();return P.filter(p=>p.runs.some(r=>/ดังนี้\\s*$/.test(r.t||''))).every(p=>p.kn)}"))
     check("R-61", ev("()=>{const b=document.querySelector('#form .pbox');return Math.abs(parseFloat(getComputedStyle(b).fontSize)-16*96/72*(b.clientWidth-16)/(160*96/25.4))<1.5}"))
+    check("R-54", ev("()=>{const op=window.print;window.print=()=>{};doPrint();window.print=op;const n=document.querySelectorAll('#print .psheet').length,k=document.querySelectorAll('#page .sheet').length;const ok=n===k&&/margin:0/.test(document.getElementById('pagecss').textContent)&&!document.querySelector('#print .guide');document.getElementById('print').innerHTML='';return ok}"), "หน้า PDF = หน้าพรีวิว ขอบ 0")
     tab(0, "copy")
     check("R-11", ev("()=>{const {F}=build();const t=F.find(f=>f.kind==='text'&&f.text==='สำเนาคู่ฉบับ');return t&&t.pt>=32&&!F.some(f=>f.kind==='img')&&F.some(f=>f.kind==='initials')}"))
     with pg.expect_download() as dl: pg.click("#bDocx")

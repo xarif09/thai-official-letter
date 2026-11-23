@@ -88,7 +88,10 @@ textarea.docta{font-family:var(--docfont);line-height:1.3;padding:6px 8px}
 #print{display:none}
 @media print{
   #app{display:none}
-  #print{display:flow-root;position:relative}
+  #print{display:block}
+  .psheet{position:relative;width:210mm;height:297mm;overflow:hidden;break-after:page;page-break-after:always}
+  .psheet:last-child{break-after:auto;page-break-after:auto}
+  html,body{margin:0;padding:0}
   body{background:#fff}
 }
 #spell{position:fixed;inset:0;background:rgba(20,30,45,.45);display:none;align-items:center;justify-content:center;z-index:50}
@@ -230,7 +233,7 @@ let TYPE = store.get("thdoc_type") || "ext";
 let D = {};
 function defaults(){return {v:DATA_VERSION,fit1:true,font:"TH SarabunIT๙",thai:true,ownerPos:"อัตโนมัติ",sal:"เรียน",kind:"คำสั่ง",date:new Date().toISOString().slice(0,10)}}
 // รุ่นของระบบ (แสดงบนหน้าจอ) และรุ่นโครงข้อมูลที่เก็บในเครื่อง — เพิ่มเลขทุกครั้งที่กฎเปลี่ยนจนค่าเก่าอาจขัดกับกฎใหม่
-const APP_VERSION="2026.11.23h", DATA_VERSION=4;
+const APP_VERSION="2026.11.23i", DATA_VERSION=4;
 function migrate(x){   // ปรับค่าที่เก็บไว้ในเครื่องให้เข้ากับกฎปัจจุบัน (ดู REQUIREMENTS.md)
  if(!x||typeof x!=="object")return {};
  const v=x.v||1;
@@ -911,16 +914,15 @@ function scale(){const z=document.getElementById("zoom").value/100;const pg=docu
  document.getElementById("stage").style.height=(pg.offsetHeight*z+20)+"px";document.getElementById("stage").style.width=(pg.offsetWidth*z)+"px";}
 
 // ---------- พิมพ์ / PDF ----------
-function doPrint(){
- update(); const M=window._model;
- for(const f of M.F)if((f.kind==="block"&&f.mode==="bottom")||f.kind==="initials")f.by=15+262+252*LASTPAGE;
- const pn=D.thai?"counter(page, thai)":"counter(page)";
- document.getElementById("pagecss").textContent=`@page{size:A4;margin:25mm 20mm 20mm 30mm;@top-center{content:"- " ${pn} " -";font-family:"${D.font}";font-size:16pt;vertical-align:bottom;padding-bottom:4mm}}@page:first{margin-top:15mm;@top-center{content:none}}`;
- const pr=document.getElementById("print");
- pr.innerHTML=M.F.filter(f=>f.mode!=="side").map(f=>floatHTML(f,30,15)).join("")+`<div style="height:10mm"></div><div class="doc" style="width:160mm;display:flow-root">${parasHTML(M.P,M.F)}</div>`;
- pr.style.cssText="display:block;position:absolute;left:-10000px;top:0";
- justify(pr);
- pr.style.cssText="";
+function doPrint(){   // R-54: พิมพ์จากหน้าพรีวิวที่แบ่งหน้าแล้วโดยตรง แต่ละหน้าเป็นกระดาษ A4 ขอบ 0 — ไม่พึ่งระยะขอบของหน้าต่างพิมพ์ จึงตรงกับพรีวิวเสมอ
+ update();
+ const src=document.getElementById("page"), n=Math.max(1,Math.round((parseFloat(src.style.height)||297+PGAP)/PSTEP+0.01)||1);
+ const body=src.innerHTML;
+ document.getElementById("pagecss").textContent="@page{size:A4;margin:0}";
+ const pr=document.getElementById("print");let h="";
+ for(let k=0;k<n;k++)h+=`<div class="psheet"><div class="page" style="position:absolute;left:0;top:${-k*PSTEP}mm;height:${n*PSTEP}mm;box-shadow:none;background:transparent;transform:none">${body}</div></div>`;
+ pr.innerHTML=h;
+ pr.querySelectorAll(".guide,.pb,.sheet").forEach(e=>e.remove());
  setTimeout(()=>window.print(),50);
 }
 
