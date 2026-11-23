@@ -119,7 +119,7 @@ const TYPES = {
   ["speed","ชั้นความเร็ว","select",["","ด่วน","ด่วนมาก","ด่วนที่สุด"]],
   ["no","ที่","text","เช่น ยล 0017.2/123"],
   ["addr","ชื่อหน่วยงานและที่อยู่","area","บรรทัดไหนยาวเกิน 8 ซม. ระบบตัดขึ้นบรรทัดใหม่ที่ช่องว่างให้เอง"],
-  ["date","วันที่","date"],
+  ["date","เดือนและปี (วันที่เว้นว่างไว้เขียนตอนลงนาม)","month"],
   ["subject","เรื่อง","text"],
   ["sal","คำขึ้นต้น","select",SAL],
   ["to","ผู้รับ (ต่อจากคำขึ้นต้น)","text"],
@@ -139,7 +139,7 @@ const TYPES = {
   ["sec","หัวบันทึก"],
   ["org","ส่วนราชการ","text"],
   ["no","ที่","text"],
-  ["date","วันที่","date"],
+  ["date","เดือนและปี (วันที่เว้นว่างไว้เขียนตอนลงนาม)","month"],
   ["subject","เรื่อง","text"],
   ["sal","คำขึ้นต้น","select",SAL],
   ["to","ผู้รับ","text"],
@@ -161,7 +161,7 @@ const TYPES = {
   ["body","ข้อความ","bigarea","ขึ้นบรรทัดใหม่ = ย่อหน้าใหม่ · เว้นบรรทัดว่าง = ภาคใหม่ (+6 pt) · > = เลื่อนเข้า 0.5 ซม. · Shift+Enter = ตัดบรรทัดตรงนี้ (บรรทัดนั้นยืด/หดให้ชนขอบขวา)"],
   ["sec","ส่วนท้าย"],
   ["sender","ชื่อส่วนราชการที่ส่งหนังสือออก","text"],
-  ["date","วันที่","date"],
+  ["date","เดือนและปี (วันที่เว้นว่างไว้เขียนตอนลงนาม)","month"],
   ["owner","ส่วนราชการเจ้าของเรื่อง","area","หลายบรรทัดได้ เช่น สำนักงานจังหวัดยะลา / กลุ่มงาน..."],
   ["tel","โทร.","text","ถ้าเหมือนโทรสาร จะรวมเป็น โทร./โทรสาร"],["fax","โทรสาร","text"],["email","ไปรษณีย์อิเล็กทรอนิกส์","text"],["ownerPos","ตำแหน่งส่วนราชการเจ้าของเรื่อง","select",["อัตโนมัติ","ต่อจากตำแหน่ง (เว้น 1 บรรทัด)","ข้างลายมือชื่อ (ซ้าย)","ชิดขอบล่าง"]]]},
  order:{name:"คำสั่ง / ประกาศ", fields:[
@@ -172,7 +172,7 @@ const TYPES = {
   ["subject","เรื่อง","text"],
   ["sec","ข้อความ"],
   ["body","ข้อความ","bigarea","ขึ้นบรรทัดใหม่ = ย่อหน้าใหม่ · เว้นบรรทัดว่าง = ภาคใหม่ (+6 pt) · > = เลื่อนเข้า 0.5 ซม. · Shift+Enter = ตัดบรรทัดตรงนี้ (บรรทัดนั้นยืด/หดให้ชนขอบขวา)"],
-  ["date","สั่ง ณ / ประกาศ ณ วันที่","date"],
+  ["date","สั่ง ณ / ประกาศ ณ เดือนและปี (วันที่เว้นว่าง)","month"],
   ["sec","ผู้ลงนาม"],
   ["name","ชื่อเต็มผู้ลงนาม","text"],
   ["pos","ตำแหน่ง","area"]]}
@@ -181,7 +181,7 @@ const COMMON = [["sec","ตั้งค่า"],["font","แบบอักษ�
  ["lsp","ระยะบรรทัด","select",["1 เท่า (ปกติ)","0.95 เท่า (กระชับ)","0.9 เท่า (กระชับมาก)"]],
  ["drafter","ผู้ร่าง (สำเนาคู่ฉบับ)","text","ชื่อย่อ ไม่บังคับ"],["typist","ผู้พิมพ์ (สำเนาคู่ฉบับ)","text"],["checker","ผู้ตรวจ (สำเนาคู่ฉบับ)","text"],
  ["fit1","ถ้าเกิน 1 หน้าเล็กน้อย ให้ระบบบีบระยะบรรทัดให้จบหน้าเดียว (ไม่ต่ำกว่า 0.9 เท่า)","check"],
- ["thai","ใช้เลขไทย","check"],["blankday","เว้นเลขวันที่ว่าง (กรอกตอนลงนาม)","check"],
+ ["thai","ใช้เลขไทย","check"],
  ["qr","QR Code สิ่งที่ส่งมาด้วย (ไม่บังคับ)","qrfile","รูป QR วางมุมซ้ายล่าง มีคำว่า สิ่งที่ส่งมาด้วย ใต้รูป"],
  ["garuda","รูปครุฑ (ไม่บังคับ)","file","PNG พื้นใส · ไม่เลือก = ใช้รูปในระบบ"]];
 
@@ -214,6 +214,7 @@ function renderForm(){
   if(kind==="select"){inp=el("select");for(const o of extra){const op=el("option",{value:o},o||"— ไม่มี —");inp.appendChild(op);} inp.value=D[key]??extra[0];}
   else if(kind==="area"||kind==="bigarea"){inp=el("textarea",{spellcheck:"true",lang:"th"});if(kind==="bigarea"){inp.className="big";shiftEnter(inp);}inp.value=D[key]||"";}
   else if(kind==="date"){inp=el("input",{type:"date"});inp.value=D[key]||"";}
+  else if(kind==="month"){inp=el("input",{type:"month"});inp.value=(D[key]||"").slice(0,7);}
   else if(kind==="reflist"||kind==="encllist"){
    const isRef=kind==="reflist"; const arr=D[key]=D[key]||[];
    const box=el("div",{style:"display:flex;flex-direction:column;gap:6px"});
@@ -295,9 +296,9 @@ function measure(t,pt=16,b=false){if(D.thai)t=thaiNum(t);
  if(!MS){MS=document.createElement("span");MS.style.cssText="position:absolute;left:-10000px;top:0;visibility:hidden;white-space:pre;line-height:1;font-family:var(--docfont)";document.body.appendChild(MS);}
  MS.style.fontSize=pt+"pt";MS.style.fontWeight=b?"bold":"normal";MS.textContent=t;
  const w=MS.getBoundingClientRect().width*25.4/96; if(MCACHE.size>20000)MCACHE.clear(); MCACHE.set(k,w); return w;}
-function thaiDate(s,ps=false){
- if(!s)return "";const [y,m,d]=s.split("-").map(Number);
- const day=D.blankday?"        ":String(d);
+function thaiDate(s,ps=false){   // ลงเฉพาะเดือนและปี — เว้นที่ว่างให้เขียนวันที่ตอนลงนาม
+ if(!s)return "";const [y,m]=s.split("-").map(Number);
+ const day="        ";
  return `${day} ${MON[m-1]} ${ps?"พ.ศ. ":""}${y+543}`;
 }
 const lines=s=>(s||"").split("\n").map(x=>x.trimEnd()).filter(x=>x.trim()!=="");
