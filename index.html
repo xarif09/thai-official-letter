@@ -47,6 +47,9 @@ body{margin:0;font-family:var(--ui);background:#e9edf2;color:#1d2530}
 .page.multi{background:transparent;box-shadow:none}
 .sheet{position:absolute;left:0;width:210mm;height:297mm;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.18)}
 .pgno{position:absolute;left:0;width:210mm;text-align:center;font-size:16pt;line-height:1}
+.fmtbar{display:flex;gap:4px;margin:2px 0 3px}
+.fmtbar button{font:inherit;font-size:12.5px;padding:2px 9px;border:1px solid #c5cfdb;border-radius:5px;background:#fff;cursor:pointer}
+.fmtbar button:hover{background:#eef3fb;border-color:#1f5fbf}
 .pb{position:absolute;left:0;right:0;border-top:2px dashed #e33;pointer-events:none}
 .pb span{position:absolute;right:4px;top:-18px;font:12px var(--ui);color:#e33;background:#fff}
 #print{display:none}
@@ -201,6 +204,22 @@ function renderTabs(){const t=document.getElementById("tabs");t.innerHTML="";
 // Shift+Enter = ตัดบรรทัดบังคับ (แสดงเป็น ↵ ท้ายบรรทัด)
 function shiftEnter(ta){ta.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.shiftKey){e.preventDefault();
  const a=ta.selectionStart,b=ta.selectionEnd;ta.value=ta.value.slice(0,a)+"↵\n"+ta.value.slice(b);ta.selectionStart=ta.selectionEnd=a+2;ta.dispatchEvent(new Event("input"));}});}
+// แถบปุ่มจัดรูปแบบเหนือช่องข้อความ: คลุมคำแล้วกด "ตัวหนา" (Ctrl+B) / "ขีดเส้นใต้" (Ctrl+U) — กดซ้ำเพื่อยกเลิก
+function wrapSel(ta,mk){const a=ta.selectionStart,b=ta.selectionEnd,v=ta.value;
+ if(a===b){ta.focus();return;}
+ let sel=v.slice(a,b),pre=v.slice(0,a),post=v.slice(b);
+ if(sel.startsWith(mk)&&sel.endsWith(mk)&&sel.length>=mk.length*2){sel=sel.slice(mk.length,-mk.length);ta.value=pre+sel+post;ta.setSelectionRange(a,a+sel.length);}
+ else if(pre.endsWith(mk)&&post.startsWith(mk)){ta.value=pre.slice(0,-mk.length)+sel+post.slice(mk.length);ta.setSelectionRange(a-mk.length,b-mk.length);}
+ else{const lead=sel.match(/^\s*/)[0],trail=sel.match(/\s*$/)[0],core=sel.trim();ta.value=pre+lead+mk+core+mk+trail+post;ta.setSelectionRange(a+lead.length,a+lead.length+core.length+mk.length*2);}
+ ta.focus();ta.dispatchEvent(new Event("input"));}
+function fmtBar(ta){const bar=el("div",{class:"fmtbar"});
+ const B=(html,title,fn)=>{const b=el("button",{type:"button",title},html);b.onmousedown=e=>e.preventDefault();b.onclick=fn;bar.appendChild(b);};
+ B("<b>ตัวหนา</b>","คลุมคำแล้วกด (Ctrl+B)",()=>wrapSel(ta,"**"));
+ B("<u>ขีดเส้นใต้</u>","คลุมคำแล้วกด (Ctrl+U)",()=>wrapSel(ta,"__"));
+ B("↵ ตัดบรรทัดตรงนี้","เหมือนกด Shift+Enter",()=>{const a=ta.selectionStart;ta.value=ta.value.slice(0,a)+"↵\n"+ta.value.slice(ta.selectionEnd);ta.setSelectionRange(a+2,a+2);ta.focus();ta.dispatchEvent(new Event("input"));});
+ ta.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&!e.altKey){const k=e.key.toLowerCase();
+  if(k==="b"||e.code==="KeyB"){e.preventDefault();wrapSel(ta,"**");}else if(k==="u"||e.code==="KeyU"){e.preventDefault();wrapSel(ta,"__");}}});
+ return bar;}
 function renderForm(){
  const f=document.getElementById("form");f.innerHTML="";
  let fields=TYPES[TYPE].fields.concat(COMMON);
@@ -280,7 +299,7 @@ function renderForm(){
     if(it.h===MSEC[MSEC.length-1]){const c=el("input",{type:"text",placeholder:"ชื่อหัวข้อ เช่น ข้อเสนอ",spellcheck:"true",lang:"th",style:"width:100%;font:inherit;font-size:13.5px;padding:4px 6px;border:1px solid #c5cfdb;border-radius:5px;margin-bottom:4px"});
      c.value=it.name||"";c.oninput=()=>{it.name=c.value;save();update();};card.appendChild(c);}
     const ta=el("textarea",{placeholder:"ข้อความในหัวข้อนี้ (ใช้รูปแบบเดียวกับช่องข้อความ)",spellcheck:"true",lang:"th",style:"width:100%;min-height:70px;font:inherit;font-size:13.5px;padding:4px 6px;border:1px solid #c5cfdb;border-radius:5px"});
-    ta.value=it.text||"";ta.oninput=()=>{it.text=ta.value;save();update();};shiftEnter(ta);card.appendChild(ta);box.appendChild(card);});
+    ta.value=it.text||"";ta.oninput=()=>{it.text=ta.value;save();update();};shiftEnter(ta);card.appendChild(fmtBar(ta));card.appendChild(ta);box.appendChild(card);});
    const free=MSEC.filter(o=>o===MSEC[MSEC.length-1]||!arr.some(x=>x.h===o));
    const add=el("button",{type:"button",style:"font:inherit;font-size:13px;padding:5px 10px;border:1px dashed #1f5fbf;color:#1f5fbf;background:#f3f7fd;border-radius:6px;cursor:pointer"},"＋ เพิ่มหัวข้อ");
    add.onclick=()=>{arr.push({h:free[0],name:"",text:""});save();renderForm();update();};
@@ -296,6 +315,7 @@ function renderForm(){
    w.appendChild(inp);w.appendChild(rb);f.appendChild(w);continue;}
   else {inp=el("input",{type:"text",spellcheck:"true",lang:"th"});inp.value=D[key]||"";}
   inp.oninput=inp.onchange=()=>{D[key]=inp.value;save();update();};
+  if(kind==="bigarea")w.appendChild(fmtBar(inp));
   w.appendChild(inp);f.appendChild(w);
  }
 }
