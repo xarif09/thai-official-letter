@@ -66,12 +66,14 @@ with sync_playwright() as p:
         check("R-63", ev("()=>document.querySelectorAll('#page .sheet').length===2"), f"{name} ยาว 2 หน้า")
     tab(1)
     check("R-39", ev("()=>!document.querySelector('#form [data-k=body]')&&document.querySelector('#form [data-k=secs] select')&&document.querySelectorAll('#form .fmtbar').length===1"), "การ์ดมีรายการเลือกหัวข้อ")
+    ev("()=>{D.secs=[{h:MSEC[0],text:'x'}];save();renderForm();}"); pg.wait_for_timeout(200)
     check("R-38b", ev("""()=>{const a=[{h:MSEC[0],text:'x'},{h:'ข้อพิจารณา',text:'y'},{h:'เรื่องเดิม',text:'z'}];secOrder(a);
-      const sel=[...document.querySelectorAll('#form [data-k=secs] select')];const opts=sel.length?[...sel[0].options].map(o=>o.value):[];
-      return a[1].h==='เรื่องเดิม'&&['ต้นเรื่อง','เรื่องเดิม'].includes(opts[0])&&opts.at(-1)===MSEC[0]}"""), "ต้นเรื่อง/เรื่องเดิม มาก่อน")
+      const o=[...document.querySelector('#form [data-k=secs] select').options].map(o=>o.value);
+      return a[1].h==='เรื่องเดิม'&&o[0]==='ต้นเรื่อง'&&o[1]==='เรื่องเดิม'&&o.at(-1)===MSEC[0]}"""), "ต้นเรื่อง/เรื่องเดิม มาก่อน")
     ev("()=>{D.secs=[{h:'ต้นเรื่อง',text:'ก'},{h:MSEC[0],text:'ข'}];save();renderForm();}"); pg.wait_for_timeout(200)
     check("R-38c", ev("()=>{const s=[...document.querySelectorAll('#form [data-k=secs] select')][1];return ![...s.options].some(o=>o.value==='ข้อเท็จจริง')}"), "เลือกต้นเรื่องแล้วไม่มีข้อเท็จจริง")
     check("R-04", ev("()=>document.getElementById('vCopy').disabled===true"), "บันทึกข้อความไม่มีสำเนาคู่ฉบับ")
+    tab(1)
     check("R-38", ev("()=>MSEC[0].includes('ไม่มีหัวข้อ')&&(()=>{const {P}=build();return P.some(p=>p.runs.some(r=>/^[1๑]\\. เรื่องเดิม$/.test(r.t)&&r.b))})()"))
     tab(2)
     check("R-42", ev("()=>{const {P}=build();const i=P.findIndex(p=>p.runs.some(r=>/^สำนักงานจังหวัด$/.test(r.t)));return i>0&&P[i].keep}"))
