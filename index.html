@@ -217,7 +217,7 @@ function renderForm(){
   else if(kind==="month"){   // เลือกเดือน (ภาษาไทย) + ปี พ.ศ.
    const [y0,m0]=((D[key]||new Date().toISOString().slice(0,7)).split("-")).map(Number);
    const st="font:inherit;padding:6px;border:1px solid #c5cfdb;border-radius:6px";
-   const ms=el("select",{style:st+";flex:1"}),ys=el("select",{style:st});
+   const ms=el("select",{style:st+";flex:1 1 60%;width:auto;min-width:0"}),ys=el("select",{style:st+";flex:1 1 40%;width:auto;min-width:0"});
    MON.forEach((n,i)=>ms.appendChild(el("option",{value:i+1},n)));ms.value=m0;
    const cy=new Date().getFullYear();for(let y=cy-3;y<=cy+3;y++)ys.appendChild(el("option",{value:y},"พ.ศ. "+(y+543)));
    if(![...ys.options].some(o=>+o.value===y0))ys.appendChild(el("option",{value:y0},"พ.ศ. "+(y0+543)));ys.value=y0;
