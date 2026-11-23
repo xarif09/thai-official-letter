@@ -94,6 +94,7 @@ textarea.docta{font-family:var(--docfont);line-height:1.3;padding:6px 8px}
   html,body{margin:0;padding:0}
   body{background:#fff}
 }
+select.hist{font-size:11.5px;padding:0 2px;margin-left:6px;border:1px solid #d5dce5;border-radius:4px;color:#1f5fbf;background:#f6f9fe;max-width:130px;vertical-align:middle;cursor:pointer}
 #drafts{position:fixed;inset:0;background:rgba(20,30,45,.45);display:none;align-items:center;justify-content:center;z-index:50}
 #drafts .box{background:#fff;width:min(640px,94vw);max-height:86vh;border-radius:10px;display:flex;flex-direction:column;box-shadow:0 8px 30px rgba(0,0,0,.3)}
 #drafts .hd{padding:12px 16px;border-bottom:1px solid #e1e6ec;display:flex;justify-content:space-between;align-items:center}#drafts .bd{padding:10px 16px;overflow:auto;font-size:14px}
@@ -244,7 +245,7 @@ let TYPE = store.get("thdoc_type") || "ext";
 let D = {};
 function defaults(){return {v:DATA_VERSION,fit1:true,font:"TH SarabunIT๙",thai:true,ownerPos:"อัตโนมัติ",sal:"เรียน",kind:"คำสั่ง",date:new Date().toISOString().slice(0,10)}}
 // รุ่นของระบบ (แสดงบนหน้าจอ) และรุ่นโครงข้อมูลที่เก็บในเครื่อง — เพิ่มเลขทุกครั้งที่กฎเปลี่ยนจนค่าเก่าอาจขัดกับกฎใหม่
-const APP_VERSION="2026.11.23k", DATA_VERSION=4;
+const APP_VERSION="2026.11.23l", DATA_VERSION=4;
 function migrate(x){   // ปรับค่าที่เก็บไว้ในเครื่องให้เข้ากับกฎปัจจุบัน (ดู REQUIREMENTS.md)
  if(!x||typeof x!=="object")return {};
  const v=x.v||1;
@@ -539,6 +540,7 @@ function renderForm(){
    w.appendChild(inp);w.appendChild(rb);f.appendChild(w);continue;}
   else {inp=el("input",{type:"text",spellcheck:"true",lang:"th"});inp.value=D[key]||"";}
   inp.oninput=inp.onchange=()=>{D[key]=inp.value;save();update();};
+  if(inp.tagName==="TEXTAREA"||(inp.tagName==="INPUT"&&inp.type==="text"))histAttach(w,inp,key);   // R-67: จำข้อมูลที่เคยกรอก
   w.appendChild(inp);f.appendChild(w);
  }
 }
@@ -1136,6 +1138,21 @@ document.getElementById("bTypo").onclick=()=>{const d=JSON.parse(JSON.stringify(
  if(d.body!==undefined)d.body=(d.body||"")+(d.body?"\nเพื่อให้การดำเนินงานต่างๆ เป็นไปด้วยความเรียบร้อย":"");
  D=Object.assign(defaults(),migrate(Object.assign(d,{v:2})));save();renderForm();update();spellShow();};
 
+// ---------- R-67: จำข้อมูลที่เคยกรอก (เก็บในเครื่อง) เลือกซ้ำได้ ----------
+const HMAX=20;
+function histGet(k){return (store.get("thdoc_hist")||{})[k]||[];}
+function histAdd(k,v){v=(v||"").trim();if(!v||v.length>600)return;const H=store.get("thdoc_hist")||{};H[k]=[v,...(H[k]||[]).filter(x=>x!==v)].slice(0,HMAX);store.set("thdoc_hist",H);}
+function histDel(k,v){const H=store.get("thdoc_hist")||{};H[k]=(H[k]||[]).filter(x=>x!==v);store.set("thdoc_hist",H);}
+function histAttach(w,inp,key){
+ inp.addEventListener("change",()=>histAdd(key,inp.value));
+ const L=histGet(key).filter(x=>x!==(inp.value||"").trim()); if(!L.length)return;
+ if(inp.tagName==="INPUT"){const id="hl_"+key;const dl=el("datalist",{id});L.forEach(x=>dl.appendChild(el("option",{value:x})));inp.setAttribute("list",id);inp.setAttribute("autocomplete","off");w.appendChild(dl);}
+ const sel=el("select",{class:"hist",title:"ข้อมูลที่เคยกรอกในช่องนี้"});sel.appendChild(el("option",{value:""},"เคยใช้ ▾"));
+ L.forEach((x,i)=>sel.appendChild(el("option",{value:i},esc(x.replace(/\n/g," / ").slice(0,70)))));
+ sel.appendChild(el("option",{value:"clear"},"✕ ล้างรายการที่เคยใช้ของช่องนี้"));
+ sel.onchange=()=>{const v=sel.value;sel.value="";if(v==="")return;if(v==="clear"){L.forEach(x=>histDel(key,x));renderForm();return;}
+  inp.value=L[+v];D[key]=inp.value;histAdd(key,inp.value);save();update();if(inp.tagName==="TEXTAREA")fitTA&&fitTA();};
+ const lb=w.querySelector("label");if(lb)lb.appendChild(sel);}
 // ---------- งานที่ยังทำไม่เสร็จ (R-73) : เก็บหลายงานในเครื่อง เปิดต่อภายหลัง ส่งออก/นำเข้าไฟล์เพื่อย้ายเครื่อง ----------
 const drGet=()=>store.get("thdoc_drafts")||[], drSet=a=>store.set("thdoc_drafts",a);
 function drDefName(){const t=(D.subject||"").trim()||((D.secs||[]).map(x=>x.text||"").join(" ").replace(/[*_>↵\n]+/g," ").trim().slice(0,40));return t||("งาน"+TYPES[TYPE].name);}

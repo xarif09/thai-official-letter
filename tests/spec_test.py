@@ -110,6 +110,11 @@ with sync_playwright() as p:
     check("R-43", ev("()=>{const n=build().P.length;return !document.getElementById('page').textContent.includes(D.name)&&document.querySelector('#form [data-k=name]').style.display==='none'}"), "เว้นว่าง: ไม่มีชื่อในหนังสือ ซ่อนช่องชื่อ")
     ev("()=>{const s=document.querySelector('#form [data-k=sigMode] select');s.value='name';s.onchange();[...document.querySelectorAll('#form [data-k=sigMode] button')][0].click();D.name='ก ข';D.pos='ค';save();renderForm();[...document.querySelectorAll('#form [data-k=sigMode] button')][0].click();}"); pg.wait_for_timeout(200)
     check("R-43", ev("()=>{const ps=document.querySelectorAll('#form [data-k=sigMode] select')[1];const i=[...ps.options].findIndex(o=>o.textContent.startsWith('"+nm0+"'));ps.value=ps.options[i].value;ps.onchange();const ok=D.name==='"+nm0+"'&&document.getElementById('page').textContent.includes('"+nm0+"')&&store.get('thdoc_signers').length===2;localStorage.removeItem('thdoc_signers');return ok}"), "รายชื่อผู้ลงนาม dropdown")
+    tab(0)
+    ev("()=>{localStorage.removeItem('thdoc_hist');document.getElementById('bClear').click();}"); pg.wait_for_timeout(200)
+    t = pg.locator('#form [data-k=to] input'); t.fill('ทดสอบผู้รับซ้ำ'); t.blur(); pg.wait_for_timeout(100)
+    ev("()=>document.getElementById('bClear').click()"); pg.wait_for_timeout(200)
+    check("R-67", ev("()=>{const s=document.querySelector('#form [data-k=to] select.hist');const ok=!!s&&!!document.querySelector('#form [data-k=to] datalist');if(!ok)return false;s.value='0';s.onchange();const r=D.to==='ทดสอบผู้รับซ้ำ';localStorage.removeItem('thdoc_hist');return r}"), "เลือกค่าที่เคยกรอกได้")
     check("ERR", not errs, "; ".join(errs[:3]))
     b.close()
 
