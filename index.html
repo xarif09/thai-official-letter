@@ -38,6 +38,15 @@ details.secbox>summary::before{content:"▸ ";color:#1f5fbf}details.secbox[open]
 .combo>button{flex:0 0 34px;font-size:14px;border:1px solid #c5cfdb;border-radius:6px;background:#f3f7fd;color:#1f5fbf;cursor:pointer}
 .cmenu{display:none;position:absolute;left:0;right:0;top:100%;margin-top:2px;background:#fff;border:1px solid #c5cfdb;border-radius:6px;box-shadow:0 6px 18px rgba(0,0,0,.15);z-index:20;max-height:280px;overflow:auto}
 .cmenu>div{padding:6px 10px;font-size:13.5px;cursor:pointer}.cmenu>div:hover{background:#eef3fb}.cmenu .cnone{color:#8a94a3;border-top:1px solid #e6ebf1}
+.pbed{display:flex;flex-direction:column;gap:3px}
+.pbrow{display:flex;gap:4px;align-items:flex-start}.pbrow.gap{margin-top:9px;border-top:1px dashed #c9d3df;padding-top:6px}
+.pbg{display:flex;flex-direction:column;gap:1px;flex:0 0 22px;opacity:.35;transition:opacity .15s}.pbrow:hover .pbg,.pbrow:focus-within .pbg{opacity:1}
+.pbg button{font-size:11px;line-height:1;padding:2px 0;border:1px solid #d5dce5;background:#fff;border-radius:4px;cursor:pointer;color:#1f5fbf}
+.pbox{flex:1;min-width:0;min-height:1.4em;border:1px solid #c5cfdb;border-radius:6px;padding:5px 8px;background:#fff;font-family:var(--docfont);line-height:1.3;outline:none;white-space:pre-wrap;word-break:break-word}
+.pbox:focus{border-color:#1f5fbf;box-shadow:0 0 0 2px rgba(31,95,191,.12)}
+.pbox:empty::before{content:attr(data-ph);color:#9aa4b1;font-family:var(--ui);font-size:13px}
+.pbadd{align-self:flex-start;margin:3px 0 0 26px;font:inherit;font-size:12.5px;padding:3px 9px;border:1px dashed #1f5fbf;color:#1f5fbf;background:#f3f7fd;border-radius:6px;cursor:pointer}
+.fmhint{font-size:11.5px;color:#6b7684;align-self:center;margin-left:4px;flex:1 1 200px}
 textarea.docta{font-family:var(--docfont);line-height:1.3;padding:6px 8px}
 .row{display:flex;gap:8px}.row>.f{flex:1}
 .chk{display:flex;align-items:center;gap:6px;font-size:13px;margin:4px 0}
@@ -65,7 +74,7 @@ textarea.docta{font-family:var(--docfont);line-height:1.3;padding:6px 8px}
 .sheet{position:absolute;left:0;width:210mm;height:297mm;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.18)}
 .pgno{position:absolute;left:0;width:210mm;text-align:center;font-size:16pt;line-height:1}
 .fmtbar{display:flex;gap:4px;margin:2px 0 3px}
-.fmtbar button{font:inherit;font-size:12.5px;padding:2px 9px;border:1px solid #c5cfdb;border-radius:5px;background:#fff;cursor:pointer}
+.fmtbar{flex-wrap:wrap}.fmtbar button{white-space:nowrap;font:inherit;font-size:12.5px;padding:2px 9px;border:1px solid #c5cfdb;border-radius:5px;background:#fff;cursor:pointer}
 .fmtbar button:hover{background:#eef3fb;border-color:#1f5fbf}
 .pb{position:absolute;left:0;right:0;border-top:2px dashed #e33;pointer-events:none}
 .pb span{position:absolute;right:4px;top:-18px;font:12px var(--ui);color:#e33;background:#fff}
@@ -148,7 +157,7 @@ const TYPES = {
   ["refList","อ้างถึง","reflist"],
   ["enclList","สิ่งที่ส่งมาด้วย","encllist"],
   ["sec","ข้อความ"],
-  ["body","ข้อความ","bigarea","ขึ้นบรรทัดใหม่ = ย่อหน้าใหม่ · เว้นบรรทัดว่าง = ภาคใหม่ (+6 pt) · > = เลื่อนเข้า 0.5 ซม. · Shift+Enter = ตัดบรรทัดตรงนี้ (บรรทัดนั้นยืด/หดให้ชนขอบขวา)"],
+  ["body","ข้อความ","bigarea","หนึ่งกล่อง = หนึ่งย่อหน้า · Enter = ย่อหน้าใหม่ · Shift+Enter = ตัดบรรทัด (บรรทัดนั้นยืด/หดให้ชนขอบขวา) · ⇤⇥ เลื่อนเข้า/ออก 0.5 ซม. · ↕ เว้นภาค +6 pt · คลุมคำแล้วกด ตัวหนา / ขีดเส้นใต้"],
   ["secs","หัวข้อ / ข้อความเพิ่มเติม (ถ้ามี)","seclist"],
   ["endp","ย่อหน้าสุดท้าย","combo",ENDP],
   ["closing","คำลงท้าย","text","ว่าง = ตามคำขึ้นต้นอัตโนมัติ"],
@@ -169,7 +178,7 @@ const TYPES = {
   ["refList","อ้างถึง (ถ้ามี)","reflist"],
   ["enclList","สิ่งที่ส่งมาด้วย (ถ้ามี)","encllist"],
   ["sec","ข้อความ"],
-  ["body","ข้อความนำ (ถ้ามี)","bigarea","ขึ้นบรรทัดใหม่ = ย่อหน้าใหม่ · เว้นบรรทัดว่าง = ภาคใหม่ (+6 pt) · > = เลื่อนเข้า 0.5 ซม. · Shift+Enter = ตัดบรรทัดตรงนี้ (บรรทัดนั้นยืด/หดให้ชนขอบขวา)"],
+  ["body","ข้อความนำ (ถ้ามี)","bigarea","หนึ่งกล่อง = หนึ่งย่อหน้า · Enter = ย่อหน้าใหม่ · Shift+Enter = ตัดบรรทัด (บรรทัดนั้นยืด/หดให้ชนขอบขวา) · ⇤⇥ เลื่อนเข้า/ออก 0.5 ซม. · ↕ เว้นภาค +6 pt · คลุมคำแล้วกด ตัวหนา / ขีดเส้นใต้"],
   ["secs","หัวข้อในบันทึก","seclist"],
   ["endp","ย่อหน้าสุดท้าย","combo",ENDP],
   ["sec","ผู้ลงนาม"],
@@ -181,7 +190,7 @@ const TYPES = {
   ["no","ที่","text"],
   ["to","ถึง","text"],
   ["sec","ข้อความ"],
-  ["body","ข้อความ","bigarea","ขึ้นบรรทัดใหม่ = ย่อหน้าใหม่ · เว้นบรรทัดว่าง = ภาคใหม่ (+6 pt) · > = เลื่อนเข้า 0.5 ซม. · Shift+Enter = ตัดบรรทัดตรงนี้ (บรรทัดนั้นยืด/หดให้ชนขอบขวา)"],
+  ["body","ข้อความ","bigarea","หนึ่งกล่อง = หนึ่งย่อหน้า · Enter = ย่อหน้าใหม่ · Shift+Enter = ตัดบรรทัด (บรรทัดนั้นยืด/หดให้ชนขอบขวา) · ⇤⇥ เลื่อนเข้า/ออก 0.5 ซม. · ↕ เว้นภาค +6 pt · คลุมคำแล้วกด ตัวหนา / ขีดเส้นใต้"],
   ["secs","หัวข้อ / ข้อความเพิ่มเติม (ถ้ามี)","seclist"],
   ["endp","ย่อหน้าสุดท้าย","combo",STPP],
   
@@ -197,7 +206,7 @@ const TYPES = {
   ["no","ที่ (เฉพาะคำสั่ง)","text","เช่น 123/2569"],
   ["subject","เรื่อง","text"],
   ["sec","ข้อความ"],
-  ["body","ข้อความ","bigarea","ขึ้นบรรทัดใหม่ = ย่อหน้าใหม่ · เว้นบรรทัดว่าง = ภาคใหม่ (+6 pt) · > = เลื่อนเข้า 0.5 ซม. · Shift+Enter = ตัดบรรทัดตรงนี้ (บรรทัดนั้นยืด/หดให้ชนขอบขวา)"],
+  ["body","ข้อความ","bigarea","หนึ่งกล่อง = หนึ่งย่อหน้า · Enter = ย่อหน้าใหม่ · Shift+Enter = ตัดบรรทัด (บรรทัดนั้นยืด/หดให้ชนขอบขวา) · ⇤⇥ เลื่อนเข้า/ออก 0.5 ซม. · ↕ เว้นภาค +6 pt · คลุมคำแล้วกด ตัวหนา / ขีดเส้นใต้"],
   ["secs","หัวข้อ / ข้อความเพิ่มเติม (ถ้ามี)","seclist"],
   ["endp","ย่อหน้าสุดท้าย","combo",ORDP],
   
@@ -230,6 +239,69 @@ function renderTabs(){const t=document.getElementById("tabs");t.innerHTML="";
 // Shift+Enter = ตัดบรรทัดบังคับ (แสดงเป็น ↵ ท้ายบรรทัด)
 function shiftEnter(ta){ta.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.shiftKey){e.preventDefault();
  const a=ta.selectionStart,b=ta.selectionEnd;ta.value=ta.value.slice(0,a)+"↵\n"+ta.value.slice(b);ta.selectionStart=ta.selectionEnd=a+2;ta.dispatchEvent(new Event("input"));}});}
+
+// ---------- ตัวแก้ไขข้อความแบบ "หนึ่งย่อหน้า = หนึ่งกล่อง" (เห็นตัวหนา/ขีดเส้นใต้จริง ไม่ต้องเห็น ** __) ----------
+// เก็บข้อมูลเป็นข้อความรูปแบบเดิม (บรรทัด = ย่อหน้า, บรรทัดว่าง = ภาคใหม่, > = เลื่อนเข้า, ↵ = ตัดบรรทัด, ** __ = ตัวหนา/ขีดเส้นใต้)
+let PB_LAST=null;
+function pbParse(txt){const ls0=(txt||"").split("\n"),ls=[];
+ for(const x of ls0){if(ls.length&&/↵\s*$/.test(ls[ls.length-1].t))ls[ls.length-1].t+="\n"+x;else ls.push({t:x});}
+ const out=[];let gap=false;
+ for(const {t} of ls){if(t.trim()===""){gap=true;continue;}const m=t.match(/^(>*)\s*([\s\S]*)$/);out.push({lvl:m[1].length,gap:gap&&out.length>0,t:m[2]});gap=false;}
+ return out.length?out:[{lvl:0,gap:false,t:""}];}
+function pbHTML(t){return esc(t).replace(/↵\s*\n/g,"<br>").replace(/\*\*([\s\S]+?)\*\*/g,"<b>$1</b>").replace(/__([\s\S]+?)__/g,"<u>$1</u>");}
+function pbText(node){let o="";for(const n of node.childNodes){
+  if(n.nodeType===3){o+=n.nodeValue.replace(/ /g," ");continue;}
+  if(n.nodeType!==1)continue;const tg=n.tagName,st=n.style||{};
+  if(tg==="BR"){o+="↵\n";continue;}
+  let inner=pbText(n);
+  if(tg==="DIV"||tg==="P"){o+=(o&&!o.endsWith("\n")?"↵\n":"")+inner;continue;}
+  const b=tg==="B"||tg==="STRONG"||+st.fontWeight>=600||st.fontWeight==="bold",u=tg==="U"||/underline/.test(st.textDecoration||"");
+  if(u&&inner.trim())inner="__"+inner+"__"; if(b&&inner.trim())inner="**"+inner+"**"; o+=inner;}
+ return o;}
+function pbSerialize(list){return list.map((p,i)=>(p.gap&&i?"\n":"")+">".repeat(p.lvl)+p.t.replace(/↵\n$/,"").replace(/\*\*\*\*|____/g,"")).join("\n");}
+function paraEditor(get,set,ph){
+ const root=el("div",{class:"pbed"});let list=pbParse(get());
+ const commit=()=>{set(pbSerialize(list));save();update();};
+ const draw=(focusIdx,caretEnd)=>{root.innerHTML="";
+  list.forEach((p,i)=>{
+   const row=el("div",{class:"pbrow"+(p.gap?" gap":"")});
+   const g=el("div",{class:"pbg"});
+   const B=(t,ti,fn)=>{const b=el("button",{type:"button",title:ti},t);b.onmousedown=e=>e.preventDefault();b.onclick=fn;g.appendChild(b);};
+   B("⇤","เลื่อนออก",()=>{if(p.lvl>0){p.lvl--;commit();draw(i);}});
+   B("⇥","เลื่อนเข้าอีก 0.5 ซม.",()=>{p.lvl++;commit();draw(i);});
+   B("↕","เว้นภาค (+6 pt) ก่อนย่อหน้านี้",()=>{if(i){p.gap=!p.gap;commit();draw(i);}});
+   const bx=el("div",{class:"pbox",contenteditable:"true",spellcheck:"true",lang:"th","data-lvl":p.lvl,"data-ph":i===0&&list.length===1?(ph||"พิมพ์ข้อความ · Enter = ย่อหน้าใหม่ · Shift+Enter = ตัดบรรทัด"):""});
+   bx.innerHTML=pbHTML(p.t);
+   const sync=()=>{p.t=pbText(bx);commit();};
+   bx.oninput=sync; bx.onfocus=()=>{PB_LAST=bx;};
+   bx.onkeydown=e=>{
+    if(e.key==="Enter"&&e.shiftKey){e.preventDefault();document.execCommand("insertLineBreak");return;}
+    if(e.key==="Enter"){e.preventDefault();   // ย่อหน้าใหม่ = กล่องใหม่ (ตัดข้อความหลังเคอร์เซอร์ไปกล่องใหม่)
+     const r=window.getSelection().getRangeAt(0);r.deleteContents();const tail=r.cloneRange();tail.selectNodeContents(bx);tail.setStart(r.endContainer,r.endOffset);
+     const frag=tail.extractContents(),tmp=el("div");tmp.appendChild(frag);
+     p.t=pbText(bx);list.splice(i+1,0,{lvl:p.lvl,gap:false,t:pbText(tmp)});commit();draw(i+1,false);return;}
+    if(e.key==="Backspace"&&i>0){const sel=window.getSelection();const r=sel.getRangeAt(0);const pre=r.cloneRange();pre.selectNodeContents(bx);pre.setEnd(r.startContainer,r.startOffset);
+     if(sel.isCollapsed&&pre.toString()===""&&!pre.cloneContents().querySelector("br")){e.preventDefault();   // ต้นกล่อง: รวมกับย่อหน้าก่อนหน้า
+      const prev=list[i-1],at=prev.t.length;prev.t+=pbText(bx);list.splice(i,1);commit();draw(i-1,at);}}
+    if((e.ctrlKey||e.metaKey)&&!e.altKey&&(e.code==="KeyB"||e.code==="KeyU")){e.preventDefault();document.execCommand(e.code==="KeyB"?"bold":"underline");sync();}
+   };
+   bx.onpaste=e=>{e.preventDefault();const t=(e.clipboardData.getData("text/plain")||"").replace(/\r/g,"");const parts=t.split("\n");
+    document.execCommand("insertText",false,parts[0]);
+    if(parts.length>1){p.t=pbText(bx);const add=parts.slice(1).filter(x=>x.trim()).map(x=>({lvl:p.lvl,gap:false,t:x}));list.splice(i+1,0,...add);commit();draw(i+add.length);}else sync();};
+   row.appendChild(g);row.appendChild(bx);root.appendChild(row);});
+  const add=el("button",{type:"button",class:"pbadd"},"＋ ย่อหน้าใหม่");add.onclick=()=>{list.push({lvl:0,gap:false,t:""});commit();draw(list.length-1);};
+  root.appendChild(add);fitPB(root);
+  if(focusIdx!=null){const bx=root.querySelectorAll(".pbox")[focusIdx];if(bx){bx.focus();const r=document.createRange();
+   if(typeof caretEnd==="number"){const tw=document.createTreeWalker(bx,NodeFilter.SHOW_TEXT);let n,left=caretEnd,done=false;   // วางเคอร์เซอร์ตรงรอยต่อหลังรวมกล่อง
+    while((n=tw.nextNode())){if(left<=n.length){r.setStart(n,left);done=true;break;}left-=n.length;} if(!done){r.selectNodeContents(bx);r.collapse(false);} else r.collapse(true);}
+   else{r.selectNodeContents(bx);r.collapse(caretEnd!==false?false:true);}
+   const sel=window.getSelection();sel.removeAllRanges();sel.addRange(r);}}};
+ draw();return root;}
+function fitPB(scope){for(const bx of (scope||document).querySelectorAll(".pbox")){const cs=getComputedStyle(bx);
+ const inner=bx.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight); if(inner<50)continue;
+ const k=inner/(160*96/25.4); bx.style.fontSize=(16*96/72*k).toFixed(2)+"px";
+ bx.style.textIndent=((25+5*(+bx.dataset.lvl||0))*96/25.4*k).toFixed(1)+"px";}}   // ย่อหน้าบรรทัดแรกตามสัดส่วนจริง
+
 // แถบปุ่มจัดรูปแบบเหนือช่องข้อความ: คลุมคำแล้วกด "ตัวหนา" (Ctrl+B) / "ขีดเส้นใต้" (Ctrl+U) — กดซ้ำเพื่อยกเลิก
 function wrapSel(ta,mk){const a=ta.selectionStart,b=ta.selectionEnd,v=ta.value;
  if(a===b){ta.focus();return;}
@@ -238,6 +310,13 @@ function wrapSel(ta,mk){const a=ta.selectionStart,b=ta.selectionEnd,v=ta.value;
  else if(pre.endsWith(mk)&&post.startsWith(mk)){ta.value=pre.slice(0,-mk.length)+sel+post.slice(mk.length);ta.setSelectionRange(a-mk.length,b-mk.length);}
  else{const lead=sel.match(/^\s*/)[0],trail=sel.match(/\s*$/)[0],core=sel.trim();ta.value=pre+lead+mk+core+mk+trail+post;ta.setSelectionRange(a+lead.length,a+lead.length+core.length+mk.length*2);}
  ta.focus();ta.dispatchEvent(new Event("input"));}
+function fmtBarPB(){const bar=el("div",{class:"fmtbar"});
+ const B=(html,title,fn)=>{const b=el("button",{type:"button",title},html);b.onmousedown=e=>e.preventDefault();b.onclick=()=>{if(!PB_LAST||!document.body.contains(PB_LAST))return;PB_LAST.focus();fn();PB_LAST.dispatchEvent(new Event("input"));};bar.appendChild(b);};
+ B("<b>ตัวหนา</b>","คลุมคำแล้วกด (Ctrl+B) · กดซ้ำเพื่อยกเลิก",()=>document.execCommand("bold"));
+ B("<u>ขีดเส้นใต้</u>","คลุมคำแล้วกด (Ctrl+U)",()=>document.execCommand("underline"));
+ B("↵ ตัดบรรทัดตรงนี้","เหมือนกด Shift+Enter: บรรทัดนี้ยืด/หดให้ชนขอบขวา",()=>document.execCommand("insertLineBreak"));
+ bar.appendChild(el("span",{class:"fmhint"},"Enter = ย่อหน้าใหม่ (กล่องใหม่) · ⇤⇥ เลื่อนเข้า/ออก · ↕ เว้นภาค"));
+ return bar;}
 function fmtBar(ta){const bar=el("div",{class:"fmtbar"});
  const B=(html,title,fn)=>{const b=el("button",{type:"button",title},html);b.onmousedown=e=>e.preventDefault();b.onclick=fn;bar.appendChild(b);};
  B("<b>ตัวหนา</b>","คลุมคำแล้วกด (Ctrl+B)",()=>wrapSel(ta,"**"));
@@ -253,7 +332,7 @@ function fitTA(){for(const ta of document.querySelectorAll("textarea.docta")){co
 function growTA(ta){   // ความสูงตามเนื้อหา (ว่าง = เตี้ย, ยาว = สูงสุด 300px แล้วเลื่อนดู)
  const y=document.getElementById("form").scrollTop;ta.style.height="auto";ta.style.minHeight="0";
  ta.style.height=Math.min(300,Math.max(ta.value.trim()?70:46,ta.scrollHeight+2))+"px";document.getElementById("form").scrollTop=y;}
-window.addEventListener("resize",fitTA);
+window.addEventListener("resize",()=>{fitTA();fitPB();});
 function renderForm(){
  const F0=document.getElementById("form");const st0=F0.scrollTop;F0.innerHTML="";let f=F0;
  let fields=TYPES[TYPE].fields.concat(COMMON);
@@ -268,7 +347,8 @@ function renderForm(){
   w.appendChild(el("label",{},esc(label)+(kind!=="select"&&extra&&typeof extra==="string"?` <span class="hint" title="${esc(extra)}">ⓘ</span>`:"")));
   let inp;
   if(kind==="select"){inp=el("select");for(const o of extra){const op=el("option",{value:o},o||"— ไม่มี —");inp.appendChild(op);} inp.value=D[key]??extra[0];}
-  else if(kind==="area"||kind==="bigarea"){inp=el("textarea",{spellcheck:"true",lang:"th"});if(kind==="bigarea"){inp.className="big docta";shiftEnter(inp);}inp.value=D[key]||"";}
+  else if(kind==="bigarea"){w.appendChild(fmtBarPB());w.appendChild(paraEditor(()=>D[key]||"",v=>{D[key]=v;}));f.appendChild(w);continue;}
+  else if(kind==="area"){inp=el("textarea",{spellcheck:"true",lang:"th"});inp.value=D[key]||"";}
   else if(kind==="date"){inp=el("input",{type:"date"});inp.value=D[key]||"";}
   else if(kind==="combo"){   // ช่องเดียว: กด ▾ เลือกข้อความสำเร็จรูป แล้วแก้ต่อในช่องเดิมได้ · เว้นว่าง = ไม่ใช้
    const opts=extra.slice(1,-1); let v=D[key]||""; if(v===extra[0])v=""; if(v===extra[extra.length-1])v=D.endpX||"";
@@ -349,8 +429,7 @@ function renderForm(){
     del.onclick=()=>{arr.splice(i,1);save();renderForm();update();};hd.appendChild(del);card.appendChild(hd);
     if(it.h===MSEC[MSEC.length-1]){const c=el("input",{type:"text",placeholder:"ชื่อหัวข้อ เช่น ข้อเสนอ",spellcheck:"true",lang:"th",style:"width:100%;font:inherit;font-size:13.5px;padding:4px 6px;border:1px solid #c5cfdb;border-radius:5px;margin-bottom:4px"});
      c.value=it.name||"";c.oninput=()=>{it.name=c.value;save();update();};card.appendChild(c);}
-    const ta=el("textarea",{class:"docta",placeholder:"ข้อความในหัวข้อนี้ (ใช้รูปแบบเดียวกับช่องข้อความ)",spellcheck:"true",lang:"th",style:"width:100%;min-height:110px;padding:4px 6px;border:1px solid #c5cfdb;border-radius:5px"});
-    ta.value=it.text||"";ta.oninput=()=>{it.text=ta.value;save();update();};shiftEnter(ta);card.appendChild(fmtBar(ta));card.appendChild(ta);box.appendChild(card);});
+    card.appendChild(fmtBarPB());card.appendChild(paraEditor(()=>it.text||"",v=>{it.text=v;},"ข้อความในหัวข้อนี้"));box.appendChild(card);});
    const add=el("button",{type:"button",style:"font:inherit;font-size:13px;padding:5px 10px;border:1px dashed #1f5fbf;color:#1f5fbf;background:#f3f7fd;border-radius:6px;cursor:pointer"},"＋ เพิ่มหัวข้อ / ข้อความ");
    add.onclick=()=>{arr.push({h:MSEC[0],name:"",text:""});save();renderForm();update();};
    w.querySelector("label").insertAdjacentHTML("beforeend",` <span class="hint" title="เริ่มต้นเป็น ไม่มีหัวข้อ (ย่อหน้าธรรมดา) เปลี่ยนเป็นต้นเรื่อง ฯลฯ ได้ · หัวข้อที่เลือกแล้วจะไม่แสดงในตัวเลือกถัดไป · ระบบใส่เลข ๑. ๒. เฉพาะรายการที่มีหัวข้อ · เลื่อนลำดับด้วย ▲▼">ⓘ</span>`);
@@ -366,7 +445,6 @@ function renderForm(){
    w.appendChild(inp);w.appendChild(rb);f.appendChild(w);continue;}
   else {inp=el("input",{type:"text",spellcheck:"true",lang:"th"});inp.value=D[key]||"";}
   inp.oninput=inp.onchange=()=>{D[key]=inp.value;save();update();};
-  if(kind==="bigarea")w.appendChild(fmtBar(inp));
   w.appendChild(inp);f.appendChild(w);
  }
 }
@@ -935,7 +1013,7 @@ const _rf=renderForm; renderForm=function(){const _st=document.getElementById("f
   const ws=g.map(k=>f.querySelector(`.f[data-k="${k}"]`)).filter(x=>x); if(ws.length<2)continue;
   const r=el("div",{class:"frow"});ws[0].before(r);ws.forEach(w=>{r.appendChild(w);w.classList.add("k-"+w.dataset.k);});}
  const sj=f.querySelector('.f[data-k="subject"]');if(sj)sj.classList.add("inl");   // "เรื่อง" ป้ายอยู่หน้าช่อง บรรทัดเดียว
- requestAnimationFrame(fitTA);document.getElementById("form").scrollTop=_st;};
+ requestAnimationFrame(()=>{fitTA();fitPB();});document.getElementById("form").scrollTop=_st;};
 load();document.documentElement.style.setProperty("--docfont",`"${D.font}","TH SarabunPSK","TH Sarabun New",sans-serif`);renderTabs();renderForm();
 (document.fonts?document.fonts.ready:Promise.resolve()).then(()=>{MCACHE.clear();update();});update();
 </script>
