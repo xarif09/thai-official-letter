@@ -72,7 +72,7 @@ with sync_playwright() as p:
     ev("()=>{D.secs=[{h:'ต้นเรื่อง',text:'ก'},{h:MSEC[0],text:'ข'}];save();renderForm();}"); pg.wait_for_timeout(200)
     check("R-38c", ev("()=>{const s=[...document.querySelectorAll('#form [data-k=secs] select')][1];return ![...s.options].some(o=>o.value==='ข้อเท็จจริง')}"), "เลือกต้นเรื่องแล้วไม่มีข้อเท็จจริง")
     check("R-04", ev("()=>document.getElementById('vCopy').disabled===true"), "บันทึกข้อความไม่มีสำเนาคู่ฉบับ")
-    check("R-38", ev("()=>MSEC[0].includes('ไม่มีหัวข้อ')&&(()=>{const {P}=build();return P.some(p=>p.runs.some(r=>/^[1๑]\\. ต้นเรื่อง$/.test(r.t)&&r.b))})()"))
+    check("R-38", ev("()=>MSEC[0].includes('ไม่มีหัวข้อ')&&(()=>{const {P}=build();return P.some(p=>p.runs.some(r=>/^[1๑]\\. เรื่องเดิม$/.test(r.t)&&r.b))})()"))
     tab(2)
     check("R-42", ev("()=>{const {P}=build();const i=P.findIndex(p=>p.runs.some(r=>/^สำนักงานจังหวัด$/.test(r.t)));return i>0&&P[i].keep}"))
     # ตรวจคำผิด
