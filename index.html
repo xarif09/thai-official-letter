@@ -237,7 +237,18 @@ function renderForm(){
     const row=(...xs)=>{const r=el("div",{style:"display:flex;gap:5px;margin-bottom:4px;align-items:center"});xs.forEach(x=>r.appendChild(x));return r;};
     if(isRef){
      card.appendChild(row(el("span",{style:"font-size:13px;white-space:nowrap"},"หนังสือ"),inp("org","ส่วนราชการ เช่น จังหวัดยะลา"),sel("speed",["","ด่วน","ด่วนมาก","ด่วนที่สุด"])));
-     card.appendChild(row(inp("no","ที่ เช่น ยล 0017.2/ว 11472"),inp("date","","date","max-width:150px")));
+     card.appendChild(row(inp("no","ที่ เช่น ยล 0017.2/ว 11472")));
+     {const st="font:inherit;font-size:13.5px;padding:4px;border:1px solid #c5cfdb;border-radius:5px;width:auto;min-width:0";
+      const [yy,mm,dd]=(it.date||"").split("-").map(Number);
+      const ds=el("select",{style:st+";flex:0 0 auto"}),ms=el("select",{style:st+";flex:1"}),ys=el("select",{style:st+";flex:0 0 auto"});
+      ds.appendChild(el("option",{value:""},"วันที่"));for(let d=1;d<=31;d++)ds.appendChild(el("option",{value:d},d));
+      ms.appendChild(el("option",{value:""},"เดือน"));MON.forEach((n,i)=>ms.appendChild(el("option",{value:i+1},n)));
+      const cy=new Date().getFullYear();ys.appendChild(el("option",{value:""},"พ.ศ."));for(let y=cy-10;y<=cy+1;y++)ys.appendChild(el("option",{value:y},y+543));
+      if(yy&&![...ys.options].some(o=>+o.value===yy))ys.appendChild(el("option",{value:yy},yy+543));
+      ds.value=dd||"";ms.value=mm||"";ys.value=yy||"";
+      const upd=()=>{it.date=(ds.value&&ms.value&&ys.value)?`${ys.value}-${String(ms.value).padStart(2,"0")}-${String(ds.value).padStart(2,"0")}`:"";save();update();prev.textContent=refText(it)||"—";};
+      ds.onchange=ms.onchange=ys.onchange=upd;
+      card.appendChild(row(el("span",{style:"font-size:13px;white-space:nowrap"},"ลงวันที่"),ds,ms,ys));}
      card.appendChild(inp("free","หรือพิมพ์ข้อความเอง (ใช้แทนช่องด้านบน) · กด Enter เพื่อขึ้นบรรทัดใหม่ได้","area"));
     }else{
      const q=inp("qty","จำนวน","text","max-width:70px");
