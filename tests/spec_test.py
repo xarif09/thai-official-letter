@@ -72,6 +72,8 @@ with sync_playwright() as p:
       return a[1].h==='เรื่องเดิม'&&o[0]==='ต้นเรื่อง/ข้อเท็จจริง'&&o.includes('ข้อเสนอ')&&o[1]==='เรื่องเดิม'&&o.at(-1)===MSEC[0]}"""), "ต้นเรื่อง/เรื่องเดิม มาก่อน")
     ev("()=>{D.secs=[{h:'ต้นเรื่อง/ข้อเท็จจริง',text:'ก'},{h:MSEC[0],text:'ข'}];save();renderForm();}"); pg.wait_for_timeout(200)
     check("R-38c", ev("()=>{const s=[...document.querySelectorAll('#form [data-k=secs] select')][1];return ![...s.options].some(o=>o.value==='ข้อเท็จจริง')}"), "เลือกต้นเรื่องแล้วไม่มีข้อเท็จจริง")
+    tab(1)
+    check("R-38e", ev("""()=>{const {P}=build();const i=P.findIndex(p=>p.runs.some(r=>/^[2๒]\\. ข้อเท็จจริง$/.test(r.t)));const h=P[i],c=P[i+1];return Math.abs(c.first-(h.first+measure(h.runs[0].t.split(' ')[0]+' ',16,true)))<0.01}"""), "ข้อความใต้หัวข้อตรงแนวชื่อหัวข้อ")
     check("R-04", ev("()=>document.getElementById('vCopy').disabled===true"), "บันทึกข้อความไม่มีสำเนาคู่ฉบับ")
     tab(1)
     check("R-38", ev("()=>MSEC[0].includes('ไม่มีหัวข้อ')&&(()=>{const {P}=build();return P.some(p=>p.runs.some(r=>/^[1๑]\\. เรื่องเดิม$/.test(r.t)&&r.b))})()"))

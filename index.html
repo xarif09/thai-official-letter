@@ -229,7 +229,7 @@ let TYPE = store.get("thdoc_type") || "ext";
 let D = {};
 function defaults(){return {v:DATA_VERSION,fit1:true,font:"TH SarabunIT๙",thai:true,ownerPos:"อัตโนมัติ",sal:"เรียน",kind:"คำสั่ง",date:new Date().toISOString().slice(0,10)}}
 // รุ่นของระบบ (แสดงบนหน้าจอ) และรุ่นโครงข้อมูลที่เก็บในเครื่อง — เพิ่มเลขทุกครั้งที่กฎเปลี่ยนจนค่าเก่าอาจขัดกับกฎใหม่
-const APP_VERSION="2026.11.23f", DATA_VERSION=4;
+const APP_VERSION="2026.11.23g", DATA_VERSION=4;
 function migrate(x){   // ปรับค่าที่เก็บไว้ในเครื่องให้เข้ากับกฎปัจจุบัน (ดู REQUIREMENTS.md)
  if(!x||typeof x!=="object")return {};
  const v=x.v||1;
@@ -273,7 +273,7 @@ function pbText(node){let o="";for(const n of node.childNodes){
   if(u&&inner.trim())inner="__"+inner+"__"; if(b&&inner.trim())inner="**"+inner+"**"; o+=inner;}
  return o;}
 function pbSerialize(list){return list.map((p,i)=>(p.gap&&i?"\n":"")+">".repeat(p.lvl)+p.t.replace(/↵\n$/,"").replace(/\*\*\*\*|____/g,"")).join("\n");}
-function paraEditor(get,set,ph){
+function paraEditor(get,set,ph,base=25){
  const root=el("div",{class:"pbed"});let list=pbParse(get());
  const commit=()=>{set(pbSerialize(list));save();update();};
  const draw=(focusIdx,caretEnd)=>{root.innerHTML="";
@@ -284,7 +284,7 @@ function paraEditor(get,set,ph){
    B("⇤","เลื่อนออก",()=>{if(p.lvl>0){p.lvl--;commit();draw(i);}});
    B("⇥","เลื่อนเข้าอีก 0.5 ซม.",()=>{p.lvl++;commit();draw(i);});
    B("↕","เว้นภาค (+6 pt) ก่อนย่อหน้านี้",()=>{if(i){p.gap=!p.gap;commit();draw(i);}});
-   const bx=el("div",{class:"pbox",contenteditable:"true",spellcheck:"true",lang:"th","data-lvl":p.lvl,"data-ph":i===0&&list.length===1?(ph||"พิมพ์ข้อความ · Enter = ย่อหน้าใหม่ · Shift+Enter = ตัดบรรทัด"):""});
+   const bx=el("div",{class:"pbox",contenteditable:"true",spellcheck:"true",lang:"th","data-lvl":p.lvl,"data-base":base,"data-ph":i===0&&list.length===1?(ph||"พิมพ์ข้อความ · Enter = ย่อหน้าใหม่ · Shift+Enter = ตัดบรรทัด"):""});
    bx.innerHTML=pbHTML(p.t);
    const sync=()=>{p.t=pbText(bx);commit();};
    bx.oninput=sync; bx.onfocus=()=>{PB_LAST=bx;};
@@ -314,7 +314,7 @@ function paraEditor(get,set,ph){
 function fitPB(scope){for(const bx of (scope||document).querySelectorAll(".pbox")){const cs=getComputedStyle(bx);
  const inner=bx.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight); if(inner<50)continue;
  const k=inner/(160*96/25.4); bx.style.fontSize=(16*96/72*k).toFixed(2)+"px";
- bx.style.textIndent=((25+5*(+bx.dataset.lvl||0))*96/25.4*k).toFixed(1)+"px";}}   // ย่อหน้าบรรทัดแรกตามสัดส่วนจริง
+ bx.style.textIndent=(((+bx.dataset.base||25)+5*(+bx.dataset.lvl||0))*96/25.4*k).toFixed(1)+"px";}}   // ย่อหน้าบรรทัดแรกตามสัดส่วนจริง
 
 // แถบปุ่มจัดรูปแบบเหนือช่องข้อความ: คลุมคำแล้วกด "ตัวหนา" (Ctrl+B) / "ขีดเส้นใต้" (Ctrl+U) — กดซ้ำเพื่อยกเลิก
 function wrapSel(ta,mk){const a=ta.selectionStart,b=ta.selectionEnd,v=ta.value;
@@ -452,7 +452,7 @@ function renderForm(){
     del.onclick=()=>{arr.splice(i,1);save();renderForm();update();};hd.appendChild(del);card.appendChild(hd);
     if(it.h===MSEC[MSEC.length-1]){const c=el("input",{type:"text",placeholder:"ชื่อหัวข้อ เช่น ข้อเสนอ",spellcheck:"true",lang:"th",style:"width:100%;font:inherit;font-size:13.5px;padding:4px 6px;border:1px solid #c5cfdb;border-radius:5px;margin-bottom:4px"});
      c.value=it.name||"";c.oninput=()=>{it.name=c.value;save();update();};card.appendChild(c);}
-    card.appendChild(paraEditor(()=>it.text||"",v=>{it.text=v;},"ข้อความในหัวข้อนี้"));box.appendChild(card);});
+    card.appendChild(paraEditor(()=>it.text||"",v=>{it.text=v;},"ข้อความในหัวข้อนี้",(it.h&&it.h!==MSEC[0])?25+measure((arr.slice(0,i+1).filter(x=>x.h&&x.h!==MSEC[0]).length)+". ",16,true):25));box.appendChild(card);});
    const add=el("button",{type:"button",style:"font:inherit;font-size:13px;padding:5px 10px;border:1px dashed #1f5fbf;color:#1f5fbf;background:#f3f7fd;border-radius:6px;cursor:pointer"},"＋ เพิ่มหัวข้อ / ข้อความ");
    add.onclick=()=>{arr.push({h:MSEC[0],name:"",text:""});save();renderForm();update();};
    w.querySelector("label").insertAdjacentHTML("beforeend",` <span class="hint" title="เริ่มต้นเป็น ไม่มีหัวข้อ (ย่อหน้าธรรมดา) เปลี่ยนเป็นต้นเรื่อง ฯลฯ ได้ · หัวข้อที่เลือกแล้วจะไม่แสดงในตัวเลือกถัดไป · ระบบใส่เลข ๑. ๒. เฉพาะรายการที่มีหัวข้อ · เลื่อนลำดับด้วย ▲▼">ⓘ</span>`);
@@ -578,7 +578,7 @@ function build(){
    if(rest)para({runs:[R(rest)],indL:ind,indR:QW,jc:"dist"});
    man.forEach(x=>para({runs:[R(x)],indL:ind,jc:"dist"}));});
  };
- const body=(txt,gap0=true)=>{
+ const body=(txt,gap0=true,base=25)=>{   // base = ระยะย่อหน้าบรรทัดแรก (มม.)
   // บรรทัดที่ลงท้ายด้วย ↵ (Shift+Enter) = ตัดบรรทัดบังคับ ในย่อหน้าเดียวกัน
   const ls0=(txt||"").split("\n"), ls=[];
   for(const x of ls0){if(ls.length&&/↵\s*$/.test(ls[ls.length-1]))ls[ls.length-1]+="\u0001"+x;else ls.push(x);}
@@ -586,7 +586,7 @@ function build(){
   for(const raw0 of ls){const raw=raw0.replace(/↵\s*$/,""); if(raw.trim()===""){gap=true;continue;}
    const m=raw.match(/^(>*)\s*(.*)$/);const lvl=m[1].length;
    const runs=[];m[2].split("\u0001").forEach((seg,j)=>{if(j)runs.push({t:"",br:true});runs.push(...rich(seg.replace(/↵\s*$/,"")));});
-   para({runs,first:25+5*lvl,jc:"dist",before:gap?6:0,kn:/(ดังนี้|ดังต่อไปนี้|ประกอบด้วย|:)\s*$/.test(m[2])});gap=false;}   // ข้อความนำรายการ ห้ามค้างท้ายหน้า
+   para({runs,first:base+5*lvl,jc:"dist",before:gap?6:0,kn:/(ดังนี้|ดังต่อไปนี้|ประกอบด้วย|:)\s*$/.test(m[2])});gap=false;}   // ข้อความนำรายการ ห้ามค้างท้ายหน้า
  };
  const endp=()=>{   // ย่อหน้าสุดท้าย (จึงเรียนมาเพื่อ... / ทั้งนี้ ตั้งแต่... ) จากรายการเลือก
   const L=TYPE==="order"?ORDP:TYPE==="stamp"?STPP:ENDP;
@@ -597,8 +597,8 @@ function build(){
   let n=0;secOrder(D.secs||[]).forEach(x=>{const h=x.h||MSEC[0];
    if(h===MSEC[0]){body(x.text,true);return;}   // ไม่มีหัวข้อ = ย่อหน้าธรรมดา ไม่ใส่เลข
    const nm=h===MSEC[MSEC.length-1]?(x.name||"").trim():h;if(!nm&&!(x.text||"").trim())return;
-   para({runs:[R(`${++n}. ${nm}`,{b:true})],first:25,before:6,kn:true});
-   body(x.text,false);});};
+   const num=`${++n}. `;para({runs:[R(num+nm,{b:true})],first:25,before:6,kn:true});
+   body(x.text,false,25+measure(num,16,true));});};   // R-38e: ข้อความใต้หัวข้อ ตัวแรกตรงแนวชื่อหัวข้อ (ไม่ใช่แนวตัวเลข)
  const sign=(extraBlank=3,cx=97)=>{
   if(SIG0<0)SIG0=P.length;
   blank(extraBlank);
