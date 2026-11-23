@@ -102,6 +102,8 @@ with sync_playwright() as p:
     pg.wait_for_timeout(400)
     check("R-71", ev("()=>!!(CSS.highlights&&CSS.highlights.get('sp-err')&&CSS.highlights.get('sp-err').size>0)&&/\\(\\d+\\)/.test(document.getElementById('bSpell').textContent)"), "ขีดเส้นใต้แดงทันที")
     check("R-72", ev("()=>/ชฎา/.test(spDiff('ปรากฎ','ปรากฏ'))&&/ปฏัก/.test(spDiff('ปรากฎ','ปรากฏ'))"), "บอกตัวอักษรที่ต่าง")
+    ev("()=>{localStorage.removeItem('thdoc_drafts');document.querySelectorAll('#tabs button')[1].click();document.getElementById('bSample').click();document.getElementById('bDrafts').click();document.getElementById('drSave').click();document.getElementById('drSave').click();document.getElementById('drClose').click();document.querySelectorAll('#tabs button')[0].click();document.getElementById('bClear').click();}"); pg.wait_for_timeout(300)
+    check("R-73", ev("()=>{const a=drGet();if(a.length!==1||a[0].type!=='memo')return false;document.getElementById('bDrafts').click();document.querySelector('#drList .it button.pri').click();const ok=TYPE==='memo'&&/ขออนุมัติ/.test(D.subject)&&document.getElementById('drafts').style.display==='none';localStorage.removeItem('thdoc_drafts');return ok}"), "บันทึก (ชื่อซ้ำ = ทับ) แล้วเปิดต่อในประเภทเดิม")
     check("ERR", not errs, "; ".join(errs[:3]))
     b.close()
 
