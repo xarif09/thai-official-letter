@@ -21,8 +21,19 @@ body{margin:0;font-family:var(--ui);background:#e9edf2;color:#1d2530}
 .f small{font-weight:400;color:#6b7684}
 .f input[type=text],.f input[type=date],.f select,.f textarea{width:100%;font:inherit;font-size:14px;padding:6px 8px;border:1px solid #c5cfdb;border-radius:6px;background:#fff}
 .f textarea{resize:vertical;min-height:54px}
-.f textarea.big{min-height:220px}
+.f textarea.big{min-height:0}
 .frow{display:flex;gap:10px;align-items:flex-end}.frow>.f{flex:1 1 0;min-width:0}.frow>.f[data-k="date"]{flex:1.4 1 0}.frow>.f[data-k="speed"],.frow>.f[data-k="sal"],.frow>.f[data-k="kind"]{flex:0 0 auto;min-width:110px}.frow>.f[data-k="to"],.frow>.f[data-k="org"]{flex:3 1 0}.frow label small{display:none}.frow>.f[data-k="date"] select:last-child{min-width:112px;flex:0 0 auto!important}.f.inl{display:flex;align-items:center;gap:10px}.f.inl>label{margin:0;white-space:nowrap}.f.inl>input{flex:1}
+details.secbox{border-bottom:1px solid #e6ebf1;padding-bottom:4px;margin-bottom:4px}
+details.secbox>summary{cursor:pointer;list-style:none;user-select:none}
+details.secbox>summary::before{content:"▸ ";color:#1f5fbf}details.secbox[open]>summary::before{content:"▾ "}
+.hint{display:inline-block;color:#1f5fbf;cursor:help;font-size:12px;font-weight:normal}
+.lcard{border:1px solid #d5dce5;border-radius:7px;padding:5px 6px;background:#fafbfd}
+.lrow{display:flex;gap:5px;align-items:center}.lrow+.lrow{margin-top:4px}
+.f .lrow .li{font:inherit;font-size:13.5px;padding:4px 6px;border:1px solid #c5cfdb;border-radius:5px;min-width:0;width:auto;background:#fff;flex:0 1 auto}
+.f .lrow input.li{flex:1 1 0}.f .lrow textarea.lta{flex:1 1 0;width:auto;resize:none;overflow:hidden;line-height:1.35;min-height:31px}
+.lnum{flex:0 0 18px;font-size:13px;color:#55606e}.lsm{font-size:12.5px;color:#55606e;white-space:nowrap}
+.ldel{flex:0 0 auto;font-size:12px;border:1px solid #e0b4b4;background:#fff5f5;color:#a33;border-radius:5px;padding:3px 7px;cursor:pointer}
+.ltg{flex:0 0 auto;font-size:12px;border:1px solid #c5cfdb;background:#fff;color:#1f5fbf;border-radius:5px;padding:3px 7px;cursor:pointer;white-space:nowrap}
 textarea.docta{font-family:var(--docfont);line-height:1.3;padding:6px 8px}
 .row{display:flex;gap:8px}.row>.f{flex:1}
 .chk{display:flex;align-items:center;gap:6px;font-size:13px;margin:4px 0}
@@ -233,17 +244,24 @@ function fmtBar(ta){const bar=el("div",{class:"fmtbar"});
  return bar;}
 // ช่องข้อความใช้ฟอนต์เดียวกับหนังสือ และย่อขนาดตามสัดส่วน "ความกว้างช่อง : 16 ซม." → ตัดบรรทัดในช่องใกล้เคียงบรรทัดในหนังสือ
 function fitTA(){for(const ta of document.querySelectorAll("textarea.docta")){const cs=getComputedStyle(ta);
- const inner=ta.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight); if(inner>50)ta.style.fontSize=(16*96/72*inner/(160*96/25.4)).toFixed(2)+"px";}}
+ const inner=ta.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight); if(inner>50)ta.style.fontSize=(16*96/72*inner/(160*96/25.4)).toFixed(2)+"px";
+ growTA(ta); if(!ta._g){ta._g=1;ta.addEventListener("input",()=>growTA(ta));}}}
+function growTA(ta){   // ความสูงตามเนื้อหา (ว่าง = เตี้ย, ยาว = สูงสุด 300px แล้วเลื่อนดู)
+ const y=document.getElementById("form").scrollTop;ta.style.height="auto";ta.style.minHeight="0";
+ ta.style.height=Math.min(300,Math.max(ta.value.trim()?70:46,ta.scrollHeight+2))+"px";document.getElementById("form").scrollTop=y;}
 window.addEventListener("resize",fitTA);
 function renderForm(){
- const f=document.getElementById("form");f.innerHTML="";
+ const F0=document.getElementById("form");const st0=F0.scrollTop;F0.innerHTML="";let f=F0;
  let fields=TYPES[TYPE].fields.concat(COMMON);
- 
+ const SECCLOSED=store.get("thdoc_secclosed")||{"ตั้งค่า":true};
  for(const [key,label,kind,extra] of fields){
-  if(key==="sec"){f.appendChild(el("div",{class:"sec"},label));continue;}
+  if(key==="sec"){   // หมวดพับเก็บได้ (จำสถานะไว้)
+   const d=el("details",{class:"secbox"});if(!SECCLOSED[label])d.open=true;
+   d.appendChild(el("summary",{class:"sec"},label));d.ontoggle=()=>{SECCLOSED[label]=!d.open;store.set("thdoc_secclosed",SECCLOSED);};
+   F0.appendChild(d);f=d;continue;}
   if(kind==="check"){const l=el("label",{class:"chk"});const c=el("input",{type:"checkbox"});c.checked=!!D[key];c.onchange=()=>{D[key]=c.checked;save();update();};l.appendChild(c);l.appendChild(document.createTextNode(label));f.appendChild(l);continue;}
   const w=el("div",{class:"f","data-k":key});
-  w.appendChild(el("label",{},label+(kind!=="select"&&extra&&typeof extra==="string"?` <small>${extra}</small>`:"")));
+  w.appendChild(el("label",{},esc(label)+(kind!=="select"&&extra&&typeof extra==="string"?` <span class="hint" title="${esc(extra)}">ⓘ</span>`:"")));
   let inp;
   if(kind==="select"){inp=el("select");for(const o of extra){const op=el("option",{value:o},o||"— ไม่มี —");inp.appendChild(op);} inp.value=D[key]??extra[0];}
   else if(kind==="area"||kind==="bigarea"){inp=el("textarea",{spellcheck:"true",lang:"th"});if(kind==="bigarea"){inp.className="big docta";shiftEnter(inp);}inp.value=D[key]||"";}
@@ -260,42 +278,44 @@ function renderForm(){
   else if(kind==="reflist"||kind==="encllist"){
    const isRef=kind==="reflist"; const arr=D[key]=D[key]||[];
    const box=el("div",{style:"display:flex;flex-direction:column;gap:6px"});
-   arr.forEach((it,i)=>{
-    const card=el("div",{style:"border:1px solid #d5dce5;border-radius:7px;padding:6px 7px;background:#fafbfd"});
-    const hd=el("div",{style:"display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#55606e;margin-bottom:4px"},`<b>${arr.length>1?(i+1)+".":"รายการ"}</b>`);
-    const del=el("button",{type:"button",style:"font-size:12px;border:1px solid #e0b4b4;background:#fff5f5;color:#a33;border-radius:5px;padding:1px 7px;cursor:pointer"},"ลบ");
-    del.onclick=()=>{arr.splice(i,1);save();renderForm();update();};hd.appendChild(del);card.appendChild(hd);
-    const inp=(k,ph,type="text",style="")=>{const x=type==="area"?el("textarea",{rows:"1",placeholder:ph,spellcheck:"true",lang:"th",style:"min-height:30px;height:auto;resize:vertical;"}):el("input",{type,placeholder:ph,style:"width:100%;font:inherit;font-size:13.5px;padding:4px 6px;border:1px solid #c5cfdb;border-radius:5px;"+style});if(type==="area")x.style.cssText+="width:100%;font:inherit;font-size:13.5px;padding:4px 6px;border:1px solid #c5cfdb;border-radius:5px;";
-     x.value=it[k]||"";x.oninput=x.onchange=()=>{it[k]=x.value;save();update();prev.textContent=(isRef?refText(it):enclText(it))||"—";};return x;};
-    const sel=(k,opts)=>{const x=el("select",{style:"font:inherit;font-size:13.5px;padding:4px;border:1px solid #c5cfdb;border-radius:5px"});for(const o of opts)x.appendChild(el("option",{value:o},o||"— ไม่มี —"));x.value=it[k]||opts[0];x.onchange=()=>{it[k]=x.value;save();update();prev.textContent=(isRef?refText(it):enclText(it))||"—";};return x;};
-    const row=(...xs)=>{const r=el("div",{style:"display:flex;gap:5px;margin-bottom:4px;align-items:center"});xs.forEach(x=>r.appendChild(x));return r;};
+   arr.forEach((it,i)=>{   // แบบกระชับ: อ้างถึง 2 แถว / สิ่งที่ส่งมาด้วย 1 แถว
+    const card=el("div",{class:"lcard"});
+    const ch=()=>{save();update();};
+    const inp=(k,ph,style="")=>{const x=el("input",{type:"text",placeholder:ph,spellcheck:"true",lang:"th",class:"li",style});x.value=it[k]||"";x.oninput=()=>{it[k]=x.value;ch();};return x;};
+    const ta=(k,ph)=>{const x=el("textarea",{rows:"1",placeholder:ph,spellcheck:"true",lang:"th",class:"li lta"});x.value=it[k]||"";
+     const grow=()=>{x.style.height="auto";x.style.height=(x.scrollHeight+2)+"px";};x.oninput=()=>{it[k]=x.value;grow();ch();};requestAnimationFrame(grow);return x;};
+    const sel=(k,opts,ph)=>{const x=el("select",{class:"li"});for(const o of opts)x.appendChild(el("option",{value:o},o||ph||"— ไม่มี —"));x.value=it[k]||opts[0];x.onchange=()=>{it[k]=x.value;ch();};return x;};
+    const row=(...xs)=>{const r=el("div",{class:"lrow"});xs.forEach(x=>r.appendChild(x));return r;};
+    const num=el("b",{class:"lnum"},(i+1)+".");
+    const del=el("button",{type:"button",class:"ldel",title:"ลบรายการนี้"},"✕");del.onclick=()=>{arr.splice(i,1);save();renderForm();update();};
     if(isRef){
-     card.appendChild(row(el("span",{style:"font-size:13px;white-space:nowrap"},"หนังสือ"),inp("org","ส่วนราชการ เช่น จังหวัดยะลา"),sel("speed",["","ด่วน","ด่วนมาก","ด่วนที่สุด"])));
-     card.appendChild(row(inp("no","ที่ เช่น ยล 0017.2/ว 11472")));
-     {const st="font:inherit;font-size:13.5px;padding:4px;border:1px solid #c5cfdb;border-radius:5px;width:auto;min-width:0";
+     const freeOn=!!(it.free&&it.free.trim())||it._f;
+     const tg=el("button",{type:"button",class:"ltg",title:"พิมพ์ข้อความอ้างถึงเองทั้งหมด"},freeOn?"กรอกแยกช่อง":"✎ พิมพ์เอง");
+     tg.onclick=()=>{if(freeOn){it.free="";it._f=false;}else it._f=true;save();renderForm();update();};
+     if(freeOn){card.appendChild(row(num,ta("free","พิมพ์ข้อความอ้างถึงเอง · Enter = ขึ้นบรรทัดใหม่"),tg,del));}
+     else{
       const [yy,mm,dd]=(it.date||"").split("-").map(Number);
-      const ds=el("select",{style:st+";flex:0 0 auto"}),ms=el("select",{style:st+";flex:1"}),ys=el("select",{style:st+";flex:0 0 auto"});
-      ds.appendChild(el("option",{value:""},"วันที่"));for(let d=1;d<=31;d++)ds.appendChild(el("option",{value:d},d));
-      ms.appendChild(el("option",{value:""},"เดือน"));MON.forEach((n,i)=>ms.appendChild(el("option",{value:i+1},n)));
+      const ds=el("select",{class:"li"}),ms=el("select",{class:"li"}),ys=el("select",{class:"li"});
+      ds.appendChild(el("option",{value:""},"วัน"));for(let d=1;d<=31;d++)ds.appendChild(el("option",{value:d},d));
+      ms.appendChild(el("option",{value:""},"เดือน"));MON.forEach((n,k)=>ms.appendChild(el("option",{value:k+1},n)));
       const cy=new Date().getFullYear();ys.appendChild(el("option",{value:""},"พ.ศ."));for(let y=cy-10;y<=cy+1;y++)ys.appendChild(el("option",{value:y},y+543));
       if(yy&&![...ys.options].some(o=>+o.value===yy))ys.appendChild(el("option",{value:yy},yy+543));
       ds.value=dd||"";ms.value=mm||"";ys.value=yy||"";
-      const upd=()=>{it.date=(ds.value&&ms.value&&ys.value)?`${ys.value}-${String(ms.value).padStart(2,"0")}-${String(ds.value).padStart(2,"0")}`:"";save();update();prev.textContent=refText(it)||"—";};
-      ds.onchange=ms.onchange=ys.onchange=upd;
-      card.appendChild(row(el("span",{style:"font-size:13px;white-space:nowrap"},"ลงวันที่"),ds,ms,ys));}
-     card.appendChild(inp("free","หรือพิมพ์ข้อความเอง (ใช้แทนช่องด้านบน) · กด Enter เพื่อขึ้นบรรทัดใหม่ได้","area"));
+      ds.onchange=ms.onchange=ys.onchange=()=>{it.date=(ds.value&&ms.value&&ys.value)?`${ys.value}-${String(ms.value).padStart(2,"0")}-${String(ds.value).padStart(2,"0")}`:"";ch();};
+      const org=inp("org","หนังสือ (ส่วนราชการ) เช่น จังหวัดยะลา","flex:2"),sp=sel("speed",["","ด่วน","ด่วนมาก","ด่วนที่สุด"],"ไม่ด่วน");
+      card.appendChild(row(num,org,sp,tg,del));
+      const no=inp("no","ที่ เช่น ยล 0017.2/ว 11472","flex:1.4");ms.style.flex="1";
+      card.appendChild(row(el("span",{class:"lnum"}),no,el("span",{class:"lsm"},"ลงวันที่"),ds,ms,ys));}
     }else{
-     const q=inp("qty","จำนวน","text","max-width:70px");
-     card.appendChild(inp("text","ชื่อเอกสาร · ยาวมากกด Enter ขึ้นบรรทัดใหม่ได้ (\"จำนวน\" อยู่บรรทัดแรกเสมอ)","area"));
-     card.appendChild(row(el("span",{style:"font-size:13px"},"จำนวน"),q,sel("unit",UNITS),el("span",{style:"font-size:12px;color:#77808c;white-space:nowrap"},"ว่าง = ไม่แสดง")));
+     const q=inp("qty","จำนวน","flex:0 0 58px;text-align:center");
+     card.appendChild(row(num,ta("text","ชื่อเอกสาร · Enter = ขึ้นบรรทัดใหม่ (จำนวน อยู่บรรทัดแรกเสมอ)"),q,sel("unit",UNITS),del));
     }
-    const prev=el("div",{style:"font-size:12.5px;color:#1f5fbf;margin-top:3px"},(isRef?refText(it):enclText(it))||"—");
-    card.appendChild(prev);box.appendChild(card);
+    box.appendChild(card);
    });
    const add=el("button",{type:"button",style:"font:inherit;font-size:13px;padding:5px 10px;border:1px dashed #1f5fbf;color:#1f5fbf;background:#f3f7fd;border-radius:6px;cursor:pointer"},`＋ เพิ่ม${label.replace(/ \(ถ้ามี\)/,"")}`);
    add.onclick=()=>{arr.push(isRef?{org:"",speed:"",no:"",date:""}:{text:"",qty:"",unit:"ชุด"});save();renderForm();update();};
-   const note=el("div",{style:"font-size:12px;color:#6b7684"},"มีมากกว่า 1 รายการ ระบบใส่เลข ๑. ๒. ให้อัตโนมัติ");
-   w.appendChild(box);w.appendChild(add);w.appendChild(note);f.appendChild(w);continue;}
+   w.querySelector("label").insertAdjacentHTML("beforeend",` <span class="hint" title="มีมากกว่า 1 รายการ ระบบใส่เลข ๑. ๒. ให้อัตโนมัติ${isRef?" · ✎ พิมพ์เอง = พิมพ์ข้อความอ้างถึงทั้งหมดเอง":" · จำนวนว่าง = ไม่แสดง"}">ⓘ</span>`);
+   w.appendChild(box);w.appendChild(add);f.appendChild(w);continue;}
   else if(kind==="seclist"){   // หัวข้อบันทึก: ต้นเรื่อง / เรื่องเดิม / ข้อเท็จจริง / ข้อกฎหมาย / ข้อพิจารณา / อื่น ๆ
    const arr=D.secs=D.secs||[]; const box=el("div",{style:"display:flex;flex-direction:column;gap:6px"});
    const used=i=>arr.filter((x,j)=>j!==i&&x.h!==MSEC[0]&&x.h!==MSEC[MSEC.length-1]).map(x=>x.h);
@@ -317,7 +337,8 @@ function renderForm(){
     ta.value=it.text||"";ta.oninput=()=>{it.text=ta.value;save();update();};shiftEnter(ta);card.appendChild(fmtBar(ta));card.appendChild(ta);box.appendChild(card);});
    const add=el("button",{type:"button",style:"font:inherit;font-size:13px;padding:5px 10px;border:1px dashed #1f5fbf;color:#1f5fbf;background:#f3f7fd;border-radius:6px;cursor:pointer"},"＋ เพิ่มหัวข้อ / ข้อความ");
    add.onclick=()=>{arr.push({h:MSEC[0],name:"",text:""});save();renderForm();update();};
-   w.appendChild(box);w.appendChild(add);w.appendChild(el("div",{style:"font-size:12px;color:#6b7684"},"เริ่มต้นเป็น ไม่มีหัวข้อ (ย่อหน้าธรรมดา) เปลี่ยนเป็นต้นเรื่อง ฯลฯ ได้ · หัวข้อที่เลือกแล้วจะไม่แสดงในตัวเลือกถัดไป · ระบบใส่เลข ๑. ๒. เฉพาะรายการที่มีหัวข้อ · เลื่อนลำดับด้วย ▲▼"));
+   w.querySelector("label").insertAdjacentHTML("beforeend",` <span class="hint" title="เริ่มต้นเป็น ไม่มีหัวข้อ (ย่อหน้าธรรมดา) เปลี่ยนเป็นต้นเรื่อง ฯลฯ ได้ · หัวข้อที่เลือกแล้วจะไม่แสดงในตัวเลือกถัดไป · ระบบใส่เลข ๑. ๒. เฉพาะรายการที่มีหัวข้อ · เลื่อนลำดับด้วย ▲▼">ⓘ</span>`);
+   w.appendChild(box);w.appendChild(add);
    f.appendChild(w);continue;}
   else if(kind==="qrfile"){inp=el("input",{type:"file",accept:"image/png,image/jpeg"});
    inp.onchange=()=>{const fl=inp.files[0];if(!fl)return;const r=new FileReader();r.onload=()=>{D.qr=r.result;save();update();};r.readAsDataURL(fl);};
@@ -328,7 +349,8 @@ function renderForm(){
    const rb=el("button",{type:"button",style:"margin-top:4px;font-size:12px"},"กลับไปใช้รูปในระบบ");rb.onclick=()=>{try{localStorage.removeItem("thdoc_garuda")}catch(e){};GARUDA=GARUDA_DEFAULT;update();};
    w.appendChild(inp);w.appendChild(rb);f.appendChild(w);continue;}
   else {inp=el("input",{type:"text",spellcheck:"true",lang:"th"});inp.value=D[key]||"";}
-  inp.oninput=inp.onchange=()=>{D[key]=inp.value;save();update();};
+  inp.oninput=inp.onchange=()=>{D[key]=inp.value;save();update();if(key==="endp")renderForm();};
+  if(key==="endpX"){const L=TYPE==="order"?ORDP:TYPE==="stamp"?STPP:ENDP;if(D.endp!==L[L.length-1])continue;}
   if(kind==="bigarea")w.appendChild(fmtBar(inp));
   w.appendChild(inp);f.appendChild(w);
  }
@@ -890,15 +912,15 @@ document.getElementById("bSample").onclick=()=>{D=Object.assign(defaults(),JSON.
 document.getElementById("bClear").onclick=()=>{const f=D.font,t=D.thai;D=Object.assign(defaults(),{font:f,thai:t,refList:[],enclList:[]});save();renderForm();update();};
 document.getElementById("gOn").onchange=update;
 document.getElementById("zoom").oninput=scale;
-const _rf=renderForm; renderForm=function(){_rf();
+const _rf=renderForm; renderForm=function(){const _st=document.getElementById("form").scrollTop;_rf();
  // วาง "เดือนและปี" ไว้บรรทัดเดียวกับ "ที่" ให้ฟอร์มกระชับ
  const f=document.getElementById("form");
  // จัดช่องสั้น ๆ ไว้บรรทัดเดียวกัน ให้ฟอร์มกระชับ (ตำแหน่งในหนังสือไม่เปลี่ยน)
- for(const g of [["speed","no","date"],["sal","to"],["kind","org"],["tel","fax"],["email","ownerPos"],["sender"],["font","lsp"],["drafter","typist","checker"]]){
+ for(const g of [["speed","no","date"],["sal","to"],["kind","org"],["pos","owner"],["tel","fax"],["email","ownerPos"],["sender"],["font","lsp"],["drafter","typist","checker"]]){
   const ws=g.map(k=>f.querySelector(`.f[data-k="${k}"]`)).filter(x=>x); if(ws.length<2)continue;
   const r=el("div",{class:"frow"});ws[0].before(r);ws.forEach(w=>{r.appendChild(w);w.classList.add("k-"+w.dataset.k);});}
  const sj=f.querySelector('.f[data-k="subject"]');if(sj)sj.classList.add("inl");   // "เรื่อง" ป้ายอยู่หน้าช่อง บรรทัดเดียว
- requestAnimationFrame(fitTA);};
+ requestAnimationFrame(fitTA);document.getElementById("form").scrollTop=_st;};
 load();document.documentElement.style.setProperty("--docfont",`"${D.font}","TH SarabunPSK","TH Sarabun New",sans-serif`);renderTabs();renderForm();
 (document.fonts?document.fonts.ready:Promise.resolve()).then(()=>{MCACHE.clear();update();});update();
 </script>
