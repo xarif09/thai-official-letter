@@ -69,7 +69,8 @@ with sync_playwright() as p:
         check("R-63", ev("()=>document.querySelectorAll('#page .sheet').length===2"), f"{name} ยาว 2 หน้า")
     for i in (0, 2):
         tab(i)
-        check("R-39", ev("()=>!document.querySelector('#form [data-k=secs] select')&&D.secs.length===1&&document.querySelectorAll('#form .pbox').length>3&&!document.querySelector('#form .pbox.single')"), ["ภายนอก","","ประทับตรา"][i]+" ไม่มีหัวข้อ หลายกล่อง")
+        check("R-39", ev("()=>!document.querySelector('#form [data-k=secs] select')&&D.secs.length===1&&document.querySelectorAll('#form .pbox').length>3&&document.querySelectorAll('#form .pbox.single:not(.grp)').length===0"), ["ภายนอก","","ประทับตรา"][i]+" ไม่มีหัวข้อ หลายกล่อง")
+        if i == 0: check("R-64", ev("()=>{const b=[...document.querySelectorAll('#form .pbox.grp')].find(b=>/^4\\./.test(b.textContent));return b&&b.children.length===5&&[...b.children].map(d=>+d.dataset.lvl).join()==='0,1,1,2,2'}"), "ข้อ 4 กับข้อย่อยอยู่กล่องเดียว ทุกบรรทัดมีระดับของตัวเอง")
     ev("()=>{D.secs=[{h:'เรื่องเดิม',text:'ก'},{h:MSEC[0],text:'ข'}];save();renderForm();}"); pg.wait_for_timeout(200)
     check("R-39", ev("()=>D.secs.length===1&&/\\*\\*เรื่องเดิม\\*\\*/.test(D.secs[0].text)"), "ข้อความเก่าที่มีหัวข้อรวมเป็นช่องเดียว")
     check("R-66", ev("()=>!document.querySelector('.pbg')&&[...document.querySelectorAll('#form .fmtbar button')].some(b=>b.textContent==='⇥')"))

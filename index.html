@@ -245,7 +245,7 @@ let TYPE = store.get("thdoc_type") || "ext";
 let D = {};
 function defaults(){return {v:DATA_VERSION,fit1:true,font:"TH SarabunIT๙",thai:true,ownerPos:"อัตโนมัติ",sal:"เรียน",kind:"คำสั่ง",date:new Date().toISOString().slice(0,10)}}
 // รุ่นของระบบ (แสดงบนหน้าจอ) และรุ่นโครงข้อมูลที่เก็บในเครื่อง — เพิ่มเลขทุกครั้งที่กฎเปลี่ยนจนค่าเก่าอาจขัดกับกฎใหม่
-const APP_VERSION="2026.11.23l", DATA_VERSION=4;
+const APP_VERSION="2026.11.23m", DATA_VERSION=4;
 function migrate(x){   // ปรับค่าที่เก็บไว้ในเครื่องให้เข้ากับกฎปัจจุบัน (ดู REQUIREMENTS.md)
  if(!x||typeof x!=="object")return {};
  const v=x.v||1;
@@ -294,39 +294,56 @@ function paraEditor(get,set,ph,base=25,mode="boxes"){
  // ตัวจัดการเยื้อง/เว้นภาคซ่อนไว้: Tab = เลื่อนเข้า, Shift+Tab = เลื่อนออก, ปุ่มบนแถบเครื่องมือ
  return mode==="single"?singleEditor(get,set,ph,base):boxEditor(get,set,ph,base);}
 function boxEditor(get,set,ph,base){
- const root=el("div",{class:"pbed"});let list=pbParse(get());
- const commit=()=>{set(pbSerialize(list));save();update();};
- const draw=(focusIdx,caretEnd)=>{root.innerHTML="";
-  list.forEach((p,i)=>{
-   const row=el("div",{class:"pbrow"+(p.gap?" gap":"")});
-   const bx=el("div",{class:"pbox",contenteditable:"true",spellcheck:"true",lang:"th","data-lvl":p.lvl,"data-base":base,"data-ph":i===0&&list.length===1?(ph||"พิมพ์ข้อความ · Enter = ย่อหน้าใหม่ · Shift+Enter = ตัดบรรทัด"):""});
-   bx.innerHTML=pbHTML(p.t);
-   const sync=()=>{p.t=pbText(bx);commit();};
-   bx._pb={lvl:d=>{p.lvl=Math.max(0,p.lvl+d);commit();draw(i);},gap:()=>{if(i){p.gap=!p.gap;commit();draw(i);}}};
-   bx.oninput=sync; bx.onfocus=()=>{PB_LAST=bx;};
+ // R-64: หนึ่งกล่อง = หนึ่งย่อหน้า (บรรทัดระดับ 0) รวมข้อย่อยที่เยื้อง (ระดับ ≥1) ใต้ย่อหน้านั้นไว้ในกล่องเดียวกัน
+ // ทุกบรรทัดในกล่องเป็น <div data-lvl> ของตัวเอง → ระบบจัดย่อหน้า/เยื้องตามระเบียบทีละบรรทัด
+ const root=el("div",{class:"pbed"});let list=pbParse(get()),shape="",bump=null;
+ const groups=L=>{const g=[];L.forEach((p,i)=>{if(!g.length||p.lvl===0||p.gap)g.push([]);g[g.length-1].push(i);});return g;};
+ const shapeOf=L=>groups(L).map(g=>g.length).join(",");
+ const divs=()=>[...root.querySelectorAll(".pbox > div")];
+ const readAll=()=>{const out=[];root.querySelectorAll(".pbox").forEach(bx=>{let first=true;
+   for(const n of [...bx.childNodes]){
+    if(n.nodeType===3){if(n.nodeValue.trim()){const d=el("div",{"data-lvl":"0"});n.replaceWith(d);d.appendChild(n);out.push({lvl:0,gap:first&&bx.dataset.gap==="1",t:pbText(d)});first=false;}continue;}
+    if(n.nodeType!==1||n.tagName!=="DIV")continue;
+    out.push({lvl:+n.dataset.lvl||0,gap:first&&bx.dataset.gap==="1",t:pbText(n).replace(/↵\n$/,"")});first=false;}});
+  return out;};
+ const commit=()=>{set(pbSerialize(list.filter(p=>p.t.trim()).length?list.filter(p=>p.t.trim()):[{lvl:0,gap:false,t:""}]));save();update();};
+ const caret=()=>{const s=getSelection();if(!s.rangeCount)return null;const r=s.getRangeAt(0);let n=r.startContainer;
+  while(n&&!(n.parentNode&&n.parentNode.classList&&n.parentNode.classList.contains("pbox")))n=n.parentNode;
+  if(!n||n.nodeType!==1)return null;const pre=document.createRange();pre.selectNodeContents(n);pre.setEnd(r.startContainer,r.startOffset);
+  return {idx:divs().indexOf(n),off:pre.toString().length};};
+ const setCaret=(idx,off)=>{const d=divs()[Math.max(0,Math.min(idx,divs().length-1))];if(!d)return;d.parentNode.focus();
+  const r=document.createRange(),tw=document.createTreeWalker(d,NodeFilter.SHOW_TEXT);let n,left=off,ok=false;
+  while((n=tw.nextNode())){if(left<=n.length){r.setStart(n,left);ok=true;break;}left-=n.length;}
+  if(!ok){r.selectNodeContents(d);r.collapse(off===0);}else r.collapse(true);const s=getSelection();s.removeAllRanges();s.addRange(r);};
+ const draw=()=>{root.innerHTML="";shape=shapeOf(list);
+  groups(list).forEach((g,gi)=>{const row=el("div",{class:"pbrow"+(list[g[0]].gap&&gi?" gap":"")});
+   const bx=el("div",{class:"pbox single grp",contenteditable:"true",spellcheck:"true",lang:"th","data-base":base,"data-gap":list[g[0]].gap&&gi?"1":"0"});
+   bx.innerHTML=g.map(i=>`<div data-lvl="${list[i].lvl}">${pbHTML(list[i].t)||"<br>"}</div>`).join("");
+   if(list.length===1&&!list[0].t)bx.dataset.ph=ph||"พิมพ์ข้อความ · Enter = ขึ้นบรรทัดใหม่ · Tab = เลื่อนเข้า (เป็นข้อย่อยในกล่องเดียวกัน)";
+   bx._pb={lvl:d=>{const c=caret();if(!c)return;list=readAll();const sel=getSelection();
+     let a=c.idx,b=c.idx;try{const r=sel.getRangeAt(0);const all=divs();const top=x=>{while(x&&!(x.parentNode&&x.parentNode.classList&&x.parentNode.classList.contains("pbox")))x=x.parentNode;return x;};const e=all.indexOf(top(r.endContainer));if(e>a)b=e;}catch(e){}
+     for(let k=a;k<=b;k++)list[k].lvl=Math.max(0,list[k].lvl+d);commit();draw();setCaret(c.idx,c.off);},
+    gap:()=>{const c=caret();if(!c)return;list=readAll();const g2=groups(list).find(g=>g.includes(c.idx));const h=g2?g2[0]:c.idx;if(h===0)return;list[h].gap=!list[h].gap;commit();draw();setCaret(c.idx,c.off);}};
+   bx.onfocus=()=>{PB_LAST=bx;try{document.execCommand("defaultParagraphSeparator",false,"div");}catch(e){}};
+   bx.oninput=()=>{const c=caret();list=readAll();
+    if(bump&&c&&c.idx===bump.idx+1&&list[c.idx]&&!list[c.idx].t.trim()){list[c.idx].lvl=bump.lvl;}bump=null;
+    commit();if(shapeOf(list)!==shape){draw();if(c)setCaret(c.idx,c.off);}else{divs().forEach((d,k)=>{if(list[k])d.dataset.lvl=list[k].lvl;});fitPB(root);}};
    bx.onkeydown=e=>{
     if(e.key==="Tab"){e.preventDefault();bx._pb.lvl(e.shiftKey?-1:1);return;}
     if(e.key==="Enter"&&e.shiftKey){e.preventDefault();document.execCommand("insertLineBreak");return;}
-    if(e.key==="Enter"){e.preventDefault();   // ย่อหน้าใหม่ = กล่องใหม่ (ตัดข้อความหลังเคอร์เซอร์ไปกล่องใหม่)
-     const r=window.getSelection().getRangeAt(0);r.deleteContents();const tail=r.cloneRange();tail.selectNodeContents(bx);tail.setStart(r.endContainer,r.endOffset);
-     const frag=tail.extractContents(),tmp=el("div");tmp.appendChild(frag);
-     p.t=pbText(bx);list.splice(i+1,0,{lvl:p.lvl,gap:false,t:pbText(tmp)});commit();draw(i+1,false);return;}
-    if(e.key==="Backspace"&&i>0){const sel=window.getSelection();const r=sel.getRangeAt(0);const pre=r.cloneRange();pre.selectNodeContents(bx);pre.setEnd(r.startContainer,r.startOffset);
-     if(sel.isCollapsed&&pre.toString()===""&&!pre.cloneContents().querySelector("br")){e.preventDefault();   // ต้นกล่อง: รวมกับย่อหน้าก่อนหน้า
-      const prev=list[i-1],at=prev.t.length;prev.t+=pbText(bx);list.splice(i,1);commit();draw(i-1,at);}}
-    if((e.ctrlKey||e.metaKey)&&!e.altKey&&(e.code==="KeyB"||e.code==="KeyU")){e.preventDefault();document.execCommand(e.code==="KeyB"?"bold":"underline");sync();}
-   };
-   bx.onpaste=e=>{e.preventDefault();const t=(e.clipboardData.getData("text/plain")||"").replace(/\r/g,"");const parts=t.split("\n");
-    document.execCommand("insertText",false,parts[0]);
-    if(parts.length>1){p.t=pbText(bx);const add=parts.slice(1).filter(x=>x.trim()).map(x=>({lvl:p.lvl,gap:false,t:x}));list.splice(i+1,0,...add);commit();draw(i+add.length);}else sync();};
+    if(e.key==="Enter"){const c=caret();if(c){const cur=readAll()[c.idx];   // บรรทัดที่ลงท้าย "ดังนี้ / ประกอบด้วย / :" → บรรทัดใหม่เป็นข้อย่อย (อยู่กล่องเดิม)
+      if(cur&&/(ดังนี้|ประกอบด้วย|:)\s*$/.test(cur.t.replace(/[*_]/g,""))&&c.off>=cur.t.replace(/[*_]|↵\n/g,"").length-1)bump={idx:c.idx,lvl:cur.lvl+1};}return;}
+    if(e.key==="Backspace"){const c=caret(),sel=getSelection();if(c&&sel.isCollapsed&&c.off===0){const d=divs()[c.idx];
+      if(d&&d===d.parentNode.firstElementChild&&c.idx>0){e.preventDefault();list=readAll();const prev=list[c.idx-1],at=prev.t.replace(/\*\*|__/g,"").length;
+       prev.t+=list[c.idx].t;list.splice(c.idx,1);commit();draw();setCaret(c.idx-1,at);}}}
+    if((e.ctrlKey||e.metaKey)&&!e.altKey&&(e.code==="KeyB"||e.code==="KeyU")){e.preventDefault();document.execCommand(e.code==="KeyB"?"bold":"underline");bx.oninput();}};
+   bx.onpaste=e=>{e.preventDefault();const t=(e.clipboardData.getData("text/plain")||"").replace(/\r/g,"");const ls=t.split("\n");
+    if(ls.length===1){document.execCommand("insertText",false,t);return;}
+    const c=caret();const lv=c&&list[c.idx]?list[c.idx].lvl:0;
+    document.execCommand("insertHTML",false,ls.filter(x=>x.trim()).map(x=>`<div data-lvl="${lv}">${esc(x)}</div>`).join(""));};
    row.appendChild(bx);root.appendChild(row);});
-  const add=el("button",{type:"button",class:"pbadd"},"＋ ย่อหน้าใหม่");add.onclick=()=>{list.push({lvl:0,gap:false,t:""});commit();draw(list.length-1);};
-  root.appendChild(add);fitPB(root);
-  if(focusIdx!=null){const bx=root.querySelectorAll(".pbox")[focusIdx];if(bx){bx.focus();const r=document.createRange();
-   if(typeof caretEnd==="number"){const tw=document.createTreeWalker(bx,NodeFilter.SHOW_TEXT);let n,left=caretEnd,done=false;
-    while((n=tw.nextNode())){if(left<=n.length){r.setStart(n,left);done=true;break;}left-=n.length;} if(!done){r.selectNodeContents(bx);r.collapse(false);} else r.collapse(true);}
-   else{r.selectNodeContents(bx);r.collapse(caretEnd!==false?false:true);}
-   const sel=window.getSelection();sel.removeAllRanges();sel.addRange(r);}}};
+  const add=el("button",{type:"button",class:"pbadd"},"＋ ย่อหน้าใหม่");add.onclick=()=>{list=readAll().filter((p,i,a)=>p.t.trim()||a.length===1);list.push({lvl:0,gap:false,t:""});commit();draw();setCaret(list.length-1,0);};
+  root.appendChild(add);requestAnimationFrame(()=>fitPB(root));fitPB(root);};
  draw();return root;}
 function singleEditor(get,set,ph,base){   // กล่องเดียว: แต่ละ <div> ข้างใน = หนึ่งย่อหน้า · บรรทัดว่าง = เว้นภาค
  const bx=el("div",{class:"pbox single",contenteditable:"true",spellcheck:"true",lang:"th","data-base":base,"data-ph":ph||"พิมพ์ข้อความ · Enter = ย่อหน้าใหม่ · Shift+Enter = ตัดบรรทัด · Tab = เลื่อนเข้า"});
