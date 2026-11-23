@@ -62,6 +62,8 @@ with sync_playwright() as p:
     check("R-80", all(k in x for k in ["keepNext", 'w:val="right"', "\u00a0", 'w:pgNumType w:fmt="thaiNumbers"']) and "PAGE" in h)
     nl = ev("()=>[...document.querySelectorAll('#page .jt')].filter(j=>j.dataset.last==='0').length")
     check("R-81", x.count("<w:br/>") >= nl and 'w:lineRule="exact"' in x and "<w:widowControl/>" in x and 'w:jc w:val="both"' in x, f"br {x.count('<w:br/>')} / บรรทัดพรีวิว {nl}")
+    import re as _re
+    check("R-81", bool(_re.search(r'<w:spacing w:val="-?\d+"/><w:sz ', x)) and not _re.search(r'<w:u [^>]*/>(<w:color|<w:spacing|<w:sz )', x), "ลำดับ rPr ตาม schema (Word ไม่ทิ้งระยะตัวอักษร)")
 
     # ---- ประเภทอื่น ----
     for i, name in [(1, "memo"), (2, "stamp"), (3, "order")]:

@@ -245,7 +245,7 @@ let TYPE = store.get("thdoc_type") || "ext";
 let D = {};
 function defaults(){return {v:DATA_VERSION,fit1:true,font:"TH SarabunIT๙",thai:true,ownerPos:"อัตโนมัติ",sal:"เรียน",kind:"คำสั่ง",date:new Date().toISOString().slice(0,10)}}
 // รุ่นของระบบ (แสดงบนหน้าจอ) และรุ่นโครงข้อมูลที่เก็บในเครื่อง — เพิ่มเลขทุกครั้งที่กฎเปลี่ยนจนค่าเก่าอาจขัดกับกฎใหม่
-const APP_VERSION="2026.11.23m", DATA_VERSION=4;
+const APP_VERSION="2026.11.23n", DATA_VERSION=4;
 function migrate(x){   // ปรับค่าที่เก็บไว้ในเครื่องให้เข้ากับกฎปัจจุบัน (ดู REQUIREMENTS.md)
  if(!x||typeof x!=="object")return {};
  const v=x.v||1;
@@ -975,7 +975,7 @@ function doPrint(){   // R-54: พิมพ์จากหน้าพรีว�
 // ---------- Word (.docx) ----------
 const xe=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const TW=mm=>Math.round(mm*1440/25.4), EMU=mm=>Math.round(mm*36000);
-function rPr(r){const sz=(r.sz||16)*2;return `<w:rPr><w:rFonts w:ascii="${xe(D.font)}" w:hAnsi="${xe(D.font)}" w:eastAsia="${xe(D.font)}" w:cs="${xe(D.font)}"/>${r.b?"<w:b/><w:bCs/>":""}${r.u?'<w:u w:val="single"/>':""}${r.color?`<w:color w:val="${r.color}"/>`:""}<w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/></w:rPr>`;}
+function rPr(r){const sz=(r.sz||16)*2;return `<w:rPr><w:rFonts w:ascii="${xe(D.font)}" w:hAnsi="${xe(D.font)}" w:eastAsia="${xe(D.font)}" w:cs="${xe(D.font)}"/>${r.b?"<w:b/><w:bCs/>":""}${r.color?`<w:color w:val="${r.color}"/>`:""}${r.sp?`<w:spacing w:val="${r.sp}"/>`:""}<w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/>${r.u?'<w:u w:val="single"/>':""}</w:rPr>`;}   // ลำดับตาม schema (Word ไม่สนองค์ประกอบที่ผิดลำดับ): color → spacing → sz → u
 function pXML(p,extraRuns="",next=null){
  const jc={left:"left",center:"center",right:"right",dist:"thaiDistribute"}[p.jc];
  let ind=`<w:ind w:left="${TW(p.indL)}" w:right="${TW(p.indR)}"${p.first?` w:firstLine="${TW(p.first)}"`:""}${p.hang?` w:hanging="${TW(p.hang)}"`:""}/>`;
@@ -986,9 +986,10 @@ function pXML(p,extraRuns="",next=null){
  if(p.jc==="dist"&&!p.rtab&&p.runs.some(r=>r.t)){   // ตัดบรรทัดตรงตำแหน่งเดียวกับหน้าพรีวิว: ใส่ <w:br/> ทุกบรรทัด + ระยะตัวอักษรเท่าพรีวิว (เผื่อ 1.5 มม. ให้ Word ยืดส่วนที่เหลือที่ช่องว่าง)
   const {lines,head}=distLines(p);const px=25.4/72;
   const body=lines.map((ln,i)=>{const w=ln.tk.reduce((a,k)=>a+tokW(k),0);
-   const n=ln.tk.reduce((a,k)=>a+(GSEG?[...GSEG.segment(k.t)].length:k.t.length),0);
-   const last=i===lines.length-1, fit=ln.w-1.5, sq=n>1&&(w>fit||!last)?Math.floor((fit-w)/(n-1)/px*20):0;   // เผื่อ 1.5 มม. เพราะ Word วัดฟอนต์ต่างจากเบราว์เซอร์เล็กน้อย (Word ยืดคืนให้ชนขอบเอง)   // บรรทัดที่หน้าพรีวิวบีบ → บีบระยะตัวอักษรใน Word เท่ากัน
-   return ln.tk.map(k=>{const r=Object.assign({},k.r,{t:k.t});let x=RX(r);if(sq)x=x.replace("<w:sz ",`<w:spacing w:val="${sq}"/><w:sz `);return x;}).join("")+(i<lines.length-1?`<w:r><w:br/></w:r>`:"");}).join("");
+   const ng=ln.tk.reduce((a,k)=>a+(GSEG?[...GSEG.segment(k.t)].length:k.t.length),0), nc=ln.tk.reduce((a,k)=>a+[...k.t].length,0);
+   // Word อาจใส่ระยะตัวอักษรทุกตัวรวมสระบน/ล่าง วรรณยุกต์ → ยืด: หารด้วยจำนวนตัวอักษรทั้งหมด (ไม่ล้นแน่) · บีบ: หารด้วยจำนวนกลุ่มตัวอักษร (บีบพอแน่)
+   const last=i===lines.length-1, fit=ln.w-1.5, n=w>fit?ng:nc, sq=n>1&&(w>fit||!last)?Math.floor((fit-w)/(n-1)/px*20):0;   // เผื่อ 1.5 มม. เพราะ Word วัดฟอนต์ต่างจากเบราว์เซอร์เล็กน้อย (Word ยืดคืนให้ชนขอบเอง)   // บรรทัดที่หน้าพรีวิวบีบ → บีบระยะตัวอักษรใน Word เท่ากัน
+   return ln.tk.map(k=>RX(Object.assign({},k.r,{t:k.t},sq?{sp:sq}:{}))).join("")+(i<lines.length-1?`<w:r><w:br/></w:r>`:"");}).join("");
   const ex=ppr;
   return `<w:p>${ex.replace("<w:pPr>","<w:pPr><w:widowControl/>").replace(`<w:jc w:val="${jc}"/>`,`<w:jc w:val="both"/>`)}${extraRuns}${head.map(RX).join("")}${body}</w:p>`;}   // both: Word/LibreOffice ยืดบรรทัดที่จบด้วย <w:br/> ให้ชนขอบขวา
  const runs=p.runs.map(r=>r.br?`<w:r><w:br/></w:r>`:(r.tab||r.rtab)?`<w:r>${rPr({})}<w:tab/></w:r>`:`<w:r>${rPr(r)}<w:t xml:space="preserve">${xe(nbsp(r.t))}</w:t></w:r>`).join("");
