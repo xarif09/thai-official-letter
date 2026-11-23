@@ -58,12 +58,27 @@ with sync_playwright() as p:
     data = open(dl.value.path(), "rb").read()
     z = zipfile.ZipFile(io.BytesIO(data)); x = z.read("word/document.xml").decode(); h = z.read("word/header1.xml").decode()
     check("R-03", data[:2] == b"PK" and "w:body" in x)
-    check("R-80", all(k in x for k in ["thaiDistribute", "keepNext", 'w:val="right"', " "]) and "ThaiArabic" in h)
+    check("R-80", all(k in x for k in ["keepNext", 'w:val="right"', "\u00a0", 'w:pgNumType w:fmt="thaiNumbers"']) and "PAGE" in h)
+    nl = ev("()=>[...document.querySelectorAll('#page .jt')].filter(j=>j.dataset.last==='0').length")
+    check("R-81", x.count("<w:br/>") >= nl and 'w:lineRule="exact"' in x and "<w:widowControl/>" in x and 'w:jc w:val="both"' in x, f"br {x.count('<w:br/>')} / บรรทัดพรีวิว {nl}")
 
     # ---- ประเภทอื่น ----
     for i, name in [(1, "memo"), (2, "stamp"), (3, "order")]:
         tab(i)
         check("R-63", ev("()=>document.querySelectorAll('#page .sheet').length===2"), f"{name} ยาว 2 หน้า")
+    for i in (0, 2):
+        tab(i)
+        check("R-39", ev("()=>!document.querySelector('#form [data-k=secs] select')&&D.secs.length===1&&document.querySelectorAll('#form .pbox').length>3&&!document.querySelector('#form .pbox.single')"), ["ภายนอก","","ประทับตรา"][i]+" ไม่มีหัวข้อ หลายกล่อง")
+    ev("()=>{D.secs=[{h:'เรื่องเดิม',text:'ก'},{h:MSEC[0],text:'ข'}];save();renderForm();}"); pg.wait_for_timeout(200)
+    check("R-39", ev("()=>D.secs.length===1&&/\\*\\*เรื่องเดิม\\*\\*/.test(D.secs[0].text)"), "ข้อความเก่าที่มีหัวข้อรวมเป็นช่องเดียว")
+    check("R-66", ev("()=>!document.querySelector('.pbg')&&[...document.querySelectorAll('#form .fmtbar button')].some(b=>b.textContent==='⇥')"))
+    tab(0)
+    bx = pg.locator('#form .pbox').nth(1); bx.click(); pg.keyboard.press("Tab"); pg.wait_for_timeout(150)
+    check("R-66", ev("()=>pbParse(D.secs[0].text)[1].lvl===1"), "Tab = เลื่อนเข้า")
+    tab(1)
+    check("R-64", ev("()=>[...document.querySelectorAll('#form [data-k=secs] .pbox')].every(b=>b.classList.contains('single'))&&document.querySelectorAll('#form .pbox.single').length===D.secs.length"), "บันทึก: กล่องเดียวต่อหัวข้อ")
+    sb = pg.locator('#form .pbox.single').first; sb.click(); pg.keyboard.press("Control+End"); pg.keyboard.press("Enter"); pg.keyboard.type("ทดสอบ"); pg.keyboard.press("Shift+Enter"); pg.keyboard.type("ต่อ"); pg.wait_for_timeout(200)
+    check("R-64", ev("()=>/\\nทดสอบ↵\\nต่อ$/.test(D.secs[0].text)&&document.querySelectorAll('#form .pbox.single').length===D.secs.length"), "Enter = ย่อหน้าใหม่ในกล่องเดิม, Shift+Enter = ↵")
     tab(1)
     check("R-39", ev("()=>!document.querySelector('#form [data-k=body]')&&document.querySelector('#form [data-k=secs] select')&&document.querySelectorAll('#form .fmtbar').length===1"), "การ์ดมีรายการเลือกหัวข้อ")
     ev("()=>{D.secs=[{h:MSEC[0],text:'x'}];save();renderForm();}"); pg.wait_for_timeout(200)

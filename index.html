@@ -44,8 +44,9 @@ details.secbox>summary::before{content:"▸ ";color:#1f5fbf}details.secbox[open]
 .pbg button{font-size:11px;line-height:1;padding:2px 0;border:1px solid #d5dce5;background:#fff;border-radius:4px;cursor:pointer;color:#1f5fbf}
 .pbox{flex:1;min-width:0;min-height:1.4em;border:1px solid #c5cfdb;border-radius:6px;padding:5px 8px;background:#fff;font-family:var(--docfont);line-height:1.3;outline:none;white-space:pre-wrap;word-break:break-word}
 .pbox:focus{border-color:#1f5fbf;box-shadow:0 0 0 2px rgba(31,95,191,.12)}
+.pbox.single>div{min-height:1.3em}.pbox.single>div.sgap{min-height:.6em;border-bottom:1px dashed #d5dce5;margin-bottom:3px}.pbed{display:flex;flex-direction:column;gap:3px}
 .pbox:empty::before{content:attr(data-ph);color:#9aa4b1;font-family:var(--ui);font-size:13px}
-.pbadd{align-self:flex-start;margin:3px 0 0 26px;font:inherit;font-size:12.5px;padding:3px 9px;border:1px dashed #1f5fbf;color:#1f5fbf;background:#f3f7fd;border-radius:6px;cursor:pointer}
+.pbadd{align-self:flex-start;margin:3px 0 0 0;font:inherit;font-size:12.5px;padding:3px 9px;border:1px dashed #1f5fbf;color:#1f5fbf;background:#f3f7fd;border-radius:6px;cursor:pointer}
 .fmhint{font-size:11.5px;color:#6b7684;align-self:center;margin-left:4px;flex:1 1 200px}
 ::highlight(sp-err){text-decoration:underline wavy #e02424;text-decoration-thickness:1.5px;text-underline-offset:3px}
 ::highlight(sp-sug){text-decoration:underline dotted #d97706;text-underline-offset:3px}
@@ -229,7 +230,7 @@ let TYPE = store.get("thdoc_type") || "ext";
 let D = {};
 function defaults(){return {v:DATA_VERSION,fit1:true,font:"TH SarabunIT๙",thai:true,ownerPos:"อัตโนมัติ",sal:"เรียน",kind:"คำสั่ง",date:new Date().toISOString().slice(0,10)}}
 // รุ่นของระบบ (แสดงบนหน้าจอ) และรุ่นโครงข้อมูลที่เก็บในเครื่อง — เพิ่มเลขทุกครั้งที่กฎเปลี่ยนจนค่าเก่าอาจขัดกับกฎใหม่
-const APP_VERSION="2026.11.23g", DATA_VERSION=4;
+const APP_VERSION="2026.11.23h", DATA_VERSION=4;
 function migrate(x){   // ปรับค่าที่เก็บไว้ในเครื่องให้เข้ากับกฎปัจจุบัน (ดู REQUIREMENTS.md)
  if(!x||typeof x!=="object")return {};
  const v=x.v||1;
@@ -264,7 +265,7 @@ function pbParse(txt){const ls0=(txt||"").split("\n"),ls=[];
  return out.length?out:[{lvl:0,gap:false,t:""}];}
 function pbHTML(t){return esc(t).replace(/↵\s*\n/g,"<br>").replace(/\*\*([\s\S]+?)\*\*/g,"<b>$1</b>").replace(/__([\s\S]+?)__/g,"<u>$1</u>");}
 function pbText(node){let o="";for(const n of node.childNodes){
-  if(n.nodeType===3){o+=n.nodeValue.replace(/ /g," ");continue;}
+  if(n.nodeType===3){o+=n.nodeValue.replace(/ /g," ").replace(/↵?\n/g,"↵\n");continue;}
   if(n.nodeType!==1)continue;const tg=n.tagName,st=n.style||{};
   if(tg==="BR"){o+="↵\n";continue;}
   let inner=pbText(n);
@@ -273,22 +274,23 @@ function pbText(node){let o="";for(const n of node.childNodes){
   if(u&&inner.trim())inner="__"+inner+"__"; if(b&&inner.trim())inner="**"+inner+"**"; o+=inner;}
  return o;}
 function pbSerialize(list){return list.map((p,i)=>(p.gap&&i?"\n":"")+">".repeat(p.lvl)+p.t.replace(/↵\n$/,"").replace(/\*\*\*\*|____/g,"")).join("\n");}
-function paraEditor(get,set,ph,base=25){
+function paraEditor(get,set,ph,base=25,mode="boxes"){
+ // mode "boxes": หนึ่งย่อหน้า = หนึ่งกล่อง (หนังสือภายนอก ฯลฯ) · mode "single": กล่องเดียว หลายย่อหน้า (ใต้หัวข้อบันทึก)
+ // ตัวจัดการเยื้อง/เว้นภาคซ่อนไว้: Tab = เลื่อนเข้า, Shift+Tab = เลื่อนออก, ปุ่มบนแถบเครื่องมือ
+ return mode==="single"?singleEditor(get,set,ph,base):boxEditor(get,set,ph,base);}
+function boxEditor(get,set,ph,base){
  const root=el("div",{class:"pbed"});let list=pbParse(get());
  const commit=()=>{set(pbSerialize(list));save();update();};
  const draw=(focusIdx,caretEnd)=>{root.innerHTML="";
   list.forEach((p,i)=>{
    const row=el("div",{class:"pbrow"+(p.gap?" gap":"")});
-   const g=el("div",{class:"pbg"});
-   const B=(t,ti,fn)=>{const b=el("button",{type:"button",title:ti},t);b.onmousedown=e=>e.preventDefault();b.onclick=fn;g.appendChild(b);};
-   B("⇤","เลื่อนออก",()=>{if(p.lvl>0){p.lvl--;commit();draw(i);}});
-   B("⇥","เลื่อนเข้าอีก 0.5 ซม.",()=>{p.lvl++;commit();draw(i);});
-   B("↕","เว้นภาค (+6 pt) ก่อนย่อหน้านี้",()=>{if(i){p.gap=!p.gap;commit();draw(i);}});
    const bx=el("div",{class:"pbox",contenteditable:"true",spellcheck:"true",lang:"th","data-lvl":p.lvl,"data-base":base,"data-ph":i===0&&list.length===1?(ph||"พิมพ์ข้อความ · Enter = ย่อหน้าใหม่ · Shift+Enter = ตัดบรรทัด"):""});
    bx.innerHTML=pbHTML(p.t);
    const sync=()=>{p.t=pbText(bx);commit();};
+   bx._pb={lvl:d=>{p.lvl=Math.max(0,p.lvl+d);commit();draw(i);},gap:()=>{if(i){p.gap=!p.gap;commit();draw(i);}}};
    bx.oninput=sync; bx.onfocus=()=>{PB_LAST=bx;};
    bx.onkeydown=e=>{
+    if(e.key==="Tab"){e.preventDefault();bx._pb.lvl(e.shiftKey?-1:1);return;}
     if(e.key==="Enter"&&e.shiftKey){e.preventDefault();document.execCommand("insertLineBreak");return;}
     if(e.key==="Enter"){e.preventDefault();   // ย่อหน้าใหม่ = กล่องใหม่ (ตัดข้อความหลังเคอร์เซอร์ไปกล่องใหม่)
      const r=window.getSelection().getRangeAt(0);r.deleteContents();const tail=r.cloneRange();tail.selectNodeContents(bx);tail.setStart(r.endContainer,r.endOffset);
@@ -302,19 +304,49 @@ function paraEditor(get,set,ph,base=25){
    bx.onpaste=e=>{e.preventDefault();const t=(e.clipboardData.getData("text/plain")||"").replace(/\r/g,"");const parts=t.split("\n");
     document.execCommand("insertText",false,parts[0]);
     if(parts.length>1){p.t=pbText(bx);const add=parts.slice(1).filter(x=>x.trim()).map(x=>({lvl:p.lvl,gap:false,t:x}));list.splice(i+1,0,...add);commit();draw(i+add.length);}else sync();};
-   row.appendChild(g);row.appendChild(bx);root.appendChild(row);});
+   row.appendChild(bx);root.appendChild(row);});
   const add=el("button",{type:"button",class:"pbadd"},"＋ ย่อหน้าใหม่");add.onclick=()=>{list.push({lvl:0,gap:false,t:""});commit();draw(list.length-1);};
   root.appendChild(add);fitPB(root);
   if(focusIdx!=null){const bx=root.querySelectorAll(".pbox")[focusIdx];if(bx){bx.focus();const r=document.createRange();
-   if(typeof caretEnd==="number"){const tw=document.createTreeWalker(bx,NodeFilter.SHOW_TEXT);let n,left=caretEnd,done=false;   // วางเคอร์เซอร์ตรงรอยต่อหลังรวมกล่อง
+   if(typeof caretEnd==="number"){const tw=document.createTreeWalker(bx,NodeFilter.SHOW_TEXT);let n,left=caretEnd,done=false;
     while((n=tw.nextNode())){if(left<=n.length){r.setStart(n,left);done=true;break;}left-=n.length;} if(!done){r.selectNodeContents(bx);r.collapse(false);} else r.collapse(true);}
    else{r.selectNodeContents(bx);r.collapse(caretEnd!==false?false:true);}
    const sel=window.getSelection();sel.removeAllRanges();sel.addRange(r);}}};
  draw();return root;}
+function singleEditor(get,set,ph,base){   // กล่องเดียว: แต่ละ <div> ข้างใน = หนึ่งย่อหน้า · บรรทัดว่าง = เว้นภาค
+ const bx=el("div",{class:"pbox single",contenteditable:"true",spellcheck:"true",lang:"th","data-base":base,"data-ph":ph||"พิมพ์ข้อความ · Enter = ย่อหน้าใหม่ · Shift+Enter = ตัดบรรทัด · Tab = เลื่อนเข้า"});
+ const list=pbParse(get());
+ bx.innerHTML=list.map(p=>(p.gap?'<div class="sgap"><br></div>':"")+`<div data-lvl="${p.lvl}">${pbHTML(p.t)||"<br>"}</div>`).join("");
+ if(list.length===1&&!list[0].t)bx.innerHTML="";
+ const ser=()=>{const out=[];let gap=false;
+  for(const n of [...bx.childNodes]){
+   if(n.nodeType===3){if(n.nodeValue.trim())out.push({lvl:0,gap,t:n.nodeValue});gap=false;continue;}
+   if(n.nodeType!==1)continue; if(n.tagName==="BR")continue;
+   const t=pbText(n).replace(/↵\n$/,"");
+   if(!t.trim()){if(out.length)gap=true;continue;}
+   out.push({lvl:+n.dataset.lvl||0,gap,t});gap=false;}
+  return pbSerialize(out.length?out:[{lvl:0,gap:false,t:""}]);};
+ const sync=()=>{bx.querySelectorAll(":scope > div").forEach(d=>{if(!d.dataset.lvl)d.dataset.lvl="0";d.classList.toggle("sgap",!d.textContent.trim());});fitPB(bx.parentNode||bx);set(ser());save();update();};
+ const cur=()=>{const sel=window.getSelection();if(!sel.rangeCount)return [];let a=sel.getRangeAt(0).startContainer,b=sel.getRangeAt(0).endContainer;
+  const top=n=>{while(n&&n.parentNode!==bx)n=n.parentNode;return n;};a=top(a);b=top(b);if(!a)return [];const r=[];let n=a;while(n){if(n.nodeType===1)r.push(n);if(n===b)break;n=n.nextSibling;}return r;};
+ bx._pb={lvl:d=>{let ds=cur();if(!ds.length&&!bx.children.length){bx.innerHTML='<div data-lvl="0"><br></div>';ds=[bx.firstChild];}ds.forEach(x=>x.dataset.lvl=Math.max(0,(+x.dataset.lvl||0)+d));sync();},
+  gap:()=>{const ds=cur();if(!ds.length)return;const d=ds[0],pv=d.previousElementSibling;if(pv&&pv.classList.contains("sgap"))pv.remove();else if(pv)d.before(Object.assign(el("div",{class:"sgap"}),{innerHTML:"<br>"}));sync();}};
+ bx.onfocus=()=>{PB_LAST=bx;try{document.execCommand("defaultParagraphSeparator",false,"div");}catch(e){}
+  if(!bx.children.length){bx.innerHTML='<div data-lvl="0"><br></div>';const r=document.createRange();r.setStart(bx.firstChild,0);r.collapse(true);const s=window.getSelection();s.removeAllRanges();s.addRange(r);}};
+ bx.oninput=sync;
+ bx.onkeydown=e=>{
+  if(e.key==="Tab"){e.preventDefault();bx._pb.lvl(e.shiftKey?-1:1);return;}
+  if(e.key==="Enter"&&e.shiftKey){e.preventDefault();document.execCommand("insertLineBreak");return;}
+  if((e.ctrlKey||e.metaKey)&&!e.altKey&&(e.code==="KeyB"||e.code==="KeyU")){e.preventDefault();document.execCommand(e.code==="KeyB"?"bold":"underline");sync();}};
+ bx.onpaste=e=>{e.preventDefault();const t=(e.clipboardData.getData("text/plain")||"").replace(/\r/g,"");
+  const ls=t.split("\n");if(ls.length===1){document.execCommand("insertText",false,t);return;}
+  document.execCommand("insertHTML",false,ls.map(x=>`<div data-lvl="0">${esc(x)||"<br>"}</div>`).join(""));sync();};
+ return bx;}
 function fitPB(scope){for(const bx of (scope||document).querySelectorAll(".pbox")){const cs=getComputedStyle(bx);
  const inner=bx.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight); if(inner<50)continue;
- const k=inner/(160*96/25.4); bx.style.fontSize=(16*96/72*k).toFixed(2)+"px";
- bx.style.textIndent=(((+bx.dataset.base||25)+5*(+bx.dataset.lvl||0))*96/25.4*k).toFixed(1)+"px";}}   // ย่อหน้าบรรทัดแรกตามสัดส่วนจริง
+ const k=inner/(160*96/25.4), b=+bx.dataset.base||25, ti=l=>((b+5*l)*96/25.4*k).toFixed(1)+"px"; bx.style.fontSize=(16*96/72*k).toFixed(2)+"px";
+ if(bx.classList.contains("single")){bx.style.textIndent="0";for(const d of bx.querySelectorAll(":scope > div"))d.style.textIndent=ti(+d.dataset.lvl||0);}
+ else bx.style.textIndent=ti(+bx.dataset.lvl||0);}}   // ย่อหน้าบรรทัดแรกตามสัดส่วนจริง
 
 // แถบปุ่มจัดรูปแบบเหนือช่องข้อความ: คลุมคำแล้วกด "ตัวหนา" (Ctrl+B) / "ขีดเส้นใต้" (Ctrl+U) — กดซ้ำเพื่อยกเลิก
 function wrapSel(ta,mk){const a=ta.selectionStart,b=ta.selectionEnd,v=ta.value;
@@ -325,11 +357,14 @@ function wrapSel(ta,mk){const a=ta.selectionStart,b=ta.selectionEnd,v=ta.value;
  else{const lead=sel.match(/^\s*/)[0],trail=sel.match(/\s*$/)[0],core=sel.trim();ta.value=pre+lead+mk+core+mk+trail+post;ta.setSelectionRange(a+lead.length,a+lead.length+core.length+mk.length*2);}
  ta.focus();ta.dispatchEvent(new Event("input"));}
 function fmtBarPB(){const bar=el("div",{class:"fmtbar"});
- const B=(html,title,fn)=>{const b=el("button",{type:"button",title},html);b.onmousedown=e=>e.preventDefault();b.onclick=()=>{if(!PB_LAST||!document.body.contains(PB_LAST))return;PB_LAST.focus();fn();PB_LAST.dispatchEvent(new Event("input"));};bar.appendChild(b);};
- B("<b>ตัวหนา</b>","คลุมคำแล้วกด (Ctrl+B) · กดซ้ำเพื่อยกเลิก",()=>document.execCommand("bold"));
- B("<u>ขีดเส้นใต้</u>","คลุมคำแล้วกด (Ctrl+U)",()=>document.execCommand("underline"));
- B("↵ ตัดบรรทัดตรงนี้","เหมือนกด Shift+Enter: บรรทัดนี้ยืด/หดให้ชนขอบขวา",()=>document.execCommand("insertLineBreak"));
- bar.appendChild(el("span",{class:"fmhint"},"Enter = ย่อหน้าใหม่ (กล่องใหม่) · ⇤⇥ เลื่อนเข้า/ออก · ↕ เว้นภาค"));
+ const B=(html,title,fn)=>{const b=el("button",{type:"button",title},html);b.onmousedown=e=>e.preventDefault();b.onclick=()=>{if(!PB_LAST||!document.body.contains(PB_LAST))return;PB_LAST.focus();fn(PB_LAST);};bar.appendChild(b);};
+ const ex=c=>x=>{document.execCommand(c);x.dispatchEvent(new Event("input"));};
+ B("<b>ตัวหนา</b>","คลุมคำแล้วกด (Ctrl+B) · กดซ้ำเพื่อยกเลิก",ex("bold"));
+ B("<u>ขีดเส้นใต้</u>","คลุมคำแล้วกด (Ctrl+U)",ex("underline"));
+ B("↵ ตัดบรรทัด","Shift+Enter: บรรทัดนี้ยืด/หดให้ชนขอบขวา",ex("insertLineBreak"));
+ B("⇥","เลื่อนย่อหน้าเข้า 0.5 ซม. (Tab)",x=>x._pb&&x._pb.lvl(1));
+ B("⇤","เลื่อนย่อหน้าออก (Shift+Tab)",x=>x._pb&&x._pb.lvl(-1));
+ B("↕","เว้นภาค +6 pt ก่อนย่อหน้านี้ (กดซ้ำเพื่อยกเลิก)",x=>x._pb&&x._pb.gap());
  return bar;}
 function fmtBar(ta){const bar=el("div",{class:"fmtbar"});
  const B=(html,title,fn)=>{const b=el("button",{type:"button",title},html);b.onmousedown=e=>e.preventDefault();b.onclick=fn;bar.appendChild(b);};
@@ -432,7 +467,14 @@ function renderForm(){
    w.querySelector("label").insertAdjacentHTML("beforeend",` <span class="hint" title="มีมากกว่า 1 รายการ ระบบใส่เลข ๑. ๒. ให้อัตโนมัติ${isRef?" · ✎ พิมพ์เอง = พิมพ์ข้อความอ้างถึงทั้งหมดเอง":" · จำนวนว่าง = ไม่แสดง"}">ⓘ</span>`);
    w.appendChild(box);w.appendChild(add);f.appendChild(w);continue;}
   else if(kind==="seclist"){   // หัวข้อบันทึก: ต้นเรื่อง / เรื่องเดิม / ข้อเท็จจริง / ข้อกฎหมาย / ข้อพิจารณา / อื่น ๆ
-   const arr=D.secs=D.secs||[]; if(!arr.length)arr.push({h:MSEC[0],name:"",text:""}); const box=el("div",{style:"display:flex;flex-direction:column;gap:6px"});
+   const arr=D.secs=D.secs||[]; if(!arr.length)arr.push({h:MSEC[0],name:"",text:""});
+   if(TYPE==="ext"||TYPE==="stamp"){   // R-39: ภายนอก/ประทับตรา ไม่มีหัวข้อ — ช่องเดียว หนึ่งกล่อง = หนึ่งย่อหน้า
+    if(arr.length>1||arr[0].h!==MSEC[0]){const t=arr.map(x=>{const nm=x.h===MSEC[MSEC.length-1]?(x.name||""):x.h;return (x.h&&x.h!==MSEC[0]&&nm?"**"+nm+"**\n":"")+(x.text||"");}).filter(x=>x.trim()).join("\n\n");
+     arr.splice(0,arr.length,{h:MSEC[0],name:"",text:t});save();}
+    const it=arr[0];w.querySelector("label").insertAdjacentHTML("beforeend",` <span class="hint" title="Enter หรือ ＋ = ขึ้นย่อหน้าใหม่ (กล่องใหม่) · Shift+Enter = ตัดบรรทัด · Tab / ⇥⇤ = เลื่อนเข้า/ออก · ↕ = เว้นภาค">ⓘ</span>`);
+    const fb=fmtBarPB();fb.style.cssText+="position:sticky;top:0;z-index:5;background:#fff;padding:3px 0";w.appendChild(fb);
+    w.appendChild(paraEditor(()=>it.text||"",v=>{it.text=v;},"พิมพ์ข้อความ · Enter = ย่อหน้าใหม่",25,"boxes"));f.appendChild(w);continue;}
+   const box=el("div",{style:"display:flex;flex-direction:column;gap:6px"});
    // ต้นเรื่อง / เรื่องเดิม อยู่ลำดับแรกเสมอ · ต้นเรื่อง กับ ข้อเท็จจริง ใช้ร่วมกันไม่ได้
    const EXCL={"ต้นเรื่อง/ข้อเท็จจริง":["ข้อเท็จจริง"],"ข้อเท็จจริง":["ต้นเรื่อง/ข้อเท็จจริง"]};
    const used=i=>{const u=arr.filter((x,j)=>j!==i&&x.h!==MSEC[0]&&x.h!==MSEC[MSEC.length-1]).map(x=>x.h);u.slice().forEach(h=>u.push(...(EXCL[h]||[])));return u;};
@@ -452,7 +494,7 @@ function renderForm(){
     del.onclick=()=>{arr.splice(i,1);save();renderForm();update();};hd.appendChild(del);card.appendChild(hd);
     if(it.h===MSEC[MSEC.length-1]){const c=el("input",{type:"text",placeholder:"ชื่อหัวข้อ เช่น ข้อเสนอ",spellcheck:"true",lang:"th",style:"width:100%;font:inherit;font-size:13.5px;padding:4px 6px;border:1px solid #c5cfdb;border-radius:5px;margin-bottom:4px"});
      c.value=it.name||"";c.oninput=()=>{it.name=c.value;save();update();};card.appendChild(c);}
-    card.appendChild(paraEditor(()=>it.text||"",v=>{it.text=v;},"ข้อความในหัวข้อนี้",(it.h&&it.h!==MSEC[0])?25+measure((arr.slice(0,i+1).filter(x=>x.h&&x.h!==MSEC[0]).length)+". ",16,true):25));box.appendChild(card);});
+    card.appendChild(paraEditor(()=>it.text||"",v=>{it.text=v;},"ข้อความในหัวข้อนี้",(it.h&&it.h!==MSEC[0])?25+measure((arr.slice(0,i+1).filter(x=>x.h&&x.h!==MSEC[0]).length)+". ",16,true):25,"single"));box.appendChild(card);});
    const add=el("button",{type:"button",style:"font:inherit;font-size:13px;padding:5px 10px;border:1px dashed #1f5fbf;color:#1f5fbf;background:#f3f7fd;border-radius:6px;cursor:pointer"},"＋ เพิ่มหัวข้อ / ข้อความ");
    add.onclick=()=>{arr.push({h:MSEC[0],name:"",text:""});save();renderForm();update();};
    w.querySelector("label").insertAdjacentHTML("beforeend",` <span class="hint" title="เริ่มต้นเป็น ไม่มีหัวข้อ (ย่อหน้าธรรมดา) เปลี่ยนเป็นต้นเรื่อง ฯลฯ ได้ · หัวข้อที่เลือกแล้วจะไม่แสดงในตัวเลือกถัดไป · ระบบใส่เลข ๑. ๒. เฉพาะรายการที่มีหัวข้อ · เลื่อนลำดับด้วย ▲▼">ⓘ</span>`);
@@ -707,7 +749,7 @@ function build(){
 // ---------- พรีวิว HTML ----------
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 function runsHTML(rs){const j=rs.findIndex(r=>r.rtab);if(j<0)return rs.map(runHTML).join("");return rs.slice(0,j).map(runHTML).join("")+`<span style="float:right;text-indent:0">${rs.slice(j+1).map(runHTML).join("")}</span>`;}
-function runHTML(r){if(r.tab||r.rtab)return "";return `<span style="${r.sz?`font-size:${r.sz}pt;`:""}${r.u?"text-decoration:underline;":""}${r.b?"font-weight:bold;":""}${r.color?`color:#${r.color};`:""}">${esc(r.t)}</span>`;}
+function runHTML(r){if(r.tab||r.rtab)return "";return `<span style="${r.sz?`font-size:${r.sz}pt;`:""}${r.u?"text-decoration:underline;":""}${r.b?"font-weight:bold;":""}${r.color?`color:#${r.color};`:""}">${esc(r.t).replace(/ {2,}/g,m=>"\u00A0".repeat(m.length))}</span>`;}   // ช่องว่างหลายช่อง (เช่น ที่เว้นเขียนวันที่ R-14) ต้องไม่ยุบ ให้ตรงกับ Word
 // ---- กระจายแบบไทย: ตัดบรรทัดเอง แล้วเพิ่มระยะระหว่างตัวอักษรให้ทุกบรรทัด (ยกเว้นบรรทัดสุดท้าย) ชนขอบขวาพอดี
 const GSEG=(typeof Intl!=="undefined"&&Intl.Segmenter)?new Intl.Segmenter("th",{granularity:"grapheme"}):null;
 function tokens(runs){const out=[];
@@ -717,12 +759,11 @@ function tokens(runs){const out=[];
    out.push({t:x,r,sp:false,sub:g.sub?g.sub.map(y=>({t:y,r,sp:/^\s+$/.test(y)})):null});}}  // กลุ่มคำที่พยายามไม่แยก เก็บเป็นชิ้นเดียว
  return out;}
 function tokW(k){if(k.br)return 0;return measure(k.t,k.r.sz||16,!!k.r.b);}
-function distHTML(p,st){
- // หัวข้อ (เรียน/อ้างถึง/เลขลำดับ) อยู่หน้าบรรทัดแรก
- let pre="",runs=p.runs,ml0=p.first?p.first:(p.hang?-p.hang:0);
- if(p.kind==="label"||p.kind==="num"){const i=runs.findIndex(r=>r.tab);
-  if(p.kind==="label"){pre+=`<span style="display:inline-block;width:${p.hang-(p.numW||0)}mm">${runs.slice(0,i).map(runHTML).join("")}</span>`;runs=runs.slice(i+1);}
-  if(p.numW){const j=runs.findIndex(r=>r.tab);pre+=`<span style="display:inline-block;width:${p.numW}mm">${runs.slice(0,j).map(runHTML).join("")}</span>`;runs=runs.slice(j+1);}}
+function distLines(p){   // จุดตัดบรรทัดของย่อหน้ากระจาย — ใช้ร่วมกันทั้งพรีวิว/PDF และ Word (R-91)
+ let runs=p.runs,head=[];const ml0=p.first?p.first:(p.hang?-p.hang:0);
+ if(p.kind==="label"||p.kind==="num"){let i=runs.findIndex(r=>r.tab);
+  if(p.kind==="label"){head=runs.slice(0,i+1);runs=runs.slice(i+1);}
+  if(p.numW){const j=runs.findIndex(r=>r.tab);head=head.concat(runs.slice(0,j+1));runs=runs.slice(j+1);}}
  const W=CW-p.indL-p.indR, W0=(p.kind==="label"||p.kind==="num")?W:W-ml0;
  const tk=tokens(runs);const lines=[];let cur=[],w=0,lim=W0;
  const push=()=>{while(cur.length&&cur[cur.length-1].sp)cur.pop();lines.push({tk:cur,w:lim});cur=[];w=0;lim=W;};
@@ -746,6 +787,14 @@ function distHTML(p,st){
    if(piece){cur.push({t:piece,r:k.r});w=measure(piece,k.r.sz||16,!!k.r.b);}continue;}
   cur.push(k);w+=kw;}
  if(cur.length)push();
+ return {lines,ml0,head,runs};}
+function distHTML(p,st){
+ // หัวข้อ (เรียน/อ้างถึง/เลขลำดับ) อยู่หน้าบรรทัดแรก
+ let pre="",runs=p.runs,ml0=p.first?p.first:(p.hang?-p.hang:0);
+ if(p.kind==="label"||p.kind==="num"){const i=runs.findIndex(r=>r.tab);
+  if(p.kind==="label"){pre+=`<span style="display:inline-block;width:${p.hang-(p.numW||0)}mm">${runs.slice(0,i).map(runHTML).join("")}</span>`;runs=runs.slice(i+1);}
+  if(p.numW){const j=runs.findIndex(r=>r.tab);pre+=`<span style="display:inline-block;width:${p.numW}mm">${runs.slice(0,j).map(runHTML).join("")}</span>`;runs=runs.slice(j+1);}}
+ const {lines}=distLines(p);
  const LH=lines.map((ln,i)=>{const last=i===lines.length-1;
   const html=ln.tk.map(k=>runHTML(Object.assign({},k.r,{t:k.t}))).join("");
   return `<div style="white-space:pre;overflow:visible;height:${lineH()*16}pt;margin-left:${i===0?ml0:0}mm">${i===0?pre:""}<span class="jt" data-w="${ln.w}" data-last="${last?1:0}">${html}</span></div>`;});
@@ -884,7 +933,16 @@ function pXML(p,extraRuns="",next=null){
  let ind=`<w:ind w:left="${TW(p.indL)}" w:right="${TW(p.indR)}"${p.first?` w:firstLine="${TW(p.first)}"`:""}${p.hang?` w:hanging="${TW(p.hang)}"`:""}/>`;
  const tabs=(p.tabAt!=null||p.rtab)?`<w:tabs>${p.tabAt!=null?`<w:tab w:val="left" w:pos="${TW(p.tabAt)}"/>`:""}${p.tabAt2!=null?`<w:tab w:val="left" w:pos="${TW(p.tabAt2)}"/>`:""}${p.rtab?`<w:tab w:val="right" w:pos="${TW(CW)}"/>`:""}</w:tabs>`:"";
  const kp=((p.keep&&next&&next.keep)||p.kn)?"<w:keepNext/><w:keepLines/>":(p.keep?"<w:keepLines/>":"");
- const ppr=`<w:pPr>${kp}${tabs}<w:spacing w:before="${Math.round(p.before*20)}" w:after="0" w:line="${Math.round(240*lspF())}" w:lineRule="auto"/>${ind}<w:jc w:val="${jc}"/>${rPr({})}</w:pPr>`;
+ const ppr=`<w:pPr>${kp}${tabs}<w:spacing w:before="${Math.round(p.before*20)}" w:after="0" w:line="${Math.round(lineH()*(p.jc==="dist"&&!p.rtab?16:Math.max(16,...p.runs.map(r=>r.sz||16)))*20)}" w:lineRule="exact"/>${ind}<w:jc w:val="${jc}"/>${rPr({})}</w:pPr>`;   // ระยะบรรทัดคงที่ = ตัวอักษรใหญ่สุดในย่อหน้า × ระยะบรรทัดของฟอนต์ เท่าพรีวิว (Word/LibreOffice คิดระยะ "single" ไม่เท่ากัน)
+ const RX=r=>r.br?`<w:r><w:br/></w:r>`:(r.tab||r.rtab)?`<w:r>${rPr({})}<w:tab/></w:r>`:`<w:r>${rPr(r)}<w:t xml:space="preserve">${xe(nbsp(r.t))}</w:t></w:r>`;
+ if(p.jc==="dist"&&!p.rtab&&p.runs.some(r=>r.t)){   // ตัดบรรทัดตรงตำแหน่งเดียวกับหน้าพรีวิว: ใส่ <w:br/> ทุกบรรทัด + ระยะตัวอักษรเท่าพรีวิว (เผื่อ 1.5 มม. ให้ Word ยืดส่วนที่เหลือที่ช่องว่าง)
+  const {lines,head}=distLines(p);const px=25.4/72;
+  const body=lines.map((ln,i)=>{const w=ln.tk.reduce((a,k)=>a+tokW(k),0);
+   const n=ln.tk.reduce((a,k)=>a+(GSEG?[...GSEG.segment(k.t)].length:k.t.length),0);
+   const last=i===lines.length-1, fit=ln.w-1.5, sq=n>1&&(w>fit||!last)?Math.floor((fit-w)/(n-1)/px*20):0;   // เผื่อ 1.5 มม. เพราะ Word วัดฟอนต์ต่างจากเบราว์เซอร์เล็กน้อย (Word ยืดคืนให้ชนขอบเอง)   // บรรทัดที่หน้าพรีวิวบีบ → บีบระยะตัวอักษรใน Word เท่ากัน
+   return ln.tk.map(k=>{const r=Object.assign({},k.r,{t:k.t});let x=RX(r);if(sq)x=x.replace("<w:sz ",`<w:spacing w:val="${sq}"/><w:sz `);return x;}).join("")+(i<lines.length-1?`<w:r><w:br/></w:r>`:"");}).join("");
+  const ex=ppr;
+  return `<w:p>${ex.replace("<w:pPr>","<w:pPr><w:widowControl/>").replace(`<w:jc w:val="${jc}"/>`,`<w:jc w:val="both"/>`)}${extraRuns}${head.map(RX).join("")}${body}</w:p>`;}   // both: Word/LibreOffice ยืดบรรทัดที่จบด้วย <w:br/> ให้ชนขอบขวา
  const runs=p.runs.map(r=>r.br?`<w:r><w:br/></w:r>`:(r.tab||r.rtab)?`<w:r>${rPr({})}<w:tab/></w:r>`:`<w:r>${rPr(r)}<w:t xml:space="preserve">${xe(nbsp(r.t))}</w:t></w:r>`).join("");
  return `<w:p>${ppr}${extraRuns}${runs}</w:p>`;
 }
@@ -915,9 +973,9 @@ function makeDocx(){
  const fbAt=i=>F.map((f,j)=>((f.kind==="block"||f.kind==="initials")&&(f.at!==undefined?f.at:P.length-1)===i)?anchorXML(f,j+1,img):"").join("");
  const body=P.map((p,i)=>pXML(p,(i===0?fl:"")+fbAt(i),P[i+1])).join("");
  const NS=`xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"`;
- const doc=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ${NS}><w:body>${body}<w:sectPr><w:headerReference w:type="default" r:id="rIdHdr"/><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="${TW(25)}" w:right="${TW(20)}" w:bottom="${TW(20)}" w:left="${TW(30)}" w:header="${TW(12)}" w:footer="${TW(10)}" w:gutter="0"/><w:titlePg/></w:sectPr></w:body></w:document>`;
+ const doc=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ${NS}><w:body>${body}<w:sectPr><w:headerReference w:type="default" r:id="rIdHdr"/><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="${TW(25)}" w:right="${TW(20)}" w:bottom="${TW(20)}" w:left="${TW(30)}" w:header="${TW(12)}" w:footer="${TW(10)}" w:gutter="0"/><w:pgNumType w:fmt="${D.thai?"thaiNumbers":"decimal"}"/><w:titlePg/></w:sectPr></w:body></w:document>`;
  const fmt=D.thai?"ThaiArabic":"Arabic";
- const hdr=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:hdr ${NS}><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r>${rPr({})}<w:t xml:space="preserve">- </w:t></w:r><w:r>${rPr({})}<w:fldChar w:fldCharType="begin"/></w:r><w:r>${rPr({})}<w:instrText xml:space="preserve"> PAGE \\* ${fmt} </w:instrText></w:r><w:r>${rPr({})}<w:fldChar w:fldCharType="separate"/></w:r><w:r>${rPr({})}<w:t>2</w:t></w:r><w:r>${rPr({})}<w:fldChar w:fldCharType="end"/></w:r><w:r>${rPr({})}<w:t xml:space="preserve"> -</w:t></w:r></w:p></w:hdr>`;
+ const hdr=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:hdr ${NS}><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r>${rPr({})}<w:t xml:space="preserve">- </w:t></w:r><w:r>${rPr({})}<w:fldChar w:fldCharType="begin"/></w:r><w:r>${rPr({})}<w:instrText xml:space="preserve"> PAGE </w:instrText></w:r><w:r>${rPr({})}<w:fldChar w:fldCharType="separate"/></w:r><w:r>${rPr({})}<w:t>2</w:t></w:r><w:r>${rPr({})}<w:fldChar w:fldCharType="end"/></w:r><w:r>${rPr({})}<w:t xml:space="preserve"> -</w:t></w:r></w:p></w:hdr>`;
  const styles=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="${xe(D.font)}" w:hAnsi="${xe(D.font)}" w:eastAsia="${xe(D.font)}" w:cs="${xe(D.font)}"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:lang w:val="en-US" w:eastAsia="en-US" w:bidi="th-TH"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style></w:styles>`;
  const ct=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Default Extension="jpeg" ContentType="image/jpeg"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/header1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/></Types>`;
  const rels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`;
