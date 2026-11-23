@@ -69,8 +69,8 @@ with sync_playwright() as p:
     ev("()=>{D.secs=[{h:MSEC[0],text:'x'}];save();renderForm();}"); pg.wait_for_timeout(200)
     check("R-38b", ev("""()=>{const a=[{h:MSEC[0],text:'x'},{h:'ข้อพิจารณา',text:'y'},{h:'เรื่องเดิม',text:'z'}];secOrder(a);
       const o=[...document.querySelector('#form [data-k=secs] select').options].map(o=>o.value);
-      return a[1].h==='เรื่องเดิม'&&o[0]==='ต้นเรื่อง'&&o[1]==='เรื่องเดิม'&&o.at(-1)===MSEC[0]}"""), "ต้นเรื่อง/เรื่องเดิม มาก่อน")
-    ev("()=>{D.secs=[{h:'ต้นเรื่อง',text:'ก'},{h:MSEC[0],text:'ข'}];save();renderForm();}"); pg.wait_for_timeout(200)
+      return a[1].h==='เรื่องเดิม'&&o[0]==='ต้นเรื่อง/ข้อเท็จจริง'&&o.includes('ข้อเสนอ')&&o[1]==='เรื่องเดิม'&&o.at(-1)===MSEC[0]}"""), "ต้นเรื่อง/เรื่องเดิม มาก่อน")
+    ev("()=>{D.secs=[{h:'ต้นเรื่อง/ข้อเท็จจริง',text:'ก'},{h:MSEC[0],text:'ข'}];save();renderForm();}"); pg.wait_for_timeout(200)
     check("R-38c", ev("()=>{const s=[...document.querySelectorAll('#form [data-k=secs] select')][1];return ![...s.options].some(o=>o.value==='ข้อเท็จจริง')}"), "เลือกต้นเรื่องแล้วไม่มีข้อเท็จจริง")
     check("R-04", ev("()=>document.getElementById('vCopy').disabled===true"), "บันทึกข้อความไม่มีสำเนาคู่ฉบับ")
     tab(1)
