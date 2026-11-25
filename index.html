@@ -283,7 +283,7 @@ let TYPE = store.get("thdoc_type") || "ext";
 let D = {};
 function defaults(){return {v:DATA_VERSION,fit1:true,font:"TH SarabunIT๙",thai:true,ownerPos:"อัตโนมัติ",sal:"เรียน",kind:"คำสั่ง",date:new Date().toISOString().slice(0,10)}}
 // รุ่นของระบบ (แสดงบนหน้าจอ) และรุ่นโครงข้อมูลที่เก็บในเครื่อง — เพิ่มเลขทุกครั้งที่กฎเปลี่ยนจนค่าเก่าอาจขัดกับกฎใหม่
-const APP_VERSION="2026.11.25e", DATA_VERSION=4;
+const APP_VERSION="2026.11.25f", DATA_VERSION=4;
 function migrate(x){   // ปรับค่าที่เก็บไว้ในเครื่องให้เข้ากับกฎปัจจุบัน (ดู REQUIREMENTS.md)
  if(!x||typeof x!=="object")return {};
  const v=x.v||1;
@@ -1133,13 +1133,13 @@ function briefXML(P,F,fl){const A=P.findIndex(p=>p.kind==="btab"), t=P[A].btab, 
  let Rc=PP("",{h:BT.rLine1-BT.hh})+PP(RR("ผู้มีอำนาจสั่งการ",{b:true}),{h:BT.rLine2-BT.rLine1,jc:"center",bdr:"top,bottom"});
  for(let i=0;i<3;i++)Rc+=cbRow(BCMD[2*i],BCMD[2*i+1],BT.rcbx1,BT.rcbx2,i===0?BT.rcb-BT.rLine2:0,[false,false]);
  const bt=document.querySelector("#page .btab");let top=78;if(bt){const pg=document.getElementById("page"),z=pg.getBoundingClientRect().height/pg.offsetHeight||1;top=(bt.getBoundingClientRect().top-pg.getBoundingClientRect().top)/z*25.4/96;}
- const h2=Math.max(60,BT.bottom-top-BT.hh-1);
+ const h2=Math.max(60,BT.bottom-top-BT.hh-5);   // เผื่อ 5 มม. — Word วางหัวบันทึกต่ำกว่าพรีวิวเล็กน้อย ถ้าแถวสูงเกินพื้นที่ Word จะย้ายทั้งแถวไปหน้าใหม่ (ตารางขาด)
  const tc=(w,inner,b,va="top")=>`<w:tc><w:tcPr><w:tcW w:w="${X(w)}" w:type="dxa"/><w:tcBorders>${b}</w:tcBorders><w:vAlign w:val="${va}"/></w:tcPr>${inner}</w:tc>`;
  const S=(s,v="single")=>`<w:${s} w:val="${v}" w:sz="4" w:space="0" w:color="auto"/>`;
  const hdL=PP(RR("เสนอเพื่อ",{b:true}),{h:8,jc:"center"}), hdR=PP(RR("ข้อพิจารณา/คำสั่งเพิ่มเติม",{b:true}),{h:7,jc:"center"})+PP(RR("(ผู้ผ่านเรื่อง)",{b:true}),{h:7,jc:"center"});
  const tbl=`<w:tbl><w:tblPr><w:tblW w:w="${X(BT.wL+BT.wR)}" w:type="dxa"/><w:tblInd w:w="${X(BT.x0)}" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="0" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="0" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid><w:gridCol w:w="${X(BT.wL)}"/><w:gridCol w:w="${X(BT.wR)}"/></w:tblGrid>`
   +`<w:tr><w:trPr><w:trHeight w:val="${X(BT.hh)}" w:hRule="exact"/></w:trPr>${tc(BT.wL,hdL,S("top")+S("left","nil")+S("bottom")+S("right"),"center")}${tc(BT.wR,hdR,S("top")+S("left")+S("bottom")+S("right"),"center")}</w:tr>`
-  +`<w:tr><w:trPr><w:trHeight w:val="${X(h2)}" w:hRule="exact"/></w:trPr>${tc(BT.wL,L,S("top")+S("left","nil")+S("bottom","nil")+S("right"))}${tc(BT.wR,Rc,S("top")+S("left")+S("bottom","nil")+S("right"))}</w:tr></w:tbl>`;
+  +`<w:tr><w:trPr><w:trHeight w:val="${X(h2)}" w:hRule="atLeast"/></w:trPr>${tc(BT.wL,L,S("top")+S("left","nil")+S("bottom","nil")+S("right"))}${tc(BT.wR,Rc,S("top")+S("left")+S("bottom","nil")+S("right"))}</w:tr></w:tbl>`;
  return head+tbl+`<w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="20" w:lineRule="exact"/></w:pPr></w:p>`;}
 let QRIMG=null;
 function dataURLbytes(u){const [h,b]=u.split(",");const bin=atob(b);const a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return {bytes:a,ext:/jpeg|jpg/.test(h)?"jpeg":"png"};}
@@ -1150,7 +1150,7 @@ function makeDocx(){
  const fbAt=i=>F.map((f,j)=>((f.kind==="block"||f.kind==="initials")&&(f.at!==undefined?f.at:P.length-1)===i)?anchorXML(f,j+1,img):"").join("");
  const body=TYPE==="brief"?briefXML(P,F,fl):P.map((p,i)=>pXML(p,(i===0?fl:"")+fbAt(i),P[i+1])).join("");
  const NS=`xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"`;
- const doc=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ${NS}><w:body>${body}<w:sectPr><w:headerReference w:type="default" r:id="rIdHdr"/><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="${TW(25)}" w:right="${TW(20)}" w:bottom="${TW(TYPE==="brief"?6:20)}" w:left="${TW(30)}" w:header="${TW(12)}" w:footer="${TW(10)}" w:gutter="0"/><w:pgNumType w:fmt="${D.thai?"thaiNumbers":"decimal"}"/><w:titlePg/></w:sectPr></w:body></w:document>`;
+ const doc=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ${NS}><w:body>${body}<w:sectPr><w:headerReference w:type="default" r:id="rIdHdr"/><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="${TW(25)}" w:right="${TW(20)}" w:bottom="${TW(TYPE==="brief"?5:20)}" w:left="${TW(30)}" w:header="${TW(12)}" w:footer="${TW(10)}" w:gutter="0"/><w:pgNumType w:fmt="${D.thai?"thaiNumbers":"decimal"}"/><w:titlePg/></w:sectPr></w:body></w:document>`;
  const fmt=D.thai?"ThaiArabic":"Arabic";
  const hdr=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:hdr ${NS}><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r>${rPr({})}<w:t xml:space="preserve">- </w:t></w:r><w:r>${rPr({})}<w:fldChar w:fldCharType="begin"/></w:r><w:r>${rPr({})}<w:instrText xml:space="preserve"> PAGE </w:instrText></w:r><w:r>${rPr({})}<w:fldChar w:fldCharType="separate"/></w:r><w:r>${rPr({})}<w:t>2</w:t></w:r><w:r>${rPr({})}<w:fldChar w:fldCharType="end"/></w:r><w:r>${rPr({})}<w:t xml:space="preserve"> -</w:t></w:r></w:p></w:hdr>`;
  const styles=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="${xe(D.font)}" w:hAnsi="${xe(D.font)}" w:eastAsia="${xe(D.font)}" w:cs="${xe(D.font)}"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:lang w:val="en-US" w:eastAsia="en-US" w:bidi="th-TH"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style></w:styles>`;
