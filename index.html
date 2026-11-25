@@ -283,7 +283,7 @@ let TYPE = store.get("thdoc_type") || "ext";
 let D = {};
 function defaults(){return {v:DATA_VERSION,fit1:true,font:"TH SarabunIT๙",thai:true,ownerPos:"อัตโนมัติ",sal:"เรียน",kind:"คำสั่ง",date:new Date().toISOString().slice(0,10)}}
 // รุ่นของระบบ (แสดงบนหน้าจอ) และรุ่นโครงข้อมูลที่เก็บในเครื่อง — เพิ่มเลขทุกครั้งที่กฎเปลี่ยนจนค่าเก่าอาจขัดกับกฎใหม่
-const APP_VERSION="2026.11.25f", DATA_VERSION=4;
+const APP_VERSION="2026.11.25g", DATA_VERSION=4;
 function migrate(x){   // ปรับค่าที่เก็บไว้ในเครื่องให้เข้ากับกฎปัจจุบัน (ดู REQUIREMENTS.md)
  if(!x||typeof x!=="object")return {};
  const v=x.v||1;
@@ -971,7 +971,7 @@ function cbxHTML(on){return `<span class="cbx">${on?"✓":""}</span>`;}
 function btabHTML(t){const L=(x,y,w)=>`<div style="position:absolute;left:${x}mm;top:${y}mm;width:${w}mm;border-top:1px solid #000"></div>`;
  const T=(x,y,w,h,html,st="")=>`<div style="position:absolute;left:${x}mm;top:${y}mm;width:${w}mm;height:${h}mm;display:flex;align-items:center;${st}">${html}</div>`;
  const cb=(x,y,lab,on,b)=>T(x,y,60,BT.cbH,`${cbxHTML(on)}<span${b?' style="font-weight:bold"':""}>${esc(lab)}</span>`);
- const p=t.prop||[];let h=`<div class="btab" style="position:absolute;left:${BT.x0}mm;top:0;width:${BT.wL+BT.wR}mm;height:200mm;border-top:1px solid #000;border-right:1px solid #000;box-sizing:border-box;text-indent:0;white-space:nowrap;line-height:${lineH()}">`;
+ const p=t.prop||[];let h=`<div class="btab" style="position:absolute;left:${BT.x0}mm;top:0;width:${BT.wL+BT.wR}mm;height:200mm;border:1px solid #000;box-sizing:border-box;text-indent:0;white-space:nowrap;line-height:${lineH()}">`;
  h+=`<div style="position:absolute;left:${BT.wL}mm;top:0;bottom:0;border-left:1px solid #000"></div>`+L(0,BT.hh,BT.wL+BT.wR);
  h+=T(0,0,BT.wL,BT.hh,"เสนอเพื่อ","justify-content:center;font-weight:bold");
  h+=T(BT.wL,0,BT.wR,BT.hh,"ข้อพิจารณา/คำสั่งเพิ่มเติม<br>(ผู้ผ่านเรื่อง)","justify-content:center;text-align:center;font-weight:bold;white-space:normal");
@@ -1138,8 +1138,8 @@ function briefXML(P,F,fl){const A=P.findIndex(p=>p.kind==="btab"), t=P[A].btab, 
  const S=(s,v="single")=>`<w:${s} w:val="${v}" w:sz="4" w:space="0" w:color="auto"/>`;
  const hdL=PP(RR("เสนอเพื่อ",{b:true}),{h:8,jc:"center"}), hdR=PP(RR("ข้อพิจารณา/คำสั่งเพิ่มเติม",{b:true}),{h:7,jc:"center"})+PP(RR("(ผู้ผ่านเรื่อง)",{b:true}),{h:7,jc:"center"});
  const tbl=`<w:tbl><w:tblPr><w:tblW w:w="${X(BT.wL+BT.wR)}" w:type="dxa"/><w:tblInd w:w="${X(BT.x0)}" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="0" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="0" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid><w:gridCol w:w="${X(BT.wL)}"/><w:gridCol w:w="${X(BT.wR)}"/></w:tblGrid>`
-  +`<w:tr><w:trPr><w:trHeight w:val="${X(BT.hh)}" w:hRule="exact"/></w:trPr>${tc(BT.wL,hdL,S("top")+S("left","nil")+S("bottom")+S("right"),"center")}${tc(BT.wR,hdR,S("top")+S("left")+S("bottom")+S("right"),"center")}</w:tr>`
-  +`<w:tr><w:trPr><w:trHeight w:val="${X(h2)}" w:hRule="atLeast"/></w:trPr>${tc(BT.wL,L,S("top")+S("left","nil")+S("bottom","nil")+S("right"))}${tc(BT.wR,Rc,S("top")+S("left")+S("bottom","nil")+S("right"))}</w:tr></w:tbl>`;
+  +`<w:tr><w:trPr><w:trHeight w:val="${X(BT.hh)}" w:hRule="exact"/></w:trPr>${tc(BT.wL,hdL,S("top")+S("left")+S("bottom")+S("right"),"center")}${tc(BT.wR,hdR,S("top")+S("left")+S("bottom")+S("right"),"center")}</w:tr>`
+  +`<w:tr><w:trPr><w:trHeight w:val="${X(h2)}" w:hRule="atLeast"/></w:trPr>${tc(BT.wL,L,S("top")+S("left")+S("bottom")+S("right"))}${tc(BT.wR,Rc,S("top")+S("left")+S("bottom")+S("right"))}</w:tr></w:tbl>`;
  return head+tbl+`<w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="20" w:lineRule="exact"/></w:pPr></w:p>`;}
 let QRIMG=null;
 function dataURLbytes(u){const [h,b]=u.split(",");const bin=atob(b);const a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return {bytes:a,ext:/jpeg|jpg/.test(h)?"jpeg":"png"};}
