@@ -128,6 +128,11 @@ with sync_playwright() as p:
     xb = zipfile.ZipFile(io.BytesIO(open(dl.value.path(),"rb").read())).read("word/document.xml").decode()
     check("R-82", "NaN" not in xb and "undefined" not in xb and "NaN" not in x and "undefined" not in x, "Word ไม่มีค่าเสีย (NaN/undefined) ที่ทำให้ MS Word เปิดไม่ได้")
     check("R-100", xb.count("<w:tbl>")==1 and xb.count("<w:tr>")==2 and xb.count('w:char="F0FE"')==1 and xb.count('w:char="F0A8"')==9 and "ผู้มีอำนาจสั่งการ" in xb, "Word: ตารางจริง 2 แถว ช่องเลือก 10 ช่อง (เลือก 1)")
+    ev("()=>{document.getElementById('fb').style.display='none';document.querySelectorAll('#tabs button')[1].click();document.getElementById('bClear').click();window._p=0;window.print=()=>{window._p++};}"); pg.wait_for_timeout(300)
+    ev("()=>document.getElementById('bPrint').click()"); pg.wait_for_timeout(300)
+    check("R-75", ev("()=>window._p===0&&document.getElementById('reqbox').style.display==='block'&&document.querySelectorAll('#form .f.req-miss').length>=5&&!!document.querySelector('#form .reqm')"), "ข้อมูลไม่ครบ พิมพ์ไม่ได้ + บอกช่องที่ขาด")
+    ev("()=>{document.getElementById('bSample').click()}"); pg.wait_for_timeout(300)
+    check("R-75", ev("()=>reqMissing().length===0&&document.getElementById('reqbox').style.display==='none'"), "กรอกครบแล้วกล่องเตือนหาย")
     check("ERR", not errs, "; ".join(errs[:3]))
     b.close()
 

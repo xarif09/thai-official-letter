@@ -98,6 +98,9 @@ textarea.docta{font-family:var(--docfont);line-height:1.3;padding:6px 8px}
 select.hist{font-size:11.5px;padding:0 2px;margin-left:6px;border:1px solid #d5dce5;border-radius:4px;color:#1f5fbf;background:#f6f9fe;max-width:130px;vertical-align:middle;cursor:pointer}
 #fb{position:fixed;inset:0;background:rgba(20,30,45,.45);display:none;align-items:center;justify-content:center;z-index:50}
 #fb .box{background:#fff;width:min(640px,94vw);max-height:90vh;border-radius:10px;display:flex;flex-direction:column;box-shadow:0 8px 30px rgba(0,0,0,.3)}#fb .hd{padding:12px 16px;border-bottom:1px solid #e1e6ec;display:flex;justify-content:space-between;align-items:center}#fb .bd{padding:12px 16px;overflow:auto;font-size:14px}#fb button{font:inherit;font-size:13px;padding:4px 12px;border:1px solid #c5cfdb;border-radius:6px;background:#fff;cursor:pointer}#fb button.pri{background:#1f5fbf;color:#fff;border-color:#1f5fbf}
+.reqm{color:#d92d20;font-weight:700;margin-right:2px}
+#reqbox{display:none;margin:0 0 6px;padding:7px 10px;border:1px solid #f0b4b4;background:#fff4f4;color:#9b1c1c;border-radius:7px;font-size:13px;line-height:1.6}#reqbox a{color:#b42318;font-weight:600}
+#form .f.req-miss>label{color:#b42318}#form .f.req-miss input,#form .f.req-miss textarea,#form .f.req-miss select,#form .f.req-miss .pbox{border-color:#e5484d!important;box-shadow:0 0 0 2px rgba(229,72,77,.15)}
 #drafts{position:fixed;inset:0;background:rgba(20,30,45,.45);display:none;align-items:center;justify-content:center;z-index:50}
 #drafts .box{background:#fff;width:min(640px,94vw);max-height:86vh;border-radius:10px;display:flex;flex-direction:column;box-shadow:0 8px 30px rgba(0,0,0,.3)}
 #drafts .hd{padding:12px 16px;border-bottom:1px solid #e1e6ec;display:flex;justify-content:space-between;align-items:center}#drafts .bd{padding:10px 16px;overflow:auto;font-size:14px}
@@ -125,6 +128,7 @@ select.hist{font-size:11.5px;padding:0 2px;margin-left:6px;border:1px solid #d5d
   </header>
   <div id="form"></div>
   <div id="msg"></div>
+  <div id="reqbox"></div>
   <div id="actions">
    <button class="pri" id="bDocx">ดาวน์โหลด Word (.docx)</button>
    <button id="bBoth">Word ทั้ง 2 ฉบับ</button>
@@ -279,7 +283,7 @@ let TYPE = store.get("thdoc_type") || "ext";
 let D = {};
 function defaults(){return {v:DATA_VERSION,fit1:true,font:"TH SarabunIT๙",thai:true,ownerPos:"อัตโนมัติ",sal:"เรียน",kind:"คำสั่ง",date:new Date().toISOString().slice(0,10)}}
 // รุ่นของระบบ (แสดงบนหน้าจอ) และรุ่นโครงข้อมูลที่เก็บในเครื่อง — เพิ่มเลขทุกครั้งที่กฎเปลี่ยนจนค่าเก่าอาจขัดกับกฎใหม่
-const APP_VERSION="2026.11.25d", DATA_VERSION=4;
+const APP_VERSION="2026.11.25e", DATA_VERSION=4;
 function migrate(x){   // ปรับค่าที่เก็บไว้ในเครื่องให้เข้ากับกฎปัจจุบัน (ดู REQUIREMENTS.md)
  if(!x||typeof x!=="object")return {};
  const v=x.v||1;
@@ -1050,6 +1054,7 @@ function update(){
  document.getElementById("warn").textContent=[...(fitMsg?[fitMsg]:[]),...WARN,...(pages>1?[`เนื้อหาเกิน 1 หน้า: หน้าถัดไปมีเลขหน้าให้อัตโนมัติ · อย่าลืมพิมพ์คำต่อเนื่อง "คำ.../" มุมขวาล่างใน Word`]:[])].join(" · ");
  scale();
  window._model={P,F};
+ if(typeof reqRefresh==="function")reqRefresh();
  liveSpellSoon();
 }
 function scale(){const z=document.getElementById("zoom").value/100;const pg=document.getElementById("page");pg.style.transform=`scale(${z})`;
@@ -1182,15 +1187,34 @@ SAMPLE.ext.qr=SAMPLE_QR;
 SAMPLE.brief={"org": "สำนักงานจังหวัดยะลา กลุ่มงานบริหารทรัพยากรบุคคล โทร. 0-7321-1586 ต่อ 74963", "no": "ยล 0017.5/", "date": "2026-07", "subject": "ประชาสัมพันธ์หลักสูตรฝึกอบรมด้าน Soft Skill ของ สวทช.", "sal": "เรียน", "to": "ผู้ว่าราชการจังหวัดยะลา", "propose": ["โปรดทราบ"], "body": "- ด้วยสำนักงานพัฒนาวิทยาศาสตร์และเทคโนโลยีแห่งชาติ (สวทช.) โดยสถาบันพัฒนาบุคลากรแห่งอนาคต แจ้งกำหนดจัดฝึกอบรมหลักสูตรด้าน Soft Skill จำนวน 3 หลักสูตร โดยให้จังหวัดแจ้งประชาสัมพันธ์ให้บุคลากรในสังกัดเข้าร่วมฝึกอบรม **(เอกสารแนบ)**\n\n- สนจ.ยล. ได้แจ้งประชาสัมพันธ์หลักสูตรดังกล่าวให้ทุกส่วนราชการ หน่วยงานรัฐวิสาหกิจ อำเภอทุกอำเภอและองค์กรปกครองส่วนท้องถิ่นทุกแห่งทราบด้วยแล้ว\n\n- จึงเรียนมาเพื่อโปรดทราบ", "staff": "นางสาวณัฏฐณิชา แซ่โก", "typist2": "นางสาวอัญชสา พิณอักษร", "bdate": "15 ก.ค. 2569", "v": 4};   // ตัวอย่างจากบันทึกย่อจริงที่ผู้ใช้ให้มา
 
 // ---------- เริ่มทำงาน ----------
-document.getElementById("bDocx").onclick=download;
+// ---------- R-75: ข้อมูลสำคัญต้องครบก่อนดาวน์โหลด/พิมพ์ ----------
+const REQ={ext:["no","addr","date","subject","to","secs","sig","owner"],memo:["org","no","date","subject","to","secs","sig"],stamp:["no","to","secs","sender","date","owner"],order:["org","subject","secs","date","sig"],brief:["org","no","date","subject","to","propose","body"]};
+function reqMissing(){const out=[],lab={};for(const f of TYPES[TYPE].fields)lab[f[0]]=f[1];
+ const has=v=>Array.isArray(v)?v.length>0:!!String(v||"").replace(/[*_>↵\s]/g,"");
+ const keys=(REQ[TYPE]||[]).slice();if(TYPE==="order"&&(D.kind||"คำสั่ง")==="คำสั่ง")keys.splice(1,0,"no");
+ for(const k of keys){
+  if(k==="secs"){if(!(D.secs||[]).some(x=>has(x.text)))out.push({k:"secs",l:"ข้อความ (เนื้อหา)"});continue;}
+  if(k==="sig"){if(D.sigMode!=="blank"){if(!has(D.name))out.push({k:"name",l:lab.name||"ชื่อผู้ลงนาม"});if(!has(D.pos))out.push({k:"pos",l:lab.pos||"ตำแหน่ง"});}continue;}
+  if(!has(D[k]))out.push({k,l:(lab[k]||k).replace(/\s*\(.*$/,"")});}
+ return out;}
+function reqGate(){const m=reqMissing();
+ document.querySelectorAll("#form .f.req-miss").forEach(x=>x.classList.remove("req-miss"));
+ if(!m.length)return true;
+ m.forEach(x=>{const w=document.querySelector(`#form .f[data-k="${x.k}"]`);if(w){w.classList.add("req-miss");const d=w.closest("details");if(d)d.open=true;}});
+ const first=document.querySelector("#form .f.req-miss");if(first)first.scrollIntoView({block:"center",behavior:"smooth"});
+ const box=document.getElementById("reqbox");box.innerHTML=`<b>ยังดาวน์โหลด/พิมพ์ไม่ได้</b> — กรอกข้อมูลสำคัญให้ครบก่อน: `+m.map(x=>`<a href="#" data-k="${x.k}">${esc(x.l)}</a>`).join(" · ");box.style.display="block";
+ box.querySelectorAll("a").forEach(a=>a.onclick=e=>{e.preventDefault();const w=document.querySelector(`#form .f[data-k="${a.dataset.k}"]`);if(w){w.scrollIntoView({block:"center",behavior:"smooth"});const i=w.querySelector("input,textarea,select,.pbox");if(i)i.focus();}});
+ return false;}
+function reqRefresh(){const box=document.getElementById("reqbox");if(box&&box.style.display==="block"){const m=reqMissing();if(!m.length){box.style.display="none";document.querySelectorAll("#form .f.req-miss").forEach(x=>x.classList.remove("req-miss"));}else reqGate();}}
+document.getElementById("bDocx").onclick=()=>{if(reqGate())download();};
 function setView(v){VIEW=(v==="copy"&&TYPE!=="memo"&&TYPE!=="brief")?"copy":"real";
  document.getElementById("vReal").className=VIEW==="real"?"on":"";document.getElementById("vCopy").className=VIEW==="copy"?"on":"";
  document.getElementById("vCopy").disabled=TYPE==="memo"||TYPE==="brief";update();}
 document.getElementById("vReal").onclick=()=>setView("real");
 document.getElementById("vCopy").onclick=()=>setView("copy");
-document.getElementById("bBoth").onclick=()=>{const v=VIEW;if(TYPE==="memo"||TYPE==="brief"){download();return;}
+document.getElementById("bBoth").onclick=()=>{if(!reqGate())return;const v=VIEW;if(TYPE==="memo"||TYPE==="brief"){download();return;}
  setView("real");download();setTimeout(()=>{setView("copy");download();setView(v);},400);};
-document.getElementById("bPrint").onclick=doPrint;
+document.getElementById("bPrint").onclick=()=>{if(reqGate())doPrint();};
 
 // ---------- ตรวจคำผิด (คำที่มักเขียนผิดในหนังสือราชการ + ตรวจวันในสัปดาห์กับวันที่) ----------
 // [รูปผิด (regex), รูปถูก, ระดับ: err = ผิดแน่, sug = ข้อแนะนำตามราชบัณฑิตยสภา/งานสารบรรณ]
@@ -1353,6 +1377,8 @@ const _rf=renderForm; renderForm=function(){const _st=document.getElementById("f
   const ws=g.map(k=>f.querySelector(`.f[data-k="${k}"]`)).filter(x=>x); if(ws.length<2)continue;
   const r=el("div",{class:"frow"});ws[0].before(r);ws.forEach(w=>{r.appendChild(w);w.classList.add("k-"+w.dataset.k);});}
  if(D.sigMode==="blank")for(const k of ["name","pos"]){const x=f.querySelector(`.f[data-k="${k}"]`);if(x)x.style.display="none";}
+ {const ks=new Set((REQ[TYPE]||[]).flatMap(k=>k==="secs"?["secs"]:k==="sig"?["name","pos"]:[k]));if(TYPE==="order")ks.add("no");
+  for(const k of ks){const l=f.querySelector(`.f[data-k="${k}"] > label`);if(l&&!l.querySelector(".reqm"))l.insertAdjacentHTML("afterbegin",'<span class="reqm" title="ต้องกรอก">*</span>');}}
  const sj=f.querySelector('.f[data-k="subject"]');if(sj)sj.classList.add("inl");   // "เรื่อง" ป้ายอยู่หน้าช่อง บรรทัดเดียว
  requestAnimationFrame(()=>{fitTA();fitPB();liveSpellSoon();});document.getElementById("form").scrollTop=_st;};
 load();document.documentElement.style.setProperty("--docfont",`"${D.font}","TH SarabunPSK","TH Sarabun New",sans-serif`);renderTabs();renderForm();
