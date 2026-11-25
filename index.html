@@ -96,6 +96,8 @@ textarea.docta{font-family:var(--docfont);line-height:1.3;padding:6px 8px}
   body{background:#fff}
 }
 select.hist{font-size:11.5px;padding:0 2px;margin-left:6px;border:1px solid #d5dce5;border-radius:4px;color:#1f5fbf;background:#f6f9fe;max-width:130px;vertical-align:middle;cursor:pointer}
+#fb{position:fixed;inset:0;background:rgba(20,30,45,.45);display:none;align-items:center;justify-content:center;z-index:50}
+#fb .box{background:#fff;width:min(640px,94vw);max-height:90vh;border-radius:10px;display:flex;flex-direction:column;box-shadow:0 8px 30px rgba(0,0,0,.3)}#fb .hd{padding:12px 16px;border-bottom:1px solid #e1e6ec;display:flex;justify-content:space-between;align-items:center}#fb .bd{padding:12px 16px;overflow:auto;font-size:14px}#fb button{font:inherit;font-size:13px;padding:4px 12px;border:1px solid #c5cfdb;border-radius:6px;background:#fff;cursor:pointer}#fb button.pri{background:#1f5fbf;color:#fff;border-color:#1f5fbf}
 #drafts{position:fixed;inset:0;background:rgba(20,30,45,.45);display:none;align-items:center;justify-content:center;z-index:50}
 #drafts .box{background:#fff;width:min(640px,94vw);max-height:86vh;border-radius:10px;display:flex;flex-direction:column;box-shadow:0 8px 30px rgba(0,0,0,.3)}
 #drafts .hd{padding:12px 16px;border-bottom:1px solid #e1e6ec;display:flex;justify-content:space-between;align-items:center}#drafts .bd{padding:10px 16px;overflow:auto;font-size:14px}
@@ -128,6 +130,7 @@ select.hist{font-size:11.5px;padding:0 2px;margin-left:6px;border:1px solid #d5d
    <button id="bBoth">Word ทั้ง 2 ฉบับ</button>
    <button class="pri" id="bPrint">พิมพ์ / บันทึก PDF</button>
    <button id="bDrafts">งานที่บันทึกไว้</button>
+   <button id="bFb">แจ้งปัญหา / ข้อเสนอแนะ</button>
    <button id="bSpell">ตรวจคำผิด</button>
    <button id="bSample">ใส่ข้อมูลตัวอย่าง</button>
    <button id="bTypo">ตัวอย่างที่มีคำผิด</button>
@@ -146,6 +149,17 @@ select.hist{font-size:11.5px;padding:0 2px;margin-left:6px;border:1px solid #d5d
  </div>
 </div>
 <div id="print"></div>
+<div id="fb" class="modal"><div class="box"><div class="hd"><b>แจ้งปัญหาการใช้งาน / ข้อเสนอแนะ</b><span><button id="fbClose">ปิด</button></span></div>
+<div class="bd" style="display:flex;flex-direction:column;gap:8px">
+ <div style="display:flex;gap:14px;flex-wrap:wrap" id="fbKind"><label class="chk"><input type="radio" name="fbk" value="bug" checked> ปัญหาการใช้งาน</label><label class="chk"><input type="radio" name="fbk" value="enhancement"> ข้อเสนอแนะ / อยากให้เพิ่ม</label><label class="chk"><input type="radio" name="fbk" value="question"> สอบถาม</label></div>
+ <input id="fbTitle" type="text" lang="th" placeholder="หัวข้อสั้น ๆ เช่น ตัดบรรทัดผิดในย่อหน้าเรียน" style="font:inherit;padding:6px 8px;border:1px solid #c5cfdb;border-radius:6px">
+ <textarea id="fbBody" lang="th" rows="6" placeholder="รายละเอียด: เกิดอะไรขึ้น / อยากให้เป็นอย่างไร" style="font:inherit;padding:6px 8px;border:1px solid #c5cfdb;border-radius:6px"></textarea>
+ <textarea id="fbSteps" lang="th" rows="3" placeholder="ขั้นตอนที่ทำก่อนเกิดปัญหา (ถ้ามี) เช่น กดใส่ข้อมูลตัวอย่าง → ดาวน์โหลด Word → เปิดใน Word" style="font:inherit;padding:6px 8px;border:1px solid #c5cfdb;border-radius:6px"></textarea>
+ <input id="fbContact" type="text" placeholder="ชื่อ/หน่วยงาน/ช่องทางติดต่อกลับ (ไม่บังคับ)" style="font:inherit;padding:6px 8px;border:1px solid #c5cfdb;border-radius:6px">
+ <label class="chk" style="font-size:13px"><input type="checkbox" id="fbData"> แนบข้อมูลที่กรอกในหนังสือปัจจุบัน (ช่วยให้แก้ปัญหาได้ตรงจุด — อย่าแนบถ้ามีข้อมูลลับ)</label>
+ <div style="font-size:12.5px;color:#6b7684">ระบบแนบรุ่นโปรแกรม ประเภทหนังสือ และเบราว์เซอร์ให้อัตโนมัติ · กด "ส่ง" แล้วจะเปิดหน้า GitHub ให้ตรวจข้อความแล้วกด <b>Submit new issue</b> (ต้องเข้าสู่ระบบ GitHub)</div>
+ <div style="display:flex;gap:8px;justify-content:flex-end"><button id="fbCopy">คัดลอกข้อความ</button><button id="fbSend" class="pri">ส่งไปที่ GitHub</button></div>
+</div></div></div>
 <div id="drafts" class="modal"><div class="box"><div class="hd"><b>งานที่ยังทำไม่เสร็จ</b><span><button id="drExp" title="บันทึกงานทั้งหมดเป็นไฟล์ ไว้ย้ายไปอีกเครื่อง">ส่งออกไฟล์</button> <button id="drImp" title="นำงานจากไฟล์ที่ส่งออกไว้เข้ามา">นำเข้าไฟล์</button> <button id="drClose">ปิด</button></span></div>
 <div class="bd"><div style="display:flex;gap:6px;margin-bottom:10px"><input id="drName" type="text" lang="th" placeholder="ชื่องาน" style="flex:1;font:inherit;padding:5px 8px;border:1px solid #c5cfdb;border-radius:6px"><button id="drSave" class="pri">บันทึกงานนี้</button></div><div id="drList"></div><input id="drFile" type="file" accept=".json,application/json" style="display:none"></div></div></div>
 <div id="spell"><div class="box"><div class="hd"><b>ตรวจคำผิด</b><span><button id="spAll" class="pri">แก้ทั้งหมดที่เป็นคำผิด</button> <button id="spClose">ปิด</button></span></div><div class="bd" id="spList"></div></div></div>
@@ -265,7 +279,7 @@ let TYPE = store.get("thdoc_type") || "ext";
 let D = {};
 function defaults(){return {v:DATA_VERSION,fit1:true,font:"TH SarabunIT๙",thai:true,ownerPos:"อัตโนมัติ",sal:"เรียน",kind:"คำสั่ง",date:new Date().toISOString().slice(0,10)}}
 // รุ่นของระบบ (แสดงบนหน้าจอ) และรุ่นโครงข้อมูลที่เก็บในเครื่อง — เพิ่มเลขทุกครั้งที่กฎเปลี่ยนจนค่าเก่าอาจขัดกับกฎใหม่
-const APP_VERSION="2026.11.25b", DATA_VERSION=4;
+const APP_VERSION="2026.11.25c", DATA_VERSION=4;
 function migrate(x){   // ปรับค่าที่เก็บไว้ในเครื่องให้เข้ากับกฎปัจจุบัน (ดู REQUIREMENTS.md)
  if(!x||typeof x!=="object")return {};
  const v=x.v||1;
@@ -1281,6 +1295,25 @@ function histAttach(w,inp,key){
  sel.onchange=()=>{const v=sel.value;sel.value="";if(v==="")return;if(v==="clear"){L.forEach(x=>histDel(key,x));renderForm();return;}
   inp.value=L[+v];D[key]=inp.value;histAdd(key,inp.value);save();update();if(inp.tagName==="TEXTAREA")fitTA&&fitTA();};
  const lb=w.querySelector("label");if(lb)lb.appendChild(sel);}
+// ---------- R-74: แจ้งปัญหา / ข้อเสนอแนะ → GitHub Issues (เว็บนิ่ง ไม่มีเครื่องแม่ข่าย) ----------
+const FB_REPO="https://github.com/xarif09/thai-official-letter/issues/new";
+function fbText(){const k=(document.querySelector('input[name=fbk]:checked')||{}).value||"bug",KN={bug:"ปัญหาการใช้งาน",enhancement:"ข้อเสนอแนะ",question:"สอบถาม"}[k];
+ const v=id=>document.getElementById(id).value.trim();
+ let b=`**ประเภท:** ${KN}\n**หนังสือ:** ${TYPES[TYPE].name} (${VIEW==="copy"?"สำเนาคู่ฉบับ":"ฉบับจริง"})\n\n### รายละเอียด\n${v("fbBody")||"-"}\n`;
+ if(v("fbSteps"))b+=`\n### ขั้นตอนที่ทำ\n${v("fbSteps")}\n`;
+ if(v("fbContact"))b+=`\n**ติดต่อกลับ:** ${v("fbContact")}\n`;
+ b+=`\n---\nรุ่น ${APP_VERSION} · ข้อมูลรุ่น ${DATA_VERSION} · ฟอนต์ ${D.font} ${document.fonts&&document.fonts.check(`16pt "${D.font}"`)?"✓":"(ไม่พบในเครื่อง)"} · ${navigator.userAgent.replace(/^Mozilla\/5\.0 /,"")}`;
+ if(WARN&&WARN.length)b+=`\nคำเตือนในหน้า: ${WARN.join(" · ")}`;
+ if(document.getElementById("fbData").checked){const j=JSON.stringify(Object.assign({},D,{qr:D.qr?"(มีรูป QR)":""}));b+=`\n\n<details><summary>ข้อมูลที่กรอก (${TYPE})</summary>\n\n\`\`\`json\n${j.slice(0,5000)}${j.length>5000?"…(ตัดท้าย)":""}\n\`\`\`\n</details>`;}
+ return {k,title:`[${KN}] ${v("fbTitle")||"(ไม่มีหัวข้อ)"}`,body:b};}
+document.getElementById("bFb").onclick=()=>{document.getElementById("fb").style.display="flex";document.getElementById("fbTitle").focus();};
+document.getElementById("fbClose").onclick=()=>{document.getElementById("fb").style.display="none";};
+document.getElementById("fb").onclick=e=>{if(e.target.id==="fb")e.target.style.display="none";};
+document.getElementById("fbCopy").onclick=async()=>{const t=fbText();try{await navigator.clipboard.writeText(t.title+"\n\n"+t.body);msgFlash("คัดลอกแล้ว — วางส่งทางอีเมล/LINE ถึงผู้พัฒนาได้");}catch(e){msgFlash("คัดลอกไม่สำเร็จ");}};
+document.getElementById("fbSend").onclick=()=>{const t=fbText();if(!document.getElementById("fbBody").value.trim()){msgFlash("กรุณากรอกรายละเอียด");document.getElementById("fbBody").focus();return;}
+ let body=t.body;const mk=()=>`${FB_REPO}?labels=${t.k}&title=${encodeURIComponent(t.title)}&body=${encodeURIComponent(body)}`;
+ if(mk().length>7500){body=body.replace(/\n\n<details>[\s\S]*<\/details>/,"\n\n(ข้อมูลที่กรอกยาวเกินลิงก์ — กด \"คัดลอกข้อความ\" แล้ววางเพิ่มในหน้า GitHub)");}
+ window.open(mk(),"_blank","noopener");document.getElementById("fb").style.display="none";msgFlash("เปิดหน้า GitHub แล้ว — ตรวจข้อความแล้วกด Submit new issue");};
 // ---------- งานที่ยังทำไม่เสร็จ (R-73) : เก็บหลายงานในเครื่อง เปิดต่อภายหลัง ส่งออก/นำเข้าไฟล์เพื่อย้ายเครื่อง ----------
 const drGet=()=>store.get("thdoc_drafts")||[], drSet=a=>store.set("thdoc_drafts",a);
 function drDefName(){const t=(D.subject||"").trim()||((D.secs||[]).map(x=>x.text||"").join(" ").replace(/[*_>↵\n]+/g," ").trim().slice(0,40));return t||("งาน"+TYPES[TYPE].name);}
