@@ -123,6 +123,7 @@ with sync_playwright() as p:
     ev("()=>{document.getElementById('spell').style.display='none';document.getElementById('drafts').style.display='none'}")
     tab(4)
     check("R-100", ev("()=>TYPE==='brief'&&!!document.querySelector('#page .btab')&&document.querySelectorAll('#page .sheet').length===0&&document.getElementById('vCopy').disabled&&/✓/.test(document.querySelector('#page .btab').textContent)&&document.getElementById('page').textContent.includes('ผู้มีอำนาจสั่งการ')&&document.getElementById('page').textContent.includes('(นางสาวณัฏฐณิชา แซ่โก)')"), "พรีวิวบันทึกย่อ 1 หน้า ตาราง + ช่องเลือก + ผู้จัดทำ")
+    check("R-101", ev("()=>{const P=build().P.filter(p=>p.cell);return P.length>0&&P.every(p=>p.first===20||p.first===0)&&P.some(p=>p.first===20)&&+document.querySelector('#form [data-k=body] .pbox').dataset.base===20}"), "ย่อหน้า 2.0 ซม. ทั้งหนังสือและฟอร์ม")
     with pg.expect_download() as dl: pg.click("#bDocx")
     xb = zipfile.ZipFile(io.BytesIO(open(dl.value.path(),"rb").read())).read("word/document.xml").decode()
     check("R-82", "NaN" not in xb and "undefined" not in xb and "NaN" not in x and "undefined" not in x, "Word ไม่มีค่าเสีย (NaN/undefined) ที่ทำให้ MS Word เปิดไม่ได้")

@@ -175,7 +175,7 @@ const store = { get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){r
 const SAL = ["เรียน","กราบเรียน","นมัสการ","เจริญพร"];
 const BPROP=["โปรดทราบ","โปรดอนุมัติ","โปรดลงนาม","โปรดพิจารณา"], BCMD=["ทราบ","อนุมัติ","เห็นชอบ","ลงนามแล้ว","อนุญาต","ลงนัด"];
 // ผังตารางบันทึกย่อ (มม.) — ใช้ร่วมกันทั้งพรีวิว/PDF และ Word
-const BT={x0:-2.5,wL:107.5,wR:67.5,hh:16,cb1:18,cbH:8,line1:34,headB:43,bodyTop:46,txtW:102,rLine1:58,rLine2:67,rcb:69,cbx1:22,cbx2:60,rcbx1:8,rcbx2:40,bottom:288,staffY:262};
+const BT={ind:20,x0:-2.5,wL:107.5,wR:67.5,hh:16,cb1:18,cbH:8,line1:34,headB:43,bodyTop:46,txtW:102,rLine1:58,rLine2:67,rcb:69,cbx1:22,cbx2:60,rcbx1:8,rcbx2:40,bottom:288,staffY:262};
 const STPP = ["— ไม่ใช้ (พิมพ์ในข้อความเอง) —","จึงแจ้งมาเพื่อทราบ","จึงแจ้งมาเพื่อโปรดทราบและถือปฏิบัติ","จึงแจ้งมาเพื่อโปรดทราบและแจ้งผู้เกี่ยวข้องทราบด้วย","จึงแจ้งมาเพื่อโปรดพิจารณาดำเนินการต่อไป","อื่น ๆ (พิมพ์เอง)"];
 const ORDP = ["— ไม่ใช้ (พิมพ์ในข้อความเอง) —","ทั้งนี้ ตั้งแต่บัดนี้เป็นต้นไป","ทั้งนี้ ให้ผู้ที่เกี่ยวข้องทราบและถือปฏิบัติ","จึงประกาศให้ทราบโดยทั่วกัน","ประกาศมาเพื่อทราบโดยทั่วกัน","อื่น ๆ (พิมพ์เอง)"];
 const ENDP = ["— ไม่ใช้ (พิมพ์ในข้อความเอง) —","จึงเรียนมาเพื่อโปรดทราบ","จึงเรียนมาเพื่อโปรดพิจารณา","จึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ","จึงเรียนมาเพื่อโปรดทราบและพิจารณาดำเนินการต่อไป","จึงเรียนมาเพื่อโปรดทราบและถือปฏิบัติ","จึงเรียนมาเพื่อโปรดทราบ และแจ้งผู้เกี่ยวข้องทราบด้วย","จึงเรียนมาเพื่อโปรดพิจารณาเข้าร่วมประชุมตามวัน เวลา และสถานที่ดังกล่าว","จึงเรียนมาเพื่อโปรดพิจารณาให้ความอนุเคราะห์ด้วย จะขอบคุณยิ่ง","จึงเรียนมาเพื่อโปรดทราบ และขอขอบคุณมา ณ โอกาสนี้","อื่น ๆ (พิมพ์เอง)"];
@@ -279,7 +279,7 @@ let TYPE = store.get("thdoc_type") || "ext";
 let D = {};
 function defaults(){return {v:DATA_VERSION,fit1:true,font:"TH SarabunIT๙",thai:true,ownerPos:"อัตโนมัติ",sal:"เรียน",kind:"คำสั่ง",date:new Date().toISOString().slice(0,10)}}
 // รุ่นของระบบ (แสดงบนหน้าจอ) และรุ่นโครงข้อมูลที่เก็บในเครื่อง — เพิ่มเลขทุกครั้งที่กฎเปลี่ยนจนค่าเก่าอาจขัดกับกฎใหม่
-const APP_VERSION="2026.11.25c", DATA_VERSION=4;
+const APP_VERSION="2026.11.25d", DATA_VERSION=4;
 function migrate(x){   // ปรับค่าที่เก็บไว้ในเครื่องให้เข้ากับกฎปัจจุบัน (ดู REQUIREMENTS.md)
  if(!x||typeof x!=="object")return {};
  const v=x.v||1;
@@ -467,7 +467,7 @@ function renderForm(){
   w.appendChild(el("label",{},esc(label)+(kind!=="select"&&extra&&typeof extra==="string"?` <span class="hint" title="${esc(extra)}">ⓘ</span>`:"")));
   let inp;
   if(kind==="select"){inp=el("select");for(const o of extra){const op=el("option",{value:o},o||"— ไม่มี —");inp.appendChild(op);} inp.value=D[key]??extra[0];}
-  else if(kind==="bigarea"){if(TYPE==="brief")w.dataset.cw=BT.txtW;w.appendChild(fmtBarPB());w.appendChild(paraEditor(()=>D[key]||"",v=>{D[key]=v;}));f.appendChild(w);continue;}
+  else if(kind==="bigarea"){if(TYPE==="brief")w.dataset.cw=BT.txtW;w.appendChild(fmtBarPB());w.appendChild(paraEditor(()=>D[key]||"",v=>{D[key]=v;},undefined,TYPE==="brief"?BT.ind:25));f.appendChild(w);continue;}
   else if(kind==="area"){inp=el("textarea",{spellcheck:"true",lang:"th"});inp.value=D[key]||"";}
   else if(kind==="date"){inp=el("input",{type:"date"});inp.value=D[key]||"";}
   else if(kind==="checks"){   // ช่องเลือกหลายข้อ (เสนอเพื่อ)
@@ -837,7 +837,7 @@ function build(){
   labelList(D.sal||"เรียน",[D.to||""],6,false);
   const tb={kind:"btab",prop:Array.isArray(D.propose)?D.propose:[]};F.push(tb);
   tb.at=P.length;para({runs:[],kind:"btab",btab:tb,before:6});
-  const b0=P.length;body(D.body||"");
+  const b0=P.length;body(D.body||"",true,BT.ind);   // R-101 ย่อหน้าบันทึกย่อ 2.0 ซม.
   for(let i=b0;i<P.length;i++){P[i].indR=CW-BT.txtW;P[i].cell=true;}
   if(P[b0])P[b0].before=mm2pt(BT.bodyTop);
   const dots="...........................................................", nm=x=>(x||"").trim()?`(${x.trim()})`:"(.......................................................)";
