@@ -45,6 +45,7 @@ details.secbox>summary::before{content:"▸ ";color:#1f5fbf}details.secbox[open]
 .pbox{flex:1;min-width:0;min-height:1.4em;border:1px solid #c5cfdb;border-radius:6px;padding:5px 8px;background:#fff;font-family:var(--docfont);line-height:1.3;outline:none;white-space:pre-wrap;word-break:break-word}
 .pbox:focus{border-color:#1f5fbf;box-shadow:0 0 0 2px rgba(31,95,191,.12)}
 .pbox.single>div{min-height:1.3em}.pbox.single>div.sgap{min-height:.6em;border-bottom:1px dashed #d5dce5;margin-bottom:3px}.pbed{display:flex;flex-direction:column;gap:3px}
+.cbx{display:inline-block;width:3.6mm;height:3.6mm;border:1.3px solid #000;margin-right:2.4mm;font-size:12pt;line-height:3.4mm;text-align:center;font-family:"Segoe UI Symbol",sans-serif;flex:0 0 auto}
 .pbox:empty::before{content:attr(data-ph);color:#9aa4b1;font-family:var(--ui);font-size:13px}
 .pbadd{align-self:flex-start;margin:3px 0 0 0;font:inherit;font-size:12.5px;padding:3px 9px;border:1px dashed #1f5fbf;color:#1f5fbf;background:#f3f7fd;border-radius:6px;cursor:pointer}
 .fmhint{font-size:11.5px;color:#6b7684;align-self:center;margin-left:4px;flex:1 1 200px}
@@ -158,6 +159,9 @@ const store = { get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){r
 
 // ---------- ฟิลด์ของแต่ละประเภท ----------
 const SAL = ["เรียน","กราบเรียน","นมัสการ","เจริญพร"];
+const BPROP=["โปรดทราบ","โปรดอนุมัติ","โปรดลงนาม","โปรดพิจารณา"], BCMD=["ทราบ","อนุมัติ","เห็นชอบ","ลงนามแล้ว","อนุญาต","ลงนัด"];
+// ผังตารางบันทึกย่อ (มม.) — ใช้ร่วมกันทั้งพรีวิว/PDF และ Word
+const BT={x0:-2.5,wL:107.5,wR:67.5,hh:16,cb1:18,cbH:8,line1:34,headB:43,bodyTop:46,txtW:102,rLine1:58,rLine2:67,rcb:69,cbx1:22,cbx2:60,rcbx1:8,rcbx2:40,bottom:288,staffY:262};
 const STPP = ["— ไม่ใช้ (พิมพ์ในข้อความเอง) —","จึงแจ้งมาเพื่อทราบ","จึงแจ้งมาเพื่อโปรดทราบและถือปฏิบัติ","จึงแจ้งมาเพื่อโปรดทราบและแจ้งผู้เกี่ยวข้องทราบด้วย","จึงแจ้งมาเพื่อโปรดพิจารณาดำเนินการต่อไป","อื่น ๆ (พิมพ์เอง)"];
 const ORDP = ["— ไม่ใช้ (พิมพ์ในข้อความเอง) —","ทั้งนี้ ตั้งแต่บัดนี้เป็นต้นไป","ทั้งนี้ ให้ผู้ที่เกี่ยวข้องทราบและถือปฏิบัติ","จึงประกาศให้ทราบโดยทั่วกัน","ประกาศมาเพื่อทราบโดยทั่วกัน","อื่น ๆ (พิมพ์เอง)"];
 const ENDP = ["— ไม่ใช้ (พิมพ์ในข้อความเอง) —","จึงเรียนมาเพื่อโปรดทราบ","จึงเรียนมาเพื่อโปรดพิจารณา","จึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ","จึงเรียนมาเพื่อโปรดทราบและพิจารณาดำเนินการต่อไป","จึงเรียนมาเพื่อโปรดทราบและถือปฏิบัติ","จึงเรียนมาเพื่อโปรดทราบ และแจ้งผู้เกี่ยวข้องทราบด้วย","จึงเรียนมาเพื่อโปรดพิจารณาเข้าร่วมประชุมตามวัน เวลา และสถานที่ดังกล่าว","จึงเรียนมาเพื่อโปรดพิจารณาให้ความอนุเคราะห์ด้วย จะขอบคุณยิ่ง","จึงเรียนมาเพื่อโปรดทราบ และขอขอบคุณมา ณ โอกาสนี้","อื่น ๆ (พิมพ์เอง)"];
@@ -231,7 +235,23 @@ const TYPES = {
   ["sec","ผู้ลงนาม"],
   ["sigMode","การลงนาม","signer"],
   ["name","ชื่อเต็มผู้ลงนาม","text"],
-  ["pos","ตำแหน่ง","area"]]}
+  ["pos","ตำแหน่ง","area"]]},
+ brief:{name:"บันทึกย่อ", fields:[   // R-100: บันทึกย่อเสนอผู้บังคับบัญชา (หัวบันทึกข้อความ + ตาราง 2 ช่อง)
+  ["sec","หัวบันทึก"],
+  ["org","ส่วนราชการ","text"],
+  ["no","ที่","text"],
+  ["date","เดือนและปี (วันที่เว้นว่างไว้เขียนตอนลงนาม)","month"],
+  ["subject","เรื่อง","text"],
+  ["sal","คำขึ้นต้น","select",SAL],
+  ["to","ผู้รับ","text"],
+  ["sec","เสนอเพื่อ"],
+  ["propose","เสนอเพื่อ (เลือกได้หลายข้อ)","checks",BPROP],
+  ["sec","ความเห็นเจ้าหน้าที่โดยสรุป"],
+  ["body","ความเห็นเจ้าหน้าที่โดยสรุป","bigarea"],
+  ["sec","ผู้จัดทำ (มุมล่างช่องซ้าย)"],
+  ["staff","เจ้าหน้าที่ (จนท.)","text","ชื่อเต็ม ไม่ต้องใส่วงเล็บ"],
+  ["typist2","พิมพ์/ทาน","text","ชื่อเต็ม ไม่ต้องใส่วงเล็บ"],
+  ["bdate","วันที่จัดทำ","text","ว่าง = วันนี้ (เช่น ๑๕ ก.ค. ๒๕๖๙)"]]}
 };
 const COMMON = [["sec","ตั้งค่า"],["font","แบบอักษร","select",["TH SarabunIT๙","TH SarabunPSK","TH Sarabun New"]],
  ["lsp","ระยะบรรทัด","select",["1 เท่า (ปกติ)","0.95 เท่า (กระชับ)","0.9 เท่า (กระชับมาก)"]],
@@ -245,7 +265,7 @@ let TYPE = store.get("thdoc_type") || "ext";
 let D = {};
 function defaults(){return {v:DATA_VERSION,fit1:true,font:"TH SarabunIT๙",thai:true,ownerPos:"อัตโนมัติ",sal:"เรียน",kind:"คำสั่ง",date:new Date().toISOString().slice(0,10)}}
 // รุ่นของระบบ (แสดงบนหน้าจอ) และรุ่นโครงข้อมูลที่เก็บในเครื่อง — เพิ่มเลขทุกครั้งที่กฎเปลี่ยนจนค่าเก่าอาจขัดกับกฎใหม่
-const APP_VERSION="2026.11.23p", DATA_VERSION=4;
+const APP_VERSION="2026.11.25a", DATA_VERSION=4;
 function migrate(x){   // ปรับค่าที่เก็บไว้ในเครื่องให้เข้ากับกฎปัจจุบัน (ดู REQUIREMENTS.md)
  if(!x||typeof x!=="object")return {};
  const v=x.v||1;
@@ -376,7 +396,7 @@ function singleEditor(get,set,ph,base){   // กล่องเดียว: แ
  return bx;}
 function fitPB(scope){for(const bx of (scope||document).querySelectorAll(".pbox")){const cs=getComputedStyle(bx);
  const inner=bx.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight); if(inner<50)continue;
- const k=inner/(160*96/25.4), b=+bx.dataset.base||25, ti=l=>((b+5*l)*96/25.4*k).toFixed(1)+"px"; bx.style.fontSize=(16*96/72*k).toFixed(2)+"px";
+ const cw=+((bx.closest("[data-cw]")||{dataset:{}}).dataset.cw||160), k=inner/(cw*96/25.4), b=+bx.dataset.base||25, ti=l=>((b+5*l)*96/25.4*k).toFixed(1)+"px"; bx.style.fontSize=(16*96/72*k).toFixed(2)+"px";
  if(bx.classList.contains("single")){bx.style.textIndent="0";for(const d of bx.querySelectorAll(":scope > div"))d.style.textIndent=ti(+d.dataset.lvl||0);}
  else bx.style.textIndent=ti(+bx.dataset.lvl||0);}}   // ย่อหน้าบรรทัดแรกตามสัดส่วนจริง
 
@@ -421,7 +441,7 @@ function secOrder(arr){const FIRST=["ต้นเรื่อง/ข้อเท
  const rest=arr.filter(x=>!mv.includes(x)); rest.splice(k,0,...mv.sort((a,b)=>FIRST.indexOf(a.h)-FIRST.indexOf(b.h))); arr.splice(0,arr.length,...rest); return arr;}
 function renderForm(){
  const F0=document.getElementById("form");const st0=F0.scrollTop;F0.innerHTML="";let f=F0;
- let fields=TYPES[TYPE].fields.concat(COMMON);
+ let fields=TYPES[TYPE].fields.concat(TYPE==="brief"?COMMON.filter(f=>!["drafter","typist","checker","fit1"].includes(f[0])):COMMON);   // บันทึกย่อ: ไม่มีสำเนาคู่ฉบับ/ไม่แบ่งหน้า
  const SECCLOSED=store.get("thdoc_secclosed")||{"ตั้งค่า":true};
  for(const [key,label,kind,extra] of fields){
   if(key==="sec"){   // หมวดพับเก็บได้ (จำสถานะไว้)
@@ -433,9 +453,14 @@ function renderForm(){
   w.appendChild(el("label",{},esc(label)+(kind!=="select"&&extra&&typeof extra==="string"?` <span class="hint" title="${esc(extra)}">ⓘ</span>`:"")));
   let inp;
   if(kind==="select"){inp=el("select");for(const o of extra){const op=el("option",{value:o},o||"— ไม่มี —");inp.appendChild(op);} inp.value=D[key]??extra[0];}
-  else if(kind==="bigarea"){w.appendChild(fmtBarPB());w.appendChild(paraEditor(()=>D[key]||"",v=>{D[key]=v;}));f.appendChild(w);continue;}
+  else if(kind==="bigarea"){if(TYPE==="brief")w.dataset.cw=BT.txtW;w.appendChild(fmtBarPB());w.appendChild(paraEditor(()=>D[key]||"",v=>{D[key]=v;}));f.appendChild(w);continue;}
   else if(kind==="area"){inp=el("textarea",{spellcheck:"true",lang:"th"});inp.value=D[key]||"";}
   else if(kind==="date"){inp=el("input",{type:"date"});inp.value=D[key]||"";}
+  else if(kind==="checks"){   // ช่องเลือกหลายข้อ (เสนอเพื่อ)
+   const cur=Array.isArray(D[key])?D[key]:[];const row=el("div",{style:"display:flex;gap:14px;flex-wrap:wrap"});
+   for(const o of extra){const l=el("label",{class:"chk",style:"font-size:14px"});const c=el("input",{type:"checkbox"});c.checked=cur.includes(o);
+    c.onchange=()=>{const a=new Set(Array.isArray(D[key])?D[key]:[]);c.checked?a.add(o):a.delete(o);D[key]=extra.filter(x=>a.has(x));save();update();};l.appendChild(c);l.appendChild(document.createTextNode(" "+o));row.appendChild(l);}
+   w.appendChild(row);f.appendChild(w);continue;}
   else if(kind==="signer"){   // R-43: 2 แบบ — ระบุชื่อ/ตำแหน่ง (เลือกจากรายชื่อที่บันทึกไว้) หรือ เว้นว่างไว้ประทับตรายางเอง
    const SG=()=>store.get("thdoc_signers")||[];
    const row=el("div",{style:"display:flex;gap:6px;flex-wrap:wrap;align-items:center"});
@@ -564,7 +589,7 @@ function renderForm(){
 }
 const INIH=17;
 let WARN=[], LASTPAGE=0, VIEW="real";   // real = ฉบับจริง, copy = สำเนาคู่ฉบับ
-const isCopy=()=>VIEW==="copy"&&TYPE!=="memo"; const QR=22;   // ขนาด QR (มม.)
+const isCopy=()=>VIEW==="copy"&&TYPE!=="memo"&&TYPE!=="brief"; const QR=22;   // ขนาด QR (มม.)
 let GARUDA = (()=>{try{return localStorage.getItem("thdoc_garuda")||GARUDA_DEFAULT}catch(e){return GARUDA_DEFAULT}})();
 
 // ---------- เครื่องมือ ----------
@@ -587,6 +612,7 @@ function normTel(x){const AR=t=>t.replace(/[๐-๙]/g,d=>"๐๑๒๓๔๕๖
   if(/^0\d{9}$/.test(d))return pre+d.slice(0,3)+" "+d.slice(3,6)+" "+d.slice(6);
   return m;})).join("").replace(/\s+-\s+|\s*,\s*/g,m=>m.includes(",")?", ":" - ");}
 function normNo(x){return String(x||"").trim().replace(/\s+/g," ").replace(/([ก-ฮ]\.?)(?=[0-9๐-๙])/g,"$1 ");}
+function briefToday(){const d=new Date();return `${d.getDate()} ${["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."][d.getMonth()]} ${d.getFullYear()+543}`;}
 function thaiDate(s,ps=false){   // ลงเฉพาะเดือนและปี — เว้นที่ว่างให้เขียนวันที่ตอนลงนาม
  if(!s)return "";const [y,m]=s.split("-").map(Number);
  const day="        ";
@@ -786,6 +812,23 @@ function build(){
   body(D.body); secs(); endp(); keepFromLast();
   sign(3);
  }
+ if(TYPE==="brief"){   // R-100 บันทึกย่อ
+  const h=15,w=h*GARUDA_RATIO;F.push({kind:"img",x:30,y:15,w,h});
+  F.push({kind:"text",x:55,y:16,w:100,h:14,text:"บันทึกข้อความ",pt:29,b:true,align:"center"});
+  const tw=measure("บันทึกข้อความ",29,true), xd=105-tw/2+measure("บันทึก",29,true)-30;
+  { const H=measure("ส่วนราชการ",20,true)+measure("  ");
+    para({runs:[R("ส่วนราชการ",{sz:20,b:true}),TAB,R(normTel(D.org||""))],indL:H,hang:H,tabAt:H,kind:"label",before:mm2pt(6)}); }
+  para({runs:[R("ที่",{sz:20,b:true}),R("  "+normNo(D.no)),TAB,R("วันที่",{sz:20,b:true}),R("  "+thaiDate(D.date))],tabAt:xd,kind:"abs"});
+  labelList("เรื่อง",[D.subject||""],0,false,20,true);
+  labelList(D.sal||"เรียน",[D.to||""],6,false);
+  const tb={kind:"btab",prop:Array.isArray(D.propose)?D.propose:[]};F.push(tb);
+  tb.at=P.length;para({runs:[],kind:"btab",btab:tb,before:6});
+  const b0=P.length;body(D.body||"");
+  for(let i=b0;i<P.length;i++){P[i].indR=CW-BT.txtW;P[i].cell=true;}
+  if(P[b0])P[b0].before=mm2pt(BT.bodyTop);
+  const dots="...........................................................", nm=x=>(x||"").trim()?`(${x.trim()})`:"(.......................................................)";
+  F.push({kind:"stext",x:70,y:BT.staffY,w:70,h:26,pt:10,lines:["จนท."+dots,nm(D.staff),"พิมพ์/ทาน"+dots,nm(D.typist2),(D.bdate||"").trim()||briefToday()]});
+ }
  if(TYPE==="stamp"){
   head3();
   para({runs:[R("ที่ "+normNo(D.no))],before:TOP});
@@ -830,7 +873,7 @@ function distLines(p){   // จุดตัดบรรทัดของย่�
  if(p.kind==="label"||p.kind==="num"){let i=runs.findIndex(r=>r.tab);
   if(p.kind==="label"){head=runs.slice(0,i+1);runs=runs.slice(i+1);}
   if(p.numW){const j=runs.findIndex(r=>r.tab);head=head.concat(runs.slice(0,j+1));runs=runs.slice(j+1);}}
- const W=CW-p.indL-p.indR, W0=(p.kind==="label"||p.kind==="num")?W:W-ml0;
+ const W=p.lw||(CW-p.indL-p.indR), W0=(p.kind==="label"||p.kind==="num")?W:W-ml0;
  const tk=tokens(runs);const lines=[];let cur=[],w=0,lim=W0;
  const push=()=>{while(cur.length&&cur[cur.length-1].sp)cur.pop();lines.push({tk:cur,w:lim});cur=[];w=0;lim=W;};
  // ความกว้างจากตำแหน่ง q ถึงจุดตัดบรรทัดบังคับ (↵) ถัดไป — ใช้ตัดสินใจ "หด" ให้ข้อความก่อน ↵ อยู่บรรทัดเดียว
@@ -884,6 +927,7 @@ function justify(root){   // เพิ่มระยะ "ระหว่าง�
  }
 }
 function paraHTML(p){
+ if(p.kind==="btab")return `<div style="position:relative;height:0;margin-top:${p.before}pt">${btabHTML(p.btab)}</div>`;
  const st=[`margin-top:${p.before}pt`,`padding-left:${p.indL}mm`,`padding-right:${p.indR}mm`,
   `text-indent:${p.first?p.first:(p.hang?-p.hang:0)}mm`,`text-align:${p.jc==="dist"?"justify":p.jc}`];
  if(!p.runs.length||p.runs.every(r=>!r.tab&&!r.t))return `<p style="${st.join(";")}">&nbsp;</p>`;
@@ -905,6 +949,19 @@ function paraHTML(p){
 }
 function sideHTML(F){const f=(F||[]).find(x=>x.kind==="block"&&x.mode==="side");if(!f)return "";
  return `<div style="position:absolute;left:0;bottom:0;white-space:pre;text-indent:0;text-align:left">${f.qr?`<img src="${f.qr}" style="width:${QR}mm;height:${QR}mm;display:block;margin-bottom:1mm">`:""}${f.lines.map(x=>esc(x)||"&nbsp;").join("<br>")}</div>`;}
+function cbxHTML(on){return `<span class="cbx">${on?"✓":""}</span>`;}
+function btabHTML(t){const L=(x,y,w)=>`<div style="position:absolute;left:${x}mm;top:${y}mm;width:${w}mm;border-top:1px solid #000"></div>`;
+ const T=(x,y,w,h,html,st="")=>`<div style="position:absolute;left:${x}mm;top:${y}mm;width:${w}mm;height:${h}mm;display:flex;align-items:center;${st}">${html}</div>`;
+ const cb=(x,y,lab,on,b)=>T(x,y,60,BT.cbH,`${cbxHTML(on)}<span${b?' style="font-weight:bold"':""}>${esc(lab)}</span>`);
+ const p=t.prop||[];let h=`<div class="btab" style="position:absolute;left:${BT.x0}mm;top:0;width:${BT.wL+BT.wR}mm;height:200mm;border-top:1px solid #000;border-right:1px solid #000;box-sizing:border-box;text-indent:0;white-space:nowrap;line-height:${lineH()}">`;
+ h+=`<div style="position:absolute;left:${BT.wL}mm;top:0;bottom:0;border-left:1px solid #000"></div>`+L(0,BT.hh,BT.wL+BT.wR);
+ h+=T(0,0,BT.wL,BT.hh,"เสนอเพื่อ","justify-content:center;font-weight:bold");
+ h+=T(BT.wL,0,BT.wR,BT.hh,"ข้อพิจารณา/คำสั่งเพิ่มเติม<br>(ผู้ผ่านเรื่อง)","justify-content:center;text-align:center;font-weight:bold;white-space:normal");
+ BPROP.forEach((o,i)=>{h+=cb(i%2?BT.cbx2:BT.cbx1,BT.cb1+Math.floor(i/2)*BT.cbH,o,p.includes(o),true);});
+ h+=L(0,BT.line1,BT.wL)+T(0,BT.line1+1,BT.wL,BT.headB-BT.line1-1,"ความเห็นเจ้าหน้าที่โดยสรุป","justify-content:center;font-weight:bold")+L(0,BT.headB,BT.wL);
+ h+=L(BT.wL,BT.rLine1,BT.wR)+T(BT.wL,BT.rLine1,BT.wR,BT.rLine2-BT.rLine1,"ผู้มีอำนาจสั่งการ","justify-content:center;font-weight:bold")+L(BT.wL,BT.rLine2,BT.wR);
+ BCMD.forEach((o,i)=>{h+=cb(BT.wL+(i%2?BT.rcbx2:BT.rcbx1),BT.rcb+Math.floor(i/2)*BT.cbH,o,false,true);});
+ return h+"</div>";}
 function parasHTML(P,F){let h="",grp="",side=sideHTML(F);
  const sf=(F||[]).find(x=>x.kind==="block"&&x.mode==="side"), at=sf&&sf.at!=null?sf.at:-1;   // QR ข้างลายมือชื่อ: ยึดใต้ย่อหน้าบรรทัดตำแหน่ง (at)
  const close=()=>{if(grp){h+=`<div style="break-inside:avoid;position:relative">${grp}${side}</div>`;grp="";side="";}};
@@ -919,6 +976,8 @@ function floatHTML(f,dx=0,dy=0){
  const box=`left:${f.x-dx}mm;top:${f.y-dy}mm;width:${f.w}mm;height:${f.h}mm`;
  if(f.kind==="img")return `<img class="fl" src="${GARUDA}" style="${box}">`;
  if(f.kind==="initials")return `<div class="fl doc" style="left:${150-dx}mm;width:40mm;top:${f.by-dy-INIH-3}mm;font-size:14pt;white-space:pre;text-align:left">${f.lines.map(esc).join("<br>")}</div>`;
+ if(f.kind==="btab")return "";
+ if(f.kind==="stext")return `<div class="fl doc" style="left:${f.x-dx}mm;top:${f.y-dy}mm;width:${f.w}mm;font-size:${f.pt}pt;line-height:1.3;text-align:center;white-space:pre">${f.lines.map(x=>esc(x)).join("<br>")}</div>`;
  if(f.kind==="block")return `<div class="fl doc" style="left:${30-dx}mm;top:${f.by-dy-blockH(f)-1.5}mm;white-space:pre">${f.qr?`<img src="${f.qr}" style="width:${QR}mm;height:${QR}mm;display:block;margin-bottom:1mm">`:""}${f.lines.map(x=>esc(x)||"&nbsp;").join("<br>")}</div>`;
  return `<div class="fl doc" style="${box};text-align:${f.align};font-size:${f.pt}pt;${f.b?"font-weight:bold;":""}${f.color?`color:#${f.color}`:""}">${esc(f.text)}</div>`;
 }
@@ -956,10 +1015,13 @@ function update(){
   return document.getElementById("content").offsetHeight*25.4/96;};
  const bb=F.find(f=>f.kind==="block"&&f.mode==="bottom"), LIM=252-(bb?blockH(bb)+4:0);
  AUTOF=0; let hmm=render(), fitMsg="";
- if(D.fit1&&hmm>LIM&&hmm<252*1.15){const base=lspF();
+ if(D.fit1&&TYPE!=="brief"&&hmm>LIM&&hmm<252*1.15){const base=lspF();
   for(const f of [0.97,0.95,0.93,0.9]){if(f>=base)continue;AUTOF=f;hmm=render();if(hmm<=LIM){fitMsg=`บีบระยะบรรทัดเป็น ${f} เท่า เพื่อให้จบในหน้าเดียว`;break;}}
   if(hmm>LIM){AUTOF=0;hmm=render();}}
- const pages=hmm>252.3?paginate(pg):1, last=pages-1;
+ const pages=(hmm>252.3&&TYPE!=="brief")?paginate(pg):1, last=pages-1;
+ if(TYPE==="brief"){const bt=pg.querySelector(".btab");if(bt){const z=pg.getBoundingClientRect().height/pg.offsetHeight||1,mmOf=y=>(y-pg.getBoundingClientRect().top)/z*25.4/96;
+   const top=mmOf(bt.getBoundingClientRect().top);bt.style.height=(BT.bottom-top)+"mm";
+   const c=document.getElementById("content");if(mmOf(c.getBoundingClientRect().bottom)>BT.staffY-1)WARN.push("ความเห็นเจ้าหน้าที่ยาวเกินช่อง (ทับส่วนผู้จัดทำ) — กรุณาสรุปให้สั้นลง");}}
  LASTPAGE=last;
  const endB=(()=>{const c=document.getElementById("content");const r=c.getBoundingClientRect(),z=pg.getBoundingClientRect().height/pg.offsetHeight||1;return (r.bottom-pg.getBoundingClientRect().top)/z*25.4/96;})();
  for(const f of F)if(f.kind==="initials")f.by=last*PSTEP+25+252;
@@ -1028,11 +1090,38 @@ function anchorXML(f,id,img){
   const ps=f.lines.map(x=>`<w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="${Math.round(240*lspF())}" w:lineRule="auto"/></w:pPr><w:r>${rPr({})}<w:t xml:space="preserve">${xe(x)}</w:t></w:r></w:p>`).join("");
   return `<w:r><mc:AlternateContent><mc:Choice Requires="wps"><w:drawing><wp:anchor distT="0" distB="0" distL="0" distR="0" simplePos="0" relativeHeight="${251658240+id}" behindDoc="0" locked="0" layoutInCell="1" allowOverlap="1"><wp:simplePos x="0" y="0"/><wp:positionH relativeFrom="margin"><wp:posOffset>0</wp:posOffset></wp:positionH>${vpos}<wp:extent cx="${EMU(w)}" cy="${EMU(h)}"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:wrapNone/><wp:docPr id="${id}" name="owner${id}"/><wp:cNvGraphicFramePr/><a:graphic><a:graphicData uri="http://schemas.microsoft.com/office/word/2010/wordprocessingShape"><wps:wsp><wps:cNvSpPr txBox="1"/><wps:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${EMU(w)}" cy="${EMU(h)}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/><a:ln><a:noFill/></a:ln></wps:spPr><wps:txbx><w:txbxContent>${ps}</w:txbxContent></wps:txbx><wps:bodyPr rot="0" vert="horz" wrap="square" lIns="0" tIns="0" rIns="0" bIns="0" anchor="b" anchorCtr="0"><a:noAutofit/></wps:bodyPr></wps:wsp></a:graphicData></a:graphic></wp:anchor></w:drawing></mc:Choice></mc:AlternateContent></w:r>`+qx;}
  const head=`<wp:anchor distT="0" distB="0" distL="0" distR="0" simplePos="0" relativeHeight="${251658240+id}" behindDoc="0" locked="0" layoutInCell="1" allowOverlap="1"><wp:simplePos x="0" y="0"/><wp:positionH relativeFrom="page"><wp:posOffset>${EMU(f.x)}</wp:posOffset></wp:positionH><wp:positionV relativeFrom="page"><wp:posOffset>${EMU(f.y)}</wp:posOffset></wp:positionV><wp:extent cx="${EMU(f.w)}" cy="${EMU(f.h)}"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:wrapNone/><wp:docPr id="${id}" name="obj${id}"/><wp:cNvGraphicFramePr/>`;
+ if(f.kind==="stext"){const tp=f.lines.map(x=>`<w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="${Math.round(f.pt*1.3*20)}" w:lineRule="exact"/><w:jc w:val="center"/></w:pPr><w:r>${rPr({sz:f.pt})}<w:t xml:space="preserve">${xe(x)}</w:t></w:r></w:p>`).join("");
+  return `<w:r><mc:AlternateContent><mc:Choice Requires="wps"><w:drawing>${head}<a:graphic><a:graphicData uri="http://schemas.microsoft.com/office/word/2010/wordprocessingShape"><wps:wsp><wps:cNvSpPr txBox="1"/><wps:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${EMU(f.w)}" cy="${EMU(f.h)}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/><a:ln><a:noFill/></a:ln></wps:spPr><wps:txbx><w:txbxContent>${tp}</w:txbxContent></wps:txbx><wps:bodyPr rot="0" vert="horz" wrap="square" lIns="0" tIns="0" rIns="0" bIns="0" anchor="t" anchorCtr="0"><a:noAutofit/></wps:bodyPr></wps:wsp></a:graphicData></a:graphic></wp:anchor></w:drawing></mc:Choice></mc:AlternateContent></w:r>`;}
  if(f.kind==="img")return `<w:r><w:drawing>${head}<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="${id}" name="garuda.${img.ext}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="rIdImg"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${EMU(f.w)}" cy="${EMU(f.h)}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:anchor></w:drawing></w:r>`;
  const jc={left:"left",center:"center"}[f.align]||"left";
  const tp=`<w:p><w:pPr><w:spacing w:before="0" w:after="0"/><w:jc w:val="${jc}"/></w:pPr><w:r>${rPr({sz:f.pt,b:f.b,color:f.color})}<w:t xml:space="preserve">${xe(f.text)}</w:t></w:r></w:p>`;
  return `<w:r><mc:AlternateContent><mc:Choice Requires="wps"><w:drawing>${head}<a:graphic><a:graphicData uri="http://schemas.microsoft.com/office/word/2010/wordprocessingShape"><wps:wsp><wps:cNvSpPr txBox="1"/><wps:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${EMU(f.w)}" cy="${EMU(f.h)}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/><a:ln><a:noFill/></a:ln></wps:spPr><wps:txbx><w:txbxContent>${tp}</w:txbxContent></wps:txbx><wps:bodyPr rot="0" vert="horz" wrap="none" lIns="0" tIns="0" rIns="0" bIns="0" anchor="t" anchorCtr="0"><a:noAutofit/></wps:bodyPr></wps:wsp></a:graphicData></a:graphic></wp:anchor></w:drawing></mc:Choice></mc:AlternateContent></w:r>`;
 }
+// R-100: บันทึกย่อใน Word = ตารางจริง 2 แถว (หัวตาราง / เนื้อหา) ตามผัง BT เดียวกับพรีวิว
+function briefXML(P,F,fl){const A=P.findIndex(p=>p.kind==="btab"), t=P[A].btab, prop=t.prop||[];
+ const X=mm=>TW(mm), ex=mm=>`w:line="${X(mm)}" w:lineRule="exact"`, BDR=s=>`<w:pBdr>${s.split(",").map(k=>`<w:${k} w:val="single" w:sz="4" w:space="0" w:color="auto"/>`).join("")}</w:pBdr>`;
+ const RR=(t,o={})=>`<w:r>${rPr(o)}<w:t xml:space="preserve">${xe(t)}</w:t></w:r>`;
+ const BOX=on=>`<w:r>${rPr({})}<w:sym w:font="Wingdings" w:char="${on?"F0FE":"F0A8"}"/></w:r>`+RR("  ");
+ const PP=(runs,{before=0,h=8,jc="left",ind=0,tab=null,bdr=""}={})=>`<w:p><w:pPr>${bdr?BDR(bdr):""}${tab!=null?`<w:tabs>${[].concat(tab).map(x=>`<w:tab w:val="left" w:pos="${X(x)}"/>`).join("")}</w:tabs>`:""}<w:spacing w:before="${Math.round(before*72/25.4*20)}" w:after="0" ${ex(h)}/><w:ind w:left="${X(ind)}" w:right="0"/><w:jc w:val="${jc}"/></w:pPr>${runs}</w:p>`;
+ const cbRow=(a,b,ind,tab,before,ons,bdr="")=>PP(`<w:r>${rPr({})}<w:tab/></w:r>`+BOX(ons[0])+RR(a,{b:true})+`<w:r>${rPr({})}<w:tab/></w:r>`+BOX(ons[1])+RR(b,{b:true}),{before,ind:0,tab:[ind,tab],bdr});
+ const head=P.slice(0,A).map((p,i)=>pXML(p,i===0?fl:"",P[i+1])).join("");
+ // ช่องซ้าย: เสนอเพื่อ (2 แถว) — เส้น — หัวข้อ — เส้น — ความเห็น
+ let L=cbRow(BPROP[0],BPROP[1],BT.cbx1,BT.cbx2,BT.cb1-BT.hh,[prop.includes(BPROP[0]),prop.includes(BPROP[1])])+cbRow(BPROP[2],BPROP[3],BT.cbx1,BT.cbx2,0,[prop.includes(BPROP[2]),prop.includes(BPROP[3])]);
+ L+=PP(RR("ความเห็นเจ้าหน้าที่โดยสรุป",{b:true}),{before:0,h:BT.headB-BT.line1,jc:"center",bdr:"top,bottom"});
+ const cell=P.slice(A+1).filter(p=>p.cell).map((p,i,a)=>pXML(Object.assign({},p,{lw:CW-p.indL-p.indR,indL:p.indL-BT.x0,indR:BT.wL+BT.x0-BT.txtW-p.indL,before:i===0?(BT.bodyTop-BT.headB)*72/25.4:p.before}),"",a[i+1])).join("");
+ L+=cell||PP("",{});
+ // ช่องขวา: ว่างสำหรับข้อพิจารณา — เส้น — ผู้มีอำนาจสั่งการ — เส้น — ช่องเลือก 3 แถว
+ let Rc=PP("",{h:BT.rLine1-BT.hh})+PP(RR("ผู้มีอำนาจสั่งการ",{b:true}),{h:BT.rLine2-BT.rLine1,jc:"center",bdr:"top,bottom"});
+ for(let i=0;i<3;i++)Rc+=cbRow(BCMD[2*i],BCMD[2*i+1],BT.rcbx1,BT.rcbx2,i===0?BT.rcb-BT.rLine2:0,[false,false]);
+ const bt=document.querySelector("#page .btab");let top=78;if(bt){const pg=document.getElementById("page"),z=pg.getBoundingClientRect().height/pg.offsetHeight||1;top=(bt.getBoundingClientRect().top-pg.getBoundingClientRect().top)/z*25.4/96;}
+ const h2=Math.max(60,BT.bottom-top-BT.hh-1);
+ const tc=(w,inner,b,va="top")=>`<w:tc><w:tcPr><w:tcW w:w="${X(w)}" w:type="dxa"/><w:tcBorders>${b}</w:tcBorders><w:vAlign w:val="${va}"/></w:tcPr>${inner}</w:tc>`;
+ const S=(s,v="single")=>`<w:${s} w:val="${v}" w:sz="4" w:space="0" w:color="auto"/>`;
+ const hdL=PP(RR("เสนอเพื่อ",{b:true}),{h:8,jc:"center"}), hdR=PP(RR("ข้อพิจารณา/คำสั่งเพิ่มเติม",{b:true}),{h:7,jc:"center"})+PP(RR("(ผู้ผ่านเรื่อง)",{b:true}),{h:7,jc:"center"});
+ const tbl=`<w:tbl><w:tblPr><w:tblW w:w="${X(BT.wL+BT.wR)}" w:type="dxa"/><w:tblInd w:w="${X(BT.x0)}" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="0" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="0" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid><w:gridCol w:w="${X(BT.wL)}"/><w:gridCol w:w="${X(BT.wR)}"/></w:tblGrid>`
+  +`<w:tr><w:trPr><w:trHeight w:val="${X(BT.hh)}" w:hRule="exact"/></w:trPr>${tc(BT.wL,hdL,S("top")+S("left","nil")+S("bottom")+S("right"),"center")}${tc(BT.wR,hdR,S("top")+S("left")+S("bottom")+S("right"),"center")}</w:tr>`
+  +`<w:tr><w:trPr><w:trHeight w:val="${X(h2)}" w:hRule="exact"/></w:trPr>${tc(BT.wL,L,S("top")+S("left","nil")+S("bottom","nil")+S("right"))}${tc(BT.wR,Rc,S("top")+S("left")+S("bottom","nil")+S("right"))}</w:tr></w:tbl>`;
+ return head+tbl+`<w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="20" w:lineRule="exact"/></w:pPr></w:p>`;}
 let QRIMG=null;
 function dataURLbytes(u){const [h,b]=u.split(",");const bin=atob(b);const a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return {bytes:a,ext:/jpeg|jpg/.test(h)?"jpeg":"png"};}
 function makeDocx(){
@@ -1040,9 +1129,9 @@ function makeDocx(){
  const qrF=F.find(f=>f.kind==="block"&&f.qr); QRIMG=qrF?dataURLbytes(qrF.qr):null;
  let fl="";F.forEach((f,i)=>{if(!(f.kind==="block"||f.kind==="initials"))fl+=anchorXML(f,i+1,img);});
  const fbAt=i=>F.map((f,j)=>((f.kind==="block"||f.kind==="initials")&&(f.at!==undefined?f.at:P.length-1)===i)?anchorXML(f,j+1,img):"").join("");
- const body=P.map((p,i)=>pXML(p,(i===0?fl:"")+fbAt(i),P[i+1])).join("");
+ const body=TYPE==="brief"?briefXML(P,F,fl):P.map((p,i)=>pXML(p,(i===0?fl:"")+fbAt(i),P[i+1])).join("");
  const NS=`xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"`;
- const doc=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ${NS}><w:body>${body}<w:sectPr><w:headerReference w:type="default" r:id="rIdHdr"/><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="${TW(25)}" w:right="${TW(20)}" w:bottom="${TW(20)}" w:left="${TW(30)}" w:header="${TW(12)}" w:footer="${TW(10)}" w:gutter="0"/><w:pgNumType w:fmt="${D.thai?"thaiNumbers":"decimal"}"/><w:titlePg/></w:sectPr></w:body></w:document>`;
+ const doc=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ${NS}><w:body>${body}<w:sectPr><w:headerReference w:type="default" r:id="rIdHdr"/><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="${TW(25)}" w:right="${TW(20)}" w:bottom="${TW(TYPE==="brief"?6:20)}" w:left="${TW(30)}" w:header="${TW(12)}" w:footer="${TW(10)}" w:gutter="0"/><w:pgNumType w:fmt="${D.thai?"thaiNumbers":"decimal"}"/><w:titlePg/></w:sectPr></w:body></w:document>`;
  const fmt=D.thai?"ThaiArabic":"Arabic";
  const hdr=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:hdr ${NS}><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r>${rPr({})}<w:t xml:space="preserve">- </w:t></w:r><w:r>${rPr({})}<w:fldChar w:fldCharType="begin"/></w:r><w:r>${rPr({})}<w:instrText xml:space="preserve"> PAGE </w:instrText></w:r><w:r>${rPr({})}<w:fldChar w:fldCharType="separate"/></w:r><w:r>${rPr({})}<w:t>2</w:t></w:r><w:r>${rPr({})}<w:fldChar w:fldCharType="end"/></w:r><w:r>${rPr({})}<w:t xml:space="preserve"> -</w:t></w:r></w:p></w:hdr>`;
  const styles=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="${xe(D.font)}" w:hAnsi="${xe(D.font)}" w:eastAsia="${xe(D.font)}" w:cs="${xe(D.font)}"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:lang w:val="en-US" w:eastAsia="en-US" w:bidi="th-TH"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style></w:styles>`;
@@ -1076,15 +1165,16 @@ function msg(t){document.getElementById("msg").textContent=t;}
 const SAMPLE_QR="data:image/png;base64,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";
 const SAMPLE={"ext": {"speed": "ด่วนที่สุด", "no": "ยล 0017.3/ว 13301", "addr": "ศาลากลางจังหวัดยะลา อาคาร 1 ชั้น 2\nถนนสุขยางค์ ตำบลสะเตง อำเภอเมืองยะลา\nจังหวัดยะลา 95000", "date": "2026-11-06", "subject": "ขอเชิญประชุมคณะกรมการจังหวัดและหัวหน้าส่วนราชการ ครั้งที่ 11/2569", "sal": "เรียน", "to": "คณะกรมการจังหวัด หัวหน้าส่วนราชการทุกส่วนราชการประจำจังหวัด หัวหน้าส่วนราชการสังกัดบริหารราชการส่วนกลาง หัวหน้าหน่วยงานรัฐวิสาหกิจทุกแห่ง นายอำเภอทุกอำเภอ ผบ.ฉก.ยะลา ผู้แทน กอ.รมน.จังหวัดยะลา อัยการจังหวัดยะลา อัยการจังหวัดคดีเยาวชนและครอบครัวจังหวัดยะลา อัยการจังหวัดคุ้มครองสิทธิและช่วยเหลือทางกฎหมายและบังคับคดีจังหวัดยะลา อัยการจังหวัดเบตง ผู้อำนวยการสำนักงานคณะกรรมการการเลือกตั้งประจำจังหวัดยะลา ผู้อำนวยการสำนักงาน ป.ป.ช. ประจำจังหวัดยะลา นายกองค์การบริหารส่วนจังหวัดยะลา นายกเทศมนตรีนครยะลา นายกเทศมนตรีเมืองเบตง นายกเทศมนตรีเมืองสะเตงนอก ประธานคณะกรรมการอิสลามประจำจังหวัดยะลา ประธานคณะกรรมการจริยธรรมประจำจังหวัดยะลา ประธานหอการค้าจังหวัดยะลา ประธานสภาอุตสาหกรรมจังหวัดยะลา รองประธานกรรมการธรรมาภิบาลจังหวัดยะลา และประธานสภาวัฒนธรรมจังหวัดยะลา", "refList": [{"org": "กระทรวงมหาดไทย", "speed": "ด่วนที่สุด", "no": "มท 0211.5/ว 8876", "date": "2026-10-09"}, {"org": "จังหวัดยะลา", "speed": "ด่วนมาก", "no": "ยล 0017.3/ว 12083", "date": "2026-10-30"}, {"free": "มติที่ประชุมคณะกรมการจังหวัดและหัวหน้าส่วนราชการ ครั้งที่ 10/2569\nเมื่อวันที่ 30 ตุลาคม 2569 ระเบียบวาระที่ 4.2"}], "enclList": [{"text": "วาระการประชุมคณะกรมการจังหวัดและหัวหน้าส่วนราชการ\nครั้งที่ 11/2569", "qty": "1", "unit": "ฉบับ"}, {"text": "แบบฟอร์มหัวหน้าส่วนราชการที่ย้ายมาดำรงตำแหน่งใหม่", "qty": "1", "unit": "ฉบับ"}, {"text": "แผนที่และผังห้องประชุมศรียะลา อาคาร 3 ชั้น 3", "qty": "", "unit": "ชุด"}], "body": "ด้วยจังหวัดยะลา ได้กำหนดประชุมคณะกรมการจังหวัดและหัวหน้าส่วนราชการ↵\nในวัน**ศุกร์ที่ 27 พฤศจิกายน 2569** เวลา 09.30 น. ณ ห้องประชุมศรียะลา อาคาร 3 ชั้น 3 ศาลากลางจังหวัดยะลา\n\nจังหวัดยะลา ขอให้ท่านดำเนินการ ดังนี้\n1. เรียนเชิญท่านเข้าร่วมประชุมฯ **ด้วยตนเอง** การแต่งกาย ข้าราชการ ชุดปฏิบัติราชการ กากีคอพับแขนยาว\n2. กรณี ส่วนราชการ/หน่วยงานใดได้รับนโยบายหรือข้อสั่งการสำคัญจากรัฐบาล กระทรวง หรือกรม ขอให้นำแจ้งสำนักงานจังหวัดยะลาทราบล่วงหน้า โดยจัดพิมพ์ด้วยกระดาษ A 4 จำนวน 2 ชุด **พร้อมไฟล์ข้อมูล** และหากหน่วยงานใดจะนำเสนอข้อมูล โดย Power Point หรือวีดิทัศน์ เพื่อความเป็นระเบียบเรียบร้อย ขอให้จัดส่งให้จังหวัดทาง Email : vipyala@gmail.com ภายในวันที่ 20 พฤศจิกายน 2569\n3. หน่วยงานใดที่มีหัวหน้าส่วนราชการย้ายมาดำรงตำแหน่งใหม่ หรือย้ายไปปฏิบัติราชการที่จังหวัดอื่น ขอให้กรอกข้อมูลตามแบบฟอร์ม QR Code ท้ายหนังสือฉบับนี้ แล้วส่งให้จังหวัดภายในวันที่ 20 พฤศจิกายน 2569 ทางไปรษณีย์อิเล็กทรอนิกส์ข้างต้นด้วย รายละเอียดปรากฏตามสิ่งที่ส่งมาด้วย 1 และ 2\n\n4. การเตรียมข้อมูลนำเสนอ ให้ปฏิบัติ ดังนี้\n>4.1 ส่งไฟล์นำเสนอล่วงหน้า__อย่างน้อย 3 วันทำการ__ก่อนวันประชุม\n>4.2 ใช้แบบอักษร TH SarabunIT๙ ขนาดไม่น้อยกว่า 16 พอยท์\n>>(1) กรณีมีวิดีทัศน์ ความยาวไม่เกิน 3 นาที\n>>(2) กรณีมีภาพประกอบ ให้ระบุแหล่งที่มาให้ชัดเจน", "closing": "ขอแสดงความนับถือ", "name": "นายวีรพัฒน์ บุณฑริก", "pos": "รองผู้ว่าราชการจังหวัด ปฏิบัติราชการแทน\nผู้ว่าราชการจังหวัดยะลา", "owner": "สำนักงานจังหวัด\nกลุ่มงานอำนวยการ", "tel": "0-7321-1586", "fax": "0-7321-1586", "email": "saraban@yala.go.th", "cc": "ผู้บัญชาการกองกำลังรักษาความสงบเรียบร้อยจังหวัดยะลา\nนายกองค์การบริหารส่วนจังหวัดยะลา", "drafter": "ชารีฟ", "typist": "ชารีฟ", "checker": "อำนวย", "endp": "จึงเรียนมาเพื่อทราบ และขอเชิญเข้าร่วมประชุมฯ ตามวัน เวลา และสถานที่ดังกล่าว โดยพร้อมเพรียงกัน"}, "memo": {"org": "สำนักงานจังหวัดยะลา กลุ่มงานอำนวยการ โทร. 0 7321 1586", "no": "ยล 0017.1/1872", "date": "2026-11-20", "subject": "ขออนุมัติจัดซื้อวัสดุคอมพิวเตอร์และอุปกรณ์ระบบประชุมออนไลน์ ประจำปีงบประมาณ พ.ศ. 2570", "sal": "เรียน", "to": "หัวหน้าสำนักงานจังหวัดยะลา", "refList": [{"org": "สำนักงานจังหวัดยะลา", "speed": "", "no": "ยล 0017.1/1544", "date": "2026-10-15"}, {"free": "บันทึกข้อความกลุ่มงานอำนวยการ ที่ ยล 0017.1/1601 ลงวันที่ 22 ตุลาคม 2569"}], "enclList": [{"text": "รายละเอียดคุณลักษณะเฉพาะของวัสดุและอุปกรณ์", "qty": "1", "unit": "ชุด"}, {"text": "ใบเสนอราคาจากผู้ประกอบการ", "qty": "3", "unit": "ฉบับ"}, {"text": "ภาพถ่ายสภาพวัสดุและอุปกรณ์ที่ชำรุด", "qty": "", "unit": "ชุด"}], "body": "", "name": "นายชารีฟ เจ๊ะแอ", "pos": "นายช่างไฟฟ้าปฏิบัติงาน", "secs": [{"h": "— ไม่มีหัวข้อ —", "name": "", "text": "กลุ่มงานอำนวยการขอเสนอเรื่องการจัดซื้อวัสดุคอมพิวเตอร์และอุปกรณ์ระบบประชุมออนไลน์ โดยมีรายละเอียด ดังนี้"}, {"h": "เรื่องเดิม", "name": "", "text": "ตามบันทึกที่อ้างถึง สำนักงานจังหวัดยะลาได้รับจัดสรรงบประมาณรายจ่ายประจำปีงบประมาณ พ.ศ. 2570 งบดำเนินงาน หมวดค่าวัสดุ เพื่อใช้ในการบำรุงรักษาระบบเครือข่ายคอมพิวเตอร์และระบบประชุมทางไกลผ่านจอภาพของศาลากลางจังหวัดยะลา"}, {"h": "ข้อเท็จจริง", "name": "", "text": "กลุ่มงานอำนวยการได้ตรวจสอบสภาพวัสดุและอุปกรณ์ที่ใช้งานอยู่แล้ว พบว่ามีความจำเป็นต้องจัดซื้อทดแทน จำนวน 6 รายการ ดังนี้\n1. ไมโครโฟนประชุมแบบตั้งโต๊ะ จำนวน 10 ชุด เป็นเงิน 45,000 บาท\n2. สายสัญญาณ HDMI ความยาว 15 เมตร จำนวน 6 เส้น เป็นเงิน 7,800 บาท\n3. หมึกพิมพ์เลเซอร์ จำนวน 12 กล่อง เป็นเงิน 30,000 บาท\n4. แบตเตอรี่สำรองไฟ (UPS) ขนาด 1,000 VA จำนวน 4 เครื่อง เป็นเงิน 18,000 บาท\n5. เมาส์และแป้นพิมพ์ไร้สาย จำนวน 10 ชุด เป็นเงิน 9,500 บาท\n6. ฮาร์ดดิสก์ภายนอก ขนาด 2 TB จำนวน 3 ลูก เป็นเงิน 7,500 บาท\nรวมเป็นเงินทั้งสิ้น **117,800 บาท (หนึ่งแสนหนึ่งหมื่นเจ็ดพันแปดร้อยบาทถ้วน)** รายละเอียดปรากฏตามสิ่งที่ส่งมาด้วย"}, {"h": "ข้อกฎหมาย ระเบียบที่เกี่ยวข้อง", "name": "", "text": "1. พระราชบัญญัติการจัดซื้อจัดจ้างและการบริหารพัสดุภาครัฐ พ.ศ. 2560 มาตรา 56 (2) (ข)\n2. ระเบียบกระทรวงการคลังว่าด้วยการจัดซื้อจัดจ้างและการบริหารพัสดุภาครัฐ พ.ศ. 2560 ข้อ 79 และข้อ 22"}, {"h": "ข้อพิจารณา", "name": "", "text": "กลุ่มงานอำนวยการพิจารณาแล้วเห็นว่า วัสดุดังกล่าวไม่ซ้ำซ้อนกับรายการที่ได้รับการสนับสนุนจากส่วนกลาง และมีเหตุผลความจำเป็น ดังนี้\n>(1) อุปกรณ์เดิมใช้งานมาแล้วเกิน 7 ปี ชำรุดบ่อยและไม่คุ้มค่าในการซ่อมแซม\n>(2) จังหวัดมีกำหนดการประชุมทางไกลผ่านจอภาพกับส่วนกลางเฉลี่ยสัปดาห์ละ 3 ครั้ง\n>(3) ต้องรองรับการประชุมคณะกรมการจังหวัดในรูปแบบผสมผสาน (Hybrid Meeting) ทุกเดือน\nจึงเห็นควรดำเนินการจัดซื้อโดยวิธีเฉพาะเจาะจง เนื่องจากวงเงินไม่เกิน 500,000 บาท"}, {"h": "ข้อเสนอ", "name": "", "text": "เพื่อโปรดพิจารณา หากเห็นชอบ โปรดอนุมัติ ดังนี้\n>(1) อนุมัติให้จัดซื้อวัสดุคอมพิวเตอร์และอุปกรณ์ระบบประชุมออนไลน์ จำนวน 6 รายการ เป็นเงิน 117,800 บาท\n>(2) แต่งตั้งคณะกรรมการตรวจรับพัสดุ จำนวน 3 คน ตามรายชื่อที่เสนอ"}], "endp": "จึงเรียนมาเพื่อโปรดพิจารณา"}, "stamp": {"speed": "ด่วนมาก", "no": "ยล 0017.2/ว 13456", "to": "นายอำเภอทุกอำเภอ หัวหน้าส่วนราชการประจำจังหวัดยะลาทุกส่วนราชการ และนายกองค์การบริหารส่วนจังหวัดยะลา", "body": "จังหวัดยะลาขอส่งสำเนาหนังสือกระทรวงมหาดไทย ด่วนที่สุด ที่ มท 0211.5/ว 9012 ลงวันที่ 18 พฤศจิกายน 2569 เรื่อง แนวทางการเตรียมความพร้อมป้องกันและบรรเทาสาธารณภัยในช่วงฤดูฝน ปี 2569 มาเพื่อโปรดทราบและถือปฏิบัติ สำหรับอำเภอขอให้แจ้งองค์กรปกครองส่วนท้องถิ่นในพื้นที่ทราบและถือปฏิบัติด้วย รายละเอียดปรากฏตามสิ่งที่ส่งมาด้วย\n\nโดยกระทรวงมหาดไทยได้กำชับให้ดำเนินการในเรื่องสำคัญ ดังนี้\n1. จัดตั้งศูนย์บัญชาการเหตุการณ์ระดับอำเภอและระดับท้องถิ่น พร้อมกำหนดผู้รับผิดชอบประจำศูนย์ตลอด 24 ชั่วโมง\n2. สำรวจและจัดเตรียมเครื่องจักรกล เครื่องสูบน้ำ เรือท้องแบน และวัสดุอุปกรณ์ ให้พร้อมใช้งานได้ทันที\n3. ประชาสัมพันธ์แจ้งเตือนประชาชนในพื้นที่เสี่ยงภัยผ่านทุกช่องทาง ได้แก่\n>3.1 หอกระจายข่าวและเสียงตามสาย\n>3.2 สื่อสังคมออนไลน์ของส่วนราชการและองค์กรปกครองส่วนท้องถิ่น\n>3.3 อาสาสมัครป้องกันภัยฝ่ายพลเรือนและผู้นำชุมชน\n4. จัดเตรียมสถานที่พักพิงชั่วคราว อาหาร น้ำดื่ม และยารักษาโรค ให้เพียงพอสำหรับผู้ประสบภัย\n5. ตรวจสอบความมั่นคงแข็งแรงของสะพาน ทำนบ และอาคารชลประทานในพื้นที่ หากพบความเสียหายให้รีบซ่อมแซมโดยเร็ว\n6. บูรณาการการปฏิบัติงานร่วมกับหน่วยทหาร ตำรวจ และอาสาสมัคร ในการอพยพประชาชนออกจากพื้นที่เสี่ยง\n7. จัดชุดปฏิบัติการเคลื่อนที่เร็วประจำอำเภอ พร้อมยานพาหนะและอุปกรณ์สื่อสาร เพื่อเข้าช่วยเหลือผู้ประสบภัยได้ทันท่วงที\n8. กำกับดูแลการใช้จ่ายเงินทดรองราชการเพื่อช่วยเหลือผู้ประสบภัยพิบัติกรณีฉุกเฉิน ให้เป็นไปตามระเบียบกระทรวงการคลังที่เกี่ยวข้องอย่างเคร่งครัด\n9. รายงานสถานการณ์และผลการให้ความช่วยเหลือให้จังหวัดทราบทุกวัน จนกว่าสถานการณ์จะคลี่คลาย\n\nอนึ่ง หากอำเภอหรือส่วนราชการใดประสบปัญหาอุปสรรคในการดำเนินการ หรือมีความต้องการสนับสนุนงบประมาณ วัสดุอุปกรณ์ และกำลังพลเพิ่มเติม ขอให้แจ้งศูนย์อำนวยการป้องกันและบรรเทาสาธารณภัยจังหวัดยะลาโดยเร็ว เพื่อจะได้พิจารณาให้การสนับสนุนต่อไป\n\nทั้งนี้ ขอให้รายงานผลการเตรียมความพร้อมให้จังหวัดทราบ**ภายในวันที่ 30 พฤศจิกายน 2569** ทางไปรษณีย์อิเล็กทรอนิกส์ข้างท้าย", "sender": "จังหวัดยะลา", "date": "2026-11-20", "owner": "สำนักงานจังหวัด\nกลุ่มงานอำนวยการ", "tel": "0 7321 1586", "fax": "0 7321 1586", "email": "saraban@yala.go.th", "drafter": "ชารีฟ", "typist": "ชารีฟ", "checker": "อำนวย"}, "order": {"kind": "คำสั่ง", "org": "จังหวัดยะลา", "no": "1234/2569", "subject": "แต่งตั้งคณะทำงานพัฒนาและดูแลระบบประชุมทางไกลผ่านจอภาพของจังหวัดยะลา", "body": "ด้วยจังหวัดยะลามีการประชุมทางไกลผ่านจอภาพกับส่วนกลางและส่วนราชการในพื้นที่เพิ่มขึ้นอย่างต่อเนื่อง เพื่อให้การประชุมเป็นไปอย่างมีประสิทธิภาพ ระบบภาพและเสียงมีความพร้อมใช้งานตลอดเวลา และสามารถแก้ไขปัญหาเฉพาะหน้าได้ทันท่วงที อาศัยอำนาจตามความในมาตรา 57 แห่งพระราชบัญญัติระเบียบบริหารราชการแผ่นดิน พ.ศ. 2534 จึงแต่งตั้งคณะทำงาน ประกอบด้วย\n>1. หัวหน้าสำนักงานจังหวัดยะลา ประธานคณะทำงาน\n>2. ผู้อำนวยการศูนย์เทคโนโลยีสารสนเทศและการสื่อสาร เขต 9 รองประธานคณะทำงาน\n>3. ผู้อำนวยการสำนักงานสถิติจังหวัดยะลา คณะทำงาน\n>4. ประชาสัมพันธ์จังหวัดยะลา คณะทำงาน\n>5. หัวหน้าสถานีวิทยุกระจายเสียงแห่งประเทศไทยจังหวัดยะลา คณะทำงาน\n>6. ผู้จัดการบริษัท โทรคมนาคมแห่งชาติ จำกัด (มหาชน) สาขายะลา คณะทำงาน\n>7. ผู้แทนการไฟฟ้าส่วนภูมิภาคจังหวัดยะลา คณะทำงาน\n>8. หัวหน้ากลุ่มงานอำนวยการ สำนักงานจังหวัดยะลา คณะทำงาน\n>9. หัวหน้ากลุ่มงานยุทธศาสตร์และข้อมูลเพื่อการพัฒนาจังหวัด คณะทำงาน\n>10. นักวิชาการคอมพิวเตอร์ชำนาญการ สำนักงานจังหวัดยะลา คณะทำงาน\n>11. นักประชาสัมพันธ์ปฏิบัติการ สำนักงานประชาสัมพันธ์จังหวัดยะลา คณะทำงาน\n>12. นายช่างไฟฟ้าปฏิบัติงาน สำนักงานจังหวัดยะลา คณะทำงานและเลขานุการ\n>13. เจ้าพนักงานธุรการปฏิบัติงาน สำนักงานจังหวัดยะลา คณะทำงานและผู้ช่วยเลขานุการ\n\nให้คณะทำงานมีหน้าที่ ดังนี้\n>1. วางแผนและจัดเตรียมระบบภาพ เสียง และเครือข่ายสำหรับการประชุมทางไกลผ่านจอภาพของจังหวัด\n>2. ตรวจสอบ บำรุงรักษา และแก้ไขปัญหาระบบให้พร้อมใช้งานอยู่เสมอ\n>3. จัดทำคู่มือการใช้งานระบบ ประกอบด้วย\n>>3.1 คู่มือสำหรับผู้ดูแลระบบ\n>>3.2 คู่มือสำหรับผู้ใช้งานทั่วไป\n>>3.3 แนวทางแก้ไขปัญหาเฉพาะหน้า\n>4. ฝึกอบรมเจ้าหน้าที่ของส่วนราชการให้สามารถใช้งานระบบได้ด้วยตนเอง\n>5. ประสานหน่วยงานที่เกี่ยวข้องเพื่อสำรองช่องสัญญาณและไฟฟ้าในกรณีฉุกเฉิน\n>6. ปฏิบัติหน้าที่อื่นตามที่ประธานคณะทำงานมอบหมาย\n\nให้ผู้ที่ได้รับแต่งตั้งปฏิบัติหน้าที่ด้วยความ**รับผิดชอบ**และ__รายงานผลการดำเนินงาน__ให้จังหวัดทราบทุกไตรมาส", "date": "2026-11-20", "name": "นายวีรพัฒน์ บุณฑริก", "pos": "รองผู้ว่าราชการจังหวัด ปฏิบัติราชการแทน\nผู้ว่าราชการจังหวัดยะลา", "drafter": "ชารีฟ", "typist": "ชารีฟ", "checker": "อำนวย", "endp": "ทั้งนี้ ตั้งแต่บัดนี้เป็นต้นไป"}};
 SAMPLE.ext.qr=SAMPLE_QR;
+SAMPLE.brief={"org": "สำนักงานจังหวัดยะลา กลุ่มงานบริหารทรัพยากรบุคคล โทร. 0-7321-1586 ต่อ 74963", "no": "ยล 0017.5/", "date": "2026-07", "subject": "ประชาสัมพันธ์หลักสูตรฝึกอบรมด้าน Soft Skill ของ สวทช.", "sal": "เรียน", "to": "ผู้ว่าราชการจังหวัดยะลา", "propose": ["โปรดทราบ"], "body": "- ด้วยสำนักงานพัฒนาวิทยาศาสตร์และเทคโนโลยีแห่งชาติ (สวทช.) โดยสถาบันพัฒนาบุคลากรแห่งอนาคต แจ้งกำหนดจัดฝึกอบรมหลักสูตรด้าน Soft Skill จำนวน 3 หลักสูตร โดยให้จังหวัดแจ้งประชาสัมพันธ์ให้บุคลากรในสังกัดเข้าร่วมฝึกอบรม **(เอกสารแนบ)**\n\n- สนจ.ยล. ได้แจ้งประชาสัมพันธ์หลักสูตรดังกล่าวให้ทุกส่วนราชการ หน่วยงานรัฐวิสาหกิจ อำเภอทุกอำเภอและองค์กรปกครองส่วนท้องถิ่นทุกแห่งทราบด้วยแล้ว\n\n- จึงเรียนมาเพื่อโปรดทราบ", "staff": "นางสาวณัฏฐณิชา แซ่โก", "typist2": "นางสาวอัญชสา พิณอักษร", "bdate": "15 ก.ค. 2569", "v": 4};   // ตัวอย่างจากบันทึกย่อจริงที่ผู้ใช้ให้มา
 
 // ---------- เริ่มทำงาน ----------
 document.getElementById("bDocx").onclick=download;
-function setView(v){VIEW=(v==="copy"&&TYPE!=="memo")?"copy":"real";
+function setView(v){VIEW=(v==="copy"&&TYPE!=="memo"&&TYPE!=="brief")?"copy":"real";
  document.getElementById("vReal").className=VIEW==="real"?"on":"";document.getElementById("vCopy").className=VIEW==="copy"?"on":"";
- document.getElementById("vCopy").disabled=TYPE==="memo";update();}
+ document.getElementById("vCopy").disabled=TYPE==="memo"||TYPE==="brief";update();}
 document.getElementById("vReal").onclick=()=>setView("real");
 document.getElementById("vCopy").onclick=()=>setView("copy");
-document.getElementById("bBoth").onclick=()=>{const v=VIEW;if(TYPE==="memo"){download();return;}
+document.getElementById("bBoth").onclick=()=>{const v=VIEW;if(TYPE==="memo"||TYPE==="brief"){download();return;}
  setView("real");download();setTimeout(()=>{setView("copy");download();setView(v);},400);};
 document.getElementById("bPrint").onclick=doPrint;
 
@@ -1218,7 +1308,7 @@ document.getElementById("drExp").onclick=()=>{const b=new Blob([JSON.stringify({
 document.getElementById("drImp").onclick=()=>document.getElementById("drFile").click();
 document.getElementById("drFile").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const j=JSON.parse(r.result);const inc=(j.drafts||[]).filter(x=>x&&x.type&&x.D);const a=drGet();let n=0;
   for(const x of inc){if(!a.some(y=>y.id===x.id)){a.push(x);n++;}}drSet(a);drRender();msgFlash(`นำเข้า ${n} งาน`);}catch(err){msgFlash("ไฟล์ไม่ถูกต้อง");}e.target.value="";};r.readAsText(f);};
-document.getElementById("bSample").onclick=()=>{D=Object.assign(defaults(),migrate(Object.assign(JSON.parse(JSON.stringify(SAMPLE[TYPE])),{v:2})));save();renderForm();update();};
+document.getElementById("bSample").onclick=()=>{D=Object.assign(defaults(),migrate(Object.assign({v:2},JSON.parse(JSON.stringify(SAMPLE[TYPE])))));save();renderForm();update();};
 document.getElementById("bClear").onclick=()=>{const f=D.font,t=D.thai;D=Object.assign(defaults(),{font:f,thai:t,refList:[],enclList:[]});save();renderForm();update();};
 document.getElementById("gOn").onchange=update;
 document.getElementById("zoom").oninput=scale;

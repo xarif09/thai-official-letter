@@ -21,7 +21,7 @@ with sync_playwright() as p:
     def tab(i, view="real"):
         ev(f"()=>{{document.querySelectorAll('#tabs button')[{i}].click();document.getElementById('bSample').click();setView('{view}')}}"); pg.wait_for_timeout(450)
 
-    check("R-02", ev("()=>document.querySelectorAll('#tabs button').length") == 4)
+    check("R-02", ev("()=>document.querySelectorAll('#tabs button').length") == 5)
     check("R-06", ev("()=>{const d=defaults();return d.font==='TH SarabunIT๙'&&d.thai===true}"))
     check("R-10", ev("()=>{const {F}=build();const g=F.find(f=>f.kind==='img');return Math.abs(GARUDA_RATIO-167/177)<0.001&&g&&g.h===30&&Math.abs(g.x+g.w/2-105)<0.1}"))
     check("R-14", ev("()=>/^\\s+\\S+ (พ\\.ศ\\. )?\\d{4}$/.test(thaiDate('2026-11-06'))&&!/\\d\\s+พฤศ/.test(thaiDate('2026-11-06'))"))
@@ -119,6 +119,12 @@ with sync_playwright() as p:
     t = pg.locator('#form [data-k=to] input'); t.fill('ทดสอบผู้รับซ้ำ'); t.blur(); pg.wait_for_timeout(100)
     ev("()=>document.getElementById('bClear').click()"); pg.wait_for_timeout(200)
     check("R-67", ev("()=>{const s=document.querySelector('#form [data-k=to] select.hist');const ok=!!s&&!!document.querySelector('#form [data-k=to] datalist');if(!ok)return false;s.value='0';s.onchange();const r=D.to==='ทดสอบผู้รับซ้ำ';localStorage.removeItem('thdoc_hist');return r}"), "เลือกค่าที่เคยกรอกได้")
+    ev("()=>{document.getElementById('spell').style.display='none';document.getElementById('drafts').style.display='none'}")
+    tab(4)
+    check("R-100", ev("()=>TYPE==='brief'&&!!document.querySelector('#page .btab')&&document.querySelectorAll('#page .sheet').length===0&&document.getElementById('vCopy').disabled&&/✓/.test(document.querySelector('#page .btab').textContent)&&document.getElementById('page').textContent.includes('ผู้มีอำนาจสั่งการ')&&document.getElementById('page').textContent.includes('(นางสาวณัฏฐณิชา แซ่โก)')"), "พรีวิวบันทึกย่อ 1 หน้า ตาราง + ช่องเลือก + ผู้จัดทำ")
+    with pg.expect_download() as dl: pg.click("#bDocx")
+    xb = zipfile.ZipFile(io.BytesIO(open(dl.value.path(),"rb").read())).read("word/document.xml").decode()
+    check("R-100", xb.count("<w:tbl>")==1 and xb.count("<w:tr>")==2 and xb.count('w:char="F0FE"')==1 and xb.count('w:char="F0A8"')==9 and "ผู้มีอำนาจสั่งการ" in xb, "Word: ตารางจริง 2 แถว ช่องเลือก 10 ช่อง (เลือก 1)")
     check("ERR", not errs, "; ".join(errs[:3]))
     b.close()
 
