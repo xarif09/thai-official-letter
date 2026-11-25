@@ -124,6 +124,7 @@ with sync_playwright() as p:
     check("R-100", ev("()=>TYPE==='brief'&&!!document.querySelector('#page .btab')&&document.querySelectorAll('#page .sheet').length===0&&document.getElementById('vCopy').disabled&&/✓/.test(document.querySelector('#page .btab').textContent)&&document.getElementById('page').textContent.includes('ผู้มีอำนาจสั่งการ')&&document.getElementById('page').textContent.includes('(นางสาวณัฏฐณิชา แซ่โก)')"), "พรีวิวบันทึกย่อ 1 หน้า ตาราง + ช่องเลือก + ผู้จัดทำ")
     with pg.expect_download() as dl: pg.click("#bDocx")
     xb = zipfile.ZipFile(io.BytesIO(open(dl.value.path(),"rb").read())).read("word/document.xml").decode()
+    check("R-82", "NaN" not in xb and "undefined" not in xb and "NaN" not in x and "undefined" not in x, "Word ไม่มีค่าเสีย (NaN/undefined) ที่ทำให้ MS Word เปิดไม่ได้")
     check("R-100", xb.count("<w:tbl>")==1 and xb.count("<w:tr>")==2 and xb.count('w:char="F0FE"')==1 and xb.count('w:char="F0A8"')==9 and "ผู้มีอำนาจสั่งการ" in xb, "Word: ตารางจริง 2 แถว ช่องเลือก 10 ช่อง (เลือก 1)")
     check("ERR", not errs, "; ".join(errs[:3]))
     b.close()

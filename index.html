@@ -265,7 +265,7 @@ let TYPE = store.get("thdoc_type") || "ext";
 let D = {};
 function defaults(){return {v:DATA_VERSION,fit1:true,font:"TH SarabunIT๙",thai:true,ownerPos:"อัตโนมัติ",sal:"เรียน",kind:"คำสั่ง",date:new Date().toISOString().slice(0,10)}}
 // รุ่นของระบบ (แสดงบนหน้าจอ) และรุ่นโครงข้อมูลที่เก็บในเครื่อง — เพิ่มเลขทุกครั้งที่กฎเปลี่ยนจนค่าเก่าอาจขัดกับกฎใหม่
-const APP_VERSION="2026.11.25a", DATA_VERSION=4;
+const APP_VERSION="2026.11.25b", DATA_VERSION=4;
 function migrate(x){   // ปรับค่าที่เก็บไว้ในเครื่องให้เข้ากับกฎปัจจุบัน (ดู REQUIREMENTS.md)
  if(!x||typeof x!=="object")return {};
  const v=x.v||1;
@@ -1073,7 +1073,7 @@ function pXML(p,extraRuns="",next=null){
    const last=i===lines.length-1, fit=ln.w-1.5, n=w>fit?ng:nc, sq=n>1&&(w>fit||!last)?Math.floor((fit-w)/(n-1)/px*20):0;   // เผื่อ 1.5 มม. เพราะ Word วัดฟอนต์ต่างจากเบราว์เซอร์เล็กน้อย (Word ยืดคืนให้ชนขอบเอง)   // บรรทัดที่หน้าพรีวิวบีบ → บีบระยะตัวอักษรใน Word เท่ากัน
    return ln.tk.map(k=>RX(Object.assign({},k.r,{t:k.t},sq?{sp:sq}:{}))).join("")+(i<lines.length-1?`<w:r><w:br/></w:r>`:"");}).join("");
   const ex=ppr;
-  return `<w:p>${ex.replace("<w:pPr>","<w:pPr><w:widowControl/>").replace(`<w:jc w:val="${jc}"/>`,`<w:jc w:val="both"/>`)}${extraRuns}${head.map(RX).join("")}${body}</w:p>`;}   // both: Word/LibreOffice ยืดบรรทัดที่จบด้วย <w:br/> ให้ชนขอบขวา
+  return `<w:p>${ex.replace(/(<w:tabs>|<w:spacing )/,"<w:widowControl/>$1").replace(`<w:jc w:val="${jc}"/>`,`<w:jc w:val="both"/>`)}${extraRuns}${head.map(RX).join("")}${body}</w:p>`;}   // both: Word/LibreOffice ยืดบรรทัดที่จบด้วย <w:br/> ให้ชนขอบขวา
  const runs=p.runs.map(r=>r.br?`<w:r><w:br/></w:r>`:(r.tab||r.rtab)?`<w:r>${rPr({})}<w:tab/></w:r>`:`<w:r>${rPr(r)}<w:t xml:space="preserve">${xe(nbsp(r.t))}</w:t></w:r>`).join("");
  return `<w:p>${ppr}${extraRuns}${runs}</w:p>`;
 }
@@ -1127,7 +1127,7 @@ function dataURLbytes(u){const [h,b]=u.split(",");const bin=atob(b);const a=new 
 function makeDocx(){
  const {P,F}=build();const img=dataURLbytes(GARUDA);
  const qrF=F.find(f=>f.kind==="block"&&f.qr); QRIMG=qrF?dataURLbytes(qrF.qr):null;
- let fl="";F.forEach((f,i)=>{if(!(f.kind==="block"||f.kind==="initials"))fl+=anchorXML(f,i+1,img);});
+ let fl="";F.forEach((f,i)=>{if(!(f.kind==="block"||f.kind==="initials"||f.kind==="btab"))fl+=anchorXML(f,i+1,img);});   // btab = ตารางบันทึกย่อ สร้างเป็นตารางจริงใน briefXML ไม่ใช่รูปลอย
  const fbAt=i=>F.map((f,j)=>((f.kind==="block"||f.kind==="initials")&&(f.at!==undefined?f.at:P.length-1)===i)?anchorXML(f,j+1,img):"").join("");
  const body=TYPE==="brief"?briefXML(P,F,fl):P.map((p,i)=>pXML(p,(i===0?fl:"")+fbAt(i),P[i+1])).join("");
  const NS=`xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"`;
