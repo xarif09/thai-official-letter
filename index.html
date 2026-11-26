@@ -284,7 +284,7 @@ let TYPE = store.get("thdoc_type") || "ext";
 let D = {};
 function defaults(){return {v:DATA_VERSION,fit1:true,font:"TH SarabunIT๙",thai:true,ownerPos:"อัตโนมัติ",sal:"เรียน",kind:"คำสั่ง",date:new Date().toISOString().slice(0,10)}}
 // รุ่นของระบบ (แสดงบนหน้าจอ) และรุ่นโครงข้อมูลที่เก็บในเครื่อง — เพิ่มเลขทุกครั้งที่กฎเปลี่ยนจนค่าเก่าอาจขัดกับกฎใหม่
-const APP_VERSION="2026.11.26f", DATA_VERSION=4;
+const APP_VERSION="2026.11.26g", DATA_VERSION=4;
 function migrate(x){   // ปรับค่าที่เก็บไว้ในเครื่องให้เข้ากับกฎปัจจุบัน (ดู REQUIREMENTS.md)
  if(!x||typeof x!=="object")return {};
  const v=x.v||1;
@@ -1245,6 +1245,11 @@ const SPELL=[
  [/นะโยบาย/g,"นโยบาย","err"],[/แนป/g,"แนบ","err"],[/อุปการะคุ[ณน]/g,"อุปการคุณ","err"],[/หลักฐาณ/g,"หลักฐาน","err"],[/สาธารณะ(?=สุข|ประโยชน์|ูปโภค|ูปการ)/g,"สาธารณ","err"],
  [/บันจุ/g,"บรรจุ","err"],[/บันทัด/g,"บรรทัด","err"],[/ปฏิกริยา/g,"ปฏิกิริยา","err"],[/พิสูจ(?!น์)/g,"พิสูจน์","err"],[/พรรณา/g,"พรรณนา","err"],
  [/ขาดดุลย์/g,"ขาดดุล","err"],[/ศรัธา/g,"ศรัทธา","err"],[/สำรวด/g,"สำรวจ","err"],
+ // R-78 คำที่เป็นคำจริงแต่ใช้ผิดที่ (ดูคำข้างเคียง) — เฉพาะแบบที่แน่ใจ
+ [/รวมประชุม/g,"ร่วมประชุม","err"],[/เข้ารวม(?!ตัว|กัน|กลุ่ม|ศูนย์|ประชุม)/g,"เข้าร่วม","err"],[/รวมมือ/g,"ร่วมมือ","err"],[/ร่วมทั้ง(?!หมด)/g,"รวมทั้ง","err"],[/ร่วมเป็นเงิน/g,"รวมเป็นเงิน","err"],
+ [/ร่วมทั้งสิ้น/g,"รวมทั้งสิ้น","err"],[/รวมกันจัด|รวมจัดงาน/g,m=>m.replace("รวม","ร่วม"),"sug"],[/ใด้/g,"ได้","err"],
+ [/(ลงวัน|ครั้ง|ข้อ|ฉบับ|ลำดับ|ชั้น|อาคาร|หมู่)ที(?=\s?[0-9๐-๙])/g,"$1ที่","err"],[/วันที(?=\s?[0-9๐-๙])/g,"วันที่","err"],
+ [/เรียนมาเพื่อโปรดทราบและพิจรณา/g,"เรียนมาเพื่อโปรดทราบและพิจารณา","err"],[/ปฏิบัติราชการแทนผู้ว่า/g,"ปฏิบัติราชการแทน ผู้ว่า","sug"],
  [/เเ/g,"แ","err"],[/ํา/g,"ำ","err"],[/([่-๋])\1+/g,"$1","err"],
  [/อีเมล์/g,"อีเมล","sug"],[/อินเตอร์เน็ต/g,"อินเทอร์เน็ต","sug"],[/แอปพลิเคชั่น/g,"แอปพลิเคชัน","sug"],[/ซอฟท์แวร์/g,"ซอฟต์แวร์","sug"],
  [/สวิทช์/g,"สวิตช์","sug"],[/นัยยะ/g,"นัย","sug"],[/([^\s])ๆ/g,"$1 ๆ","sug"],[/ๆ(?=[^\s.,)ฯ”"])/g,"ๆ ","sug"],[/ {2,}/g," ","sug"]];
@@ -1324,7 +1329,22 @@ function dictAddUser(w){const a=udGet();if(!a.includes(w)){a.push(w);store.set(U
 const ORTHO=[[/[A-Za-z][\u0E31\u0E34-\u0E3A\u0E47-\u0E4E]+/g,"สระ/วรรณยุกต์ไทยอยู่บนตัวอักษรอังกฤษ"],[/[\u0E01-\u0E4E][A-Za-z]{1,3}(?=[\u0E01-\u0E4E])/g,"มีตัวอักษรอังกฤษปนในคำไทย (ลืมเปลี่ยนภาษาแป้นพิมพ์)"],
  [/[เแโใไ][ะาำิีึืุู่้๊๋็์ั]/g,"สระหน้าไม่มีพยัญชนะตามหลัง"],[/(^|[^ก-ฮ\u0E31\u0E34-\u0E3A\u0E47-\u0E4E])[\u0E31\u0E34-\u0E3A\u0E47-\u0E4E]+/g,"สระบน/ล่าง/วรรณยุกต์ไม่มีพยัญชนะ"],[/[\u0E34-\u0E37\u0E31][\u0E34-\u0E37\u0E31]/g,"สระบนซ้อนกัน"],[/[\u0E38\u0E39][\u0E38\u0E39]/g,"สระล่างซ้อนกัน"],[/[0-9๐-๙][A-Za-z]*[ก-ฮ]{2,}[A-Za-z]+|[0-9๐-๙][A-Za-z]{4,}/g,"ตัวเลขติดกับตัวอักษร (พิมพ์เกิน?)"]];
 function orthoIssues(t){const out=[];for(const [re,note] of ORTHO){re.lastIndex=0;let m;while((m=re.exec(t))){let w=m[0],i=m.index;if(/^[^\u0E01-\u0E4EA-Za-z0-9๐-๙]/.test(w)){w=w.slice(1);i++;}if(!w)continue;out.push({lv:"err",w,fix:null,i,note});if(!m[0].length)re.lastIndex++;}}return out;}
-function findIssues(t){const res=dictIssues(t).concat(orthoIssues(t));   // หาจุดผิดในข้อความเดียว → [{lv,w,fix,i,note}]
+// R-79 จำนวนเงินกับตัวหนังสือในวงเล็บ และยอดรวม
+function bahtText(n){const D=["","หนึ่ง","สอง","สาม","สี่","ห้า","หก","เจ็ด","แปด","เก้า"],U=["","สิบ","ร้อย","พัน","หมื่น","แสน"];
+ const part=x=>{if(!+x)return "";let o="";const s=String(+x);if(s.length>6)return part(s.slice(0,-6))+"ล้าน"+part(s.slice(-6));
+  for(let i=0;i<s.length;i++){const d=+s[i],pos=s.length-1-i;if(!d)continue;if(pos===1&&d===1)o+="สิบ";else if(pos===1&&d===2)o+="ยี่สิบ";else if(pos===0&&d===1&&s.length>1)o+="เอ็ด";else o+=D[d]+U[pos];}return o;};
+ const [b,st]=(Math.round(n*100)/100).toFixed(2).split(".");return (+b?part(b)+"บาท":"")+(+st?part(st)+"สตางค์":(+b?"ถ้วน":"ศูนย์บาทถ้วน"));}
+function moneyIssues(t){const out=[],num=x=>+arab(x).replace(/,/g,"");
+ const re=/([0-9๐-๙][0-9๐-๙,]*(?:\.[0-9๐-๙]{1,2})?)\s*บาท\s*\(([^)]{3,})\)/g;let m;
+ while((m=re.exec(t))){const want=bahtText(num(m[1])),got=m[2].replace(/[\s*_]/g,"");if(got!==want&&got.replace(/ถ้วน$/,"")!==want.replace(/ถ้วน$/,"")){const i=m.index+m[0].lastIndexOf(m[2]);out.push({lv:"err",w:m[2],fix:want,i,note:`${m[1]} บาท อ่านว่า ${want}`});}}
+ // ยอดรวม: รายการ "... X บาท" หลายรายการ ตามด้วย "รวม...Y บาท"
+ const L=t.split("\n");let sum=0,cnt=0,off=0;
+ for(const l of L){const tot=l.match(/รวม[^0-9๐-๙]{0,25}?([0-9๐-๙][0-9๐-๙,]*(?:\.[0-9๐-๙]{1,2})?)\s*บาท/);
+  if(tot){const y=num(tot[1]);if(cnt>=2&&Math.abs(y-sum)>0.005)out.push({lv:"err",w:tot[1],fix:null,i:off+l.indexOf(tot[1],tot.index),note:`ผลรวม ${cnt} รายการข้างบน = ${sum.toLocaleString("th-TH",{minimumFractionDigits:sum%1?2:0})} บาท`});sum=0;cnt=0;}
+  else{const ms=[...l.matchAll(/([0-9๐-๙][0-9๐-๙,]*(?:\.[0-9๐-๙]{1,2})?)\s*บาท(?!\s*\()/g)];if(ms.length===1&&/^\s*(>*\s*)?(\(?[0-9๐-๙]+[.)]|-)/.test(l)){sum+=num(ms[0][1]);cnt++;}}
+  off+=l.length+1;}
+ return out;}
+function findIssues(t){const res=dictIssues(t).concat(orthoIssues(t),moneyIssues(t));   // หาจุดผิดในข้อความเดียว → [{lv,w,fix,i,note}]
  for(const [re,rp,lv] of SPELL){re.lastIndex=0;let m;
   while((m=re.exec(t))){const tail=t.slice(m.index),r2=tail.replace(new RegExp(re.source),rp),fix=r2.slice(0,r2.length-(tail.length-m[0].length));
    if(fix!==m[0])res.push({lv,w:m[0],fix,i:m.index,note:SP_NOTE[rp]||""});if(m[0].length===0)re.lastIndex++;}}

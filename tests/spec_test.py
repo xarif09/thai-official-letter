@@ -164,6 +164,10 @@ with sync_playwright() as p:
     pg2 = b.new_page(); pg2.goto(f"http://127.0.0.1:{srv.server_address[1]}/index.html"); pg2.wait_for_timeout(2500)
     check("R-76", pg2.evaluate("()=>DICT?DICT.W.size:0") > 50000 and pg2.evaluate("()=>findIssues('กฏหมาย').some(r=>r.lv==='err')"), "เปิดหน้าเว็บแล้วโหลดพจนานุกรมเอง ไม่ต้องคลิกแท็บ")
     pg2.close(); srv.shutdown()
+    r79 = pg.evaluate("""()=>{const t='1. ไมโครโฟน เป็นเงิน 45,000 บาท'+String.fromCharCode(10)+'2. สาย เป็นเงิน 7,800 บาท'+String.fromCharCode(10)+'รวมเป็นเงินทั้งสิ้น 92,800 บาท (แปดหมื่นสองพันแปดร้อยบาทถ้วน)';
+      const r=findIssues(t);return [bahtText(117800)==='หนึ่งแสนหนึ่งหมื่นเจ็ดพันแปดร้อยบาทถ้วน', bahtText(21)==='ยี่สิบเอ็ดบาทถ้วน', r.some(x=>/ผลรวม 2 รายการ/.test(x.note)), r.some(x=>x.fix==='เก้าหมื่นสองพันแปดร้อยบาทถ้วน'),
+        findIssues('ขอเชิญเข้ารวมประชุม ลงวันที 15 ใด้รับ').length===3, findIssues('รวมทั้งสิ้น รวมกลุ่ม เข้าร่วมประชุม').length===0]}""")
+    check("R-79", all(r79), "จำนวนเงิน/ตัวหนังสือ/ยอดรวม และคำที่ใช้สลับกัน "+str(r79))
     check("ERR", not errs, "; ".join(errs[:3]))
     b.close()
 
