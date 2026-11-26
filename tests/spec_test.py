@@ -134,6 +134,11 @@ with sync_playwright() as p:
     check("R-75", ev("()=>window._p===0&&document.getElementById('reqbox').style.display==='block'&&document.querySelectorAll('#form .f.req-miss').length>=5&&!!document.querySelector('#form .reqm')"), "ข้อมูลไม่ครบ พิมพ์ไม่ได้ + บอกช่องที่ขาด")
     ev("()=>{document.getElementById('bSample').click()}"); pg.wait_for_timeout(300)
     check("R-75", ev("()=>reqMissing().length===0&&document.getElementById('reqbox').style.display==='none'"), "กรอกครบแล้วกล่องเตือนหาย")
+    tab(0)
+    check("R-70b", ev("""()=>{const ok=["ด้วยจังหวัดได้ปรากฏเหตุการณ์ ขอให้ปฏิบัติตามกฎหมาย","สัญญานี้ทำขึ้น สัญญาน่าจะลงนาม สัญญานายหน้า","ทำนุบำรุง ทะนุบำรุง เผอิญ","ศาสตราจารย์ วิทยาศาสตร์ กระทรวง ครุภัณฑ์ ผลลัพธ์","ต่าง ๆ ได้แก่"];
+      const bad=[["ครุภัณท์","ครุภัณฑ์"],["ยุทธศาสตร ","ยุทธศาสตร์"],["ทรัพยากรณ์","ทรัพยากร"],["ผู้บังคับบันชา","บัญชา"],["มาตราฐาน","มาตรฐาน"],["เอกสารแนป","แนบ"],["สัมนา","สัมมนา"],["ลิขสิทธ์","สิทธิ์"]];
+      return ok.every(t=>!findIssues(t).some(r=>r.lv==='err'))&&bad.every(([w,f])=>findIssues(w).some(r=>r.lv==='err'&&(w.slice(0,r.i)+r.fix+w.slice(r.i+r.w.length)).includes(f.trim())))}"""), "ไม่ทักคำถูก (สัญญานี้ ทะนุบำรุง เผอิญ ศาสตราจารย์) และจับคำผิดที่เพิ่ม")
+    check("R-71b", ev("""()=>{document.querySelectorAll('#tabs button')[1].click();D.secs=[{h:MSEC[0],text:'ต่าง ๆ'+String.fromCharCode(10)+'กรณี'}];save();renderForm();update();liveSpell();const H=CSS.highlights.get('sp-sug');return !H||H.size===0}"""), "ไม่ทักไม้ยมกตรงรอยต่อย่อหน้า และไม่ทักช่องว่างจัดหน้าในพรีวิว")
     check("ERR", not errs, "; ".join(errs[:3]))
     b.close()
 
