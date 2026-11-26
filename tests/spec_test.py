@@ -100,11 +100,11 @@ with sync_playwright() as p:
     tab(2)
     check("R-42", ev("()=>{const {P}=build();const i=P.findIndex(p=>p.runs.some(r=>/^สำนักงานจังหวัด$/.test(r.t)));return i>0&&P[i].keep}"))
     # ตรวจคำผิด
-    ev("()=>{document.querySelectorAll('#tabs button')[0].click();document.getElementById('bTypo').click();}"); pg.wait_for_timeout(400)
+    ev("()=>{document.querySelectorAll('#tabs button')[0].click();typoSample();}"); pg.wait_for_timeout(400)
     sc = ev("()=>spellScan().map(r=>r.w)")
     check("R-70", len(sc) >= 5 and any("พุธ" in w for w in sc), f"พบ {len(sc)} จุด")
     pg.wait_for_timeout(400)
-    check("R-71", ev("()=>!!(CSS.highlights&&CSS.highlights.get('sp-err')&&CSS.highlights.get('sp-err').size>0)&&/\\(\\d+/.test(document.getElementById('bSpell').textContent)"), "ขีดเส้นใต้แดงทันที")
+    check("R-71", ev("()=>!!(CSS.highlights&&CSS.highlights.get('sp-err')&&CSS.highlights.get('sp-err').size>0)&&+document.getElementById('bSpell').dataset.n>0"), "ขีดเส้นใต้แดงทันที")
     check("R-72", ev("()=>/ชฎา/.test(spDiff('ปรากฎ','ปรากฏ'))&&/ปฏัก/.test(spDiff('ปรากฎ','ปรากฏ'))"), "บอกตัวอักษรที่ต่าง")
     ev("()=>{localStorage.removeItem('thdoc_drafts');document.querySelectorAll('#tabs button')[1].click();document.getElementById('bSample').click();document.getElementById('bDrafts').click();document.getElementById('drSave').click();document.getElementById('drSave').click();document.getElementById('drClose').click();document.querySelectorAll('#tabs button')[0].click();document.getElementById('bClear').click();}"); pg.wait_for_timeout(300)
     check("R-73", ev("()=>{const a=drGet();if(a.length!==1||a[0].type!=='memo')return false;document.getElementById('bDrafts').click();document.querySelector('#drList .it button.pri').click();const ok=TYPE==='memo'&&/ขออนุมัติ/.test(D.subject)&&document.getElementById('drafts').style.display==='none';localStorage.removeItem('thdoc_drafts');return ok}"), "บันทึก (ชื่อซ้ำ = ทับ) แล้วเปิดต่อในประเภทเดิม")
@@ -180,6 +180,14 @@ with sync_playwright() as p:
       const inList=spellScan().some(r=>r.f.label==='ที่');const hl=[...CSS.highlights.get('sp-unk')||[],...CSS.highlights.get('sp-err')||[]].some(rg=>/ยล|กขค/.test(rg.toString()));
       D.no=o;renderForm();update();return [!b,!inList,!hl]}""")
     check("R-85", all(r85), "ไม่ตรวจเลขที่หนังสือ (ช่อง/รายการ/พรีวิว) "+str(r85))
+    r86 = pg.evaluate("""()=>{typoSample();const bt=document.getElementById('bSpell');const noBtn=!document.getElementById('bTypo')&&bt.textContent==='รายการคำผิด';bt.click();
+      const L=document.getElementById('spList');const gh=[...L.querySelectorAll('.gh')].map(g=>g.className);const it=L.querySelector('.it.err');
+      const ctx=it&&it.querySelector('.ctx').textContent.length>it.querySelector('.ctx mark').textContent.length+6;
+      const n0=spellScan().filter(r=>r.lv==='err').length;it.querySelector('.ch button.pri').click();const n1=spellScan().filter(r=>r.lv==='err').length;
+      const it2=document.querySelector('#spList .it.err');const inp=it2.querySelector('.ed input');const r=spellScan().find(x=>x.lv==='err');const seg=inp.value;
+      inp.value=seg.replace(r.w,r.fix||'');it2.querySelector('.ed button').click();const n2=spellScan().filter(r=>r.lv==='err').length;
+      document.getElementById('spClose').click();return [noBtn,gh.length>=2&&gh[0].includes('err'),ctx,n1===n0-1,n2===n1-1]}""")
+    check("R-86", all(r86), "ปุ่มรายการคำผิด แยกกลุ่ม แสดงข้อความก่อน-หลัง เลือกคำถูก/แก้เอง "+str(r86))
     check("ERR", not errs, "; ".join(errs[:3]))
     b.close()
 
