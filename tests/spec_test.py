@@ -147,6 +147,14 @@ with sync_playwright() as p:
       const w='ซอเรมาลอ';const before=findIssues(w).some(r=>r.lv==='unk');dictAddUser(w);const after=!findIssues(w).some(r=>r.lv==='unk');localStorage.removeItem('thdoc_userdict');DICT.W.delete(w);
       return {samples,typo,names,user:before&&after,size:DICT.W.size}}""")
     check("R-76", all([r76["samples"],r76["typo"],r76["names"],r76["user"]]) and r76["size"]>50000, str(r76))
+    # R-76b: เปิดผ่านเว็บแล้วพจนานุกรมต้องโหลดเองทันที (ไม่ต้องคลิกอะไร)
+    import http.server, threading, functools
+    srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(http.server.SimpleHTTPRequestHandler, directory=os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")))
+    srv.RequestHandlerClass.log_message = lambda *a, **k: None
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    pg2 = b.new_page(); pg2.goto(f"http://127.0.0.1:{srv.server_address[1]}/index.html"); pg2.wait_for_timeout(2500)
+    check("R-76", pg2.evaluate("()=>DICT?DICT.W.size:0") > 50000 and pg2.evaluate("()=>findIssues('กฏหมาย').some(r=>r.lv==='err')"), "เปิดหน้าเว็บแล้วโหลดพจนานุกรมเอง ไม่ต้องคลิกแท็บ")
+    pg2.close(); srv.shutdown()
     check("ERR", not errs, "; ".join(errs[:3]))
     b.close()
 
