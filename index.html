@@ -1312,7 +1312,9 @@ function findIssues(t){const res=dictIssues(t);   // หาจุดผิดใ
  while((m=wre.exec(t))){const d=+arab(m[2]),mo=TMON.indexOf(m[3]),y=+arab(m[4])-543;const dt=new Date(y,mo,d);
   if(dt.getMonth()!==mo)res.push({lv:"err",w:m[0],fix:null,i:m.index,note:`ไม่มีวันที่ ${m[2]} ${m[3]}`});
   else if(WDAY[dt.getDay()]!==m[1])res.push({lv:"err",w:m[0],fix:m[0].replace(m[1]+"ที่",WDAY[dt.getDay()]+"ที่"),i:m.index,note:`วันที่ ${m[2]} ${m[3]} ${m[4]} ตรงกับวัน${WDAY[dt.getDay()]}`});}
- return res.filter(r=>!(r.lv==="unk"&&res.some(o=>o.lv!=="unk"&&o.i<r.i+r.w.length&&r.i<o.i+o.w.length))&&!res.some(o=>o!==r&&o.i<=r.i&&o.i+o.w.length>=r.i+r.w.length&&o.w.length>r.w.length));}
+ const r1=res.filter(r=>!(r.lv==="unk"&&res.some(o=>o.lv!=="unk"&&o.i<r.i+r.w.length&&r.i<o.i+o.w.length)));   // คำผิดที่รู้คำถูก มาก่อน "ไม่รู้จัก"
+ const r2=r1.filter(r=>!r1.some(o=>o!==r&&o.i<=r.i&&o.i+o.w.length>=r.i+r.w.length&&o.w.length>r.w.length));       // ซ้อนกัน เก็บอันยาวกว่า
+ const seen=new Set();return r2.filter(r=>{const k=r.i+"|"+r.w+"|"+r.lv;if(seen.has(k))return false;seen.add(k);return true;});}   // พจนานุกรม+รายการในตัว เจอคำเดียวกัน แสดงครั้งเดียว
 function spellScan(){const res=[];for(const f of spellFields())for(const r of findIssues(f.get()))res.push(Object.assign({f},r));return res;}
 // แสดงเฉพาะตัวอักษรที่ต่างกัน พร้อมชื่อตัวอักษร — ตัวที่หน้าตาคล้ายกัน (ฎ/ฏ, เเ/แ) จะเห็นชัดว่าต่างตรงไหน
 const CHNAME={"ฎ":"ฎ ชฎา","ฏ":"ฏ ปฏัก","เเ":"สระเอ 2 ตัว","แ":"สระแอ","ํา":"นิคหิต + สระอา","ำ":"สระอำ"," ":"เว้นวรรค","ณ":"ณ เณร","น":"น หนู","ศ":"ศ ศาลา","ส":"ส เสือ","ษ":"ษ ฤๅษี","ต":"ต เต่า","ท":"ท ทหาร","ใ":"ไม้ม้วน ใ","ไ":"ไม้มลาย ไ","ค":"ค ควาย","ก":"ก ไก่","บ":"บ ใบไม้","พ":"พ พาน","ย":"ย ยักษ์","ร":"ร เรือ","ร์":"ร์ (ร การันต์)","ส์":"ส์ (ส การันต์)","ค์":"ค์ (ค การันต์)","ห์":"ห์","ิ":"สระอิ","ี":"สระอี","ั":"ไม้หันอากาศ","็":"ไม้ไต่คู้","่":"ไม้เอก","้":"ไม้โท","า":"สระอา","์":"ทัณฑฆาต (การันต์)","ณ์":"ณ์ (ณ การันต์)"};

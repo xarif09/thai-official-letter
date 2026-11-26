@@ -146,6 +146,10 @@ with sync_playwright() as p:
       const names=!findIssues('(นายวีรพัฒน์ บุณฑริก) สนจ.ยล. ว 123').some(r=>r.lv==='unk');
       const w='ซอเรมาลอ';const before=findIssues(w).some(r=>r.lv==='unk');dictAddUser(w);const after=!findIssues(w).some(r=>r.lv==='unk');localStorage.removeItem('thdoc_userdict');DICT.W.delete(w);
       return {samples,typo,names,user:before&&after,size:DICT.W.size}}""")
+    r76c = pg.evaluate("""()=>{const t='ขอให้ปฎิบัติตามกฏหมาย สังเกตุว่าครุภัณท์ชำรุด เข้าร่วมสัมนา งบประมาน คอมพิวเตอ ปรากฎว่า เเต่งตั้ง อนุญาติ';
+      const r=findIssues(t).filter(x=>x.lv==='err').map(x=>x.w);const need=['ปฎิ','กฏ','สังเกตุ','ภัณท์','สัมนา','งบประมาน','คอมพิวเตอ','ปรากฎ','เเ','อนุญาติ'];
+      return need.filter(w=>!r.includes(w)).concat(r.length!==new Set(r).size?['ซ้ำ']:[])}""")
+    check("R-76", not r76c, "มีพจนานุกรมแล้วต้องยังจับคำผิดในตัวครบ ไม่ซ้ำ: ขาด "+",".join(r76c))
     check("R-76", all([r76["samples"],r76["typo"],r76["names"],r76["user"]]) and r76["size"]>50000, str(r76))
     # R-76b: เปิดผ่านเว็บแล้วพจนานุกรมต้องโหลดเองทันที (ไม่ต้องคลิกอะไร)
     import http.server, threading, functools
