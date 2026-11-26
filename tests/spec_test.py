@@ -188,6 +188,10 @@ with sync_playwright() as p:
       inp.value=seg.replace(r.w,r.fix||'');it2.querySelector('.ed button').click();const n2=spellScan().filter(r=>r.lv==='err').length;
       document.getElementById('spClose').click();return [noBtn,gh.length>=2&&gh[0].includes('err'),ctx,n1===n0-1,n2===n1-1]}""")
     check("R-86", all(r86), "ปุ่มรายการคำผิด แยกกลุ่ม แสดงข้อความก่อน-หลัง เลือกคำถูก/แก้เอง "+str(r86))
+    r87 = pg.evaluate("""()=>{typoSample();document.getElementById('bSpell').click();const ok=[...document.querySelectorAll('#spList .it')].every(it=>{const v=it.querySelector('.ed input').value;return [...v].length<=40});
+      const r=spellScan()[0];const v=document.querySelector('#spList .it .ed input').value;document.getElementById('spClose').click();
+      return [ok, v.length<=r.w.length+24, !!document.querySelector('#side h1 #bFb'), !document.querySelector('.btns #bFb')]}""")
+    check("R-87", all(r87), "แก้เองแสดงคำ ±10 ตัวอักษร · ปุ่มแจ้งปัญหาอยู่หัวระบบ "+str(r87))
     check("ERR", not errs, "; ".join(errs[:3]))
     b.close()
 

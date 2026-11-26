@@ -11,7 +11,7 @@ body{margin:0;font-family:var(--ui);background:#e9edf2;color:#1d2530}
 #app{display:flex;height:100vh}
 #side{width:600px;min-width:460px;max-width:48vw;background:#fff;border-right:1px solid #cfd6df;display:flex;flex-direction:column}
 #side header{padding:12px 14px;border-bottom:1px solid #e1e6ec}
-#side h1{font-size:17px;margin:0 0 8px}
+#side h1{font-size:17px;margin:0 0 8px;display:flex;align-items:center;justify-content:space-between;gap:8px}#bFb{font:inherit;font-size:12px;font-weight:400;padding:3px 9px;border:1px solid #c5cfdb;border-radius:14px;background:#fff;color:#1f5fbf;cursor:pointer;white-space:nowrap}#bFb:hover{background:#eef4fc}@media print{#bFb{display:none}}
 .tabs{display:flex;flex-wrap:wrap;gap:4px}
 .tabs button{border:1px solid #c5cfdb;background:#f5f7fa;border-radius:6px;padding:5px 9px;font:inherit;font-size:13px;cursor:pointer}
 .tabs button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
@@ -134,7 +134,7 @@ select.hist{font-size:11.5px;padding:0 2px;margin-left:6px;border:1px solid #d5d
 <div id="app">
  <div id="side">
   <header>
-   <h1>ระบบจัดหน้าหนังสือราชการ</h1>
+   <h1>ระบบจัดหน้าหนังสือราชการ <button id="bFb" title="แจ้งปัญหาการใช้งาน หรือเสนอแนะเพื่อพัฒนาระบบ">💬 แจ้งปัญหา / ข้อเสนอแนะ</button></h1>
    <div class="tabs" id="tabs"></div><div id="ver" style="font-size:11px;color:#8a94a3;margin-top:4px"></div>
   </header>
   <div id="form"></div>
@@ -145,7 +145,6 @@ select.hist{font-size:11.5px;padding:0 2px;margin-left:6px;border:1px solid #d5d
    <button id="bBoth">Word ทั้ง 2 ฉบับ</button>
    <button class="pri" id="bPrint">พิมพ์ / บันทึก PDF</button>
    <button id="bDrafts">งานที่บันทึกไว้</button>
-   <button id="bFb">แจ้งปัญหา / ข้อเสนอแนะ</button>
    <button id="bSpell">รายการคำผิด</button>
    <button id="bSample">ใส่ข้อมูลตัวอย่าง</button>
    <button id="bClear">ล้างข้อมูล</button>
@@ -293,7 +292,7 @@ let TYPE = store.get("thdoc_type") || "ext";
 let D = {};
 function defaults(){return {v:DATA_VERSION,fit1:true,font:"TH SarabunIT๙",thai:true,ownerPos:"อัตโนมัติ",sal:"เรียน",kind:"คำสั่ง",date:new Date().toISOString().slice(0,10)}}
 // รุ่นของระบบ (แสดงบนหน้าจอ) และรุ่นโครงข้อมูลที่เก็บในเครื่อง — เพิ่มเลขทุกครั้งที่กฎเปลี่ยนจนค่าเก่าอาจขัดกับกฎใหม่
-const APP_VERSION="2026.11.26j", DATA_VERSION=4;
+const APP_VERSION="2026.11.26k", DATA_VERSION=4;
 function migrate(x){   // ปรับค่าที่เก็บไว้ในเครื่องให้เข้ากับกฎปัจจุบัน (ดู REQUIREMENTS.md)
  if(!x||typeof x!=="object")return {};
  const v=x.v||1;
@@ -1451,8 +1450,9 @@ function spellShow(){const res=spellScan(),L=document.getElementById("spList");L
     const bt=el("button",{type:"button",class:"pri",title:"ผลหลังแก้: "+pv},esc(o.lab||wd||o.x));bt.onclick=()=>spApply(r,o.from,o.x,o.orig);row.appendChild(bt);}
    if(lv!=="err"){const ad=el("button",{type:"button",title:"คำนี้ถูกแล้ว — จำไว้ในเครื่องนี้ ไม่ทักอีก"},"✓ ถูกแล้ว");ad.onclick=()=>{if(lv==="unk")dictAddUser(r.w);else SPIGN.add(r.f.label+"|"+r.i+"|"+r.w);liveSpellSoon();spellShow();};row.appendChild(ad);}
    it.appendChild(row);
-   const ed=el("div",{class:"ed"});const inp=el("input",{type:"text",value:seg,title:"แก้ข้อความช่วงนี้เอง แล้วกด ใช้ (หรือ Enter)"});inp.value=seg;
-   const ok=el("button",{type:"button"},"ใช้");ok.onclick=()=>{if(inp.value!==seg)spApply(r,a,inp.value,seg);};inp.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();ok.click();}};
+   const ea=Math.max(0,r.i-10,t.lastIndexOf("\n",r.i-1)+1);let eb=Math.min(t.length,r.i+r.w.length+10);const nl=t.indexOf("\n",r.i+r.w.length);if(nl>=0&&nl<eb)eb=nl;const CM=/[ัิ-ฺ็-๎ะาำ]/;let ea2=ea;while(ea2>0&&CM.test(t[ea2]))ea2--;const ea_=ea2;while(eb<t.length&&CM.test(t[eb]))eb++;   // R-87 แก้เอง: คำนั้น ± 10 ตัวอักษร
+   const ed=el("div",{class:"ed"});const inp=el("input",{type:"text",value:t.slice(ea_,eb),title:"แก้ข้อความช่วงนี้เอง แล้วกด ใช้ (หรือ Enter)"});const sg2=t.slice(ea_,eb);inp.value=sg2;
+   const ok=el("button",{type:"button"},"ใช้");ok.onclick=()=>{if(inp.value!==sg2)spApply(r,ea_,inp.value,sg2);};inp.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();ok.click();}};
    ed.appendChild(el("small",{},"แก้เอง:"));ed.appendChild(inp);ed.appendChild(ok);it.appendChild(ed);
    L.appendChild(it);}}
  document.getElementById("spAll").style.display=res.some(r=>r.lv==="err"&&r.fix!==null)?"":"none";
