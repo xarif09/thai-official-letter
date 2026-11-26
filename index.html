@@ -284,7 +284,7 @@ let TYPE = store.get("thdoc_type") || "ext";
 let D = {};
 function defaults(){return {v:DATA_VERSION,fit1:true,font:"TH SarabunIT๙",thai:true,ownerPos:"อัตโนมัติ",sal:"เรียน",kind:"คำสั่ง",date:new Date().toISOString().slice(0,10)}}
 // รุ่นของระบบ (แสดงบนหน้าจอ) และรุ่นโครงข้อมูลที่เก็บในเครื่อง — เพิ่มเลขทุกครั้งที่กฎเปลี่ยนจนค่าเก่าอาจขัดกับกฎใหม่
-const APP_VERSION="2026.11.26d", DATA_VERSION=4;
+const APP_VERSION="2026.11.26e", DATA_VERSION=4;
 function migrate(x){   // ปรับค่าที่เก็บไว้ในเครื่องให้เข้ากับกฎปัจจุบัน (ดู REQUIREMENTS.md)
  if(!x||typeof x!=="object")return {};
  const v=x.v||1;
@@ -1250,8 +1250,9 @@ const SPELL=[
  [/สวิทช์/g,"สวิตช์","sug"],[/นัยยะ/g,"นัย","sug"],[/([^\s])ๆ/g,"$1 ๆ","sug"],[/ๆ(?=[^\s.,)ฯ”"])/g,"ๆ ","sug"],[/ {2,}/g," ","sug"]];
 const SP_NOTE={"$1 ๆ":"เว้นวรรคหน้าไม้ยมก (ราชบัณฑิตยสภา)","ๆ ":"เว้นวรรคหลังไม้ยมก"," ":"เว้นวรรคซ้อนเกิน 1 ช่อง"};
 const WDAY=["อาทิตย์","จันทร์","อังคาร","พุธ","พฤหัสบดี","ศุกร์","เสาร์"];
+const NAMEK=["name","drafter","typist","checker","staff","typist2"];   // ช่องชื่อคน: ไม่ทัก "ไม่พบในพจนานุกรม"
 function spellFields(){const out=[];const lab={};for(const [k,l] of TYPES[TYPE].fields.concat(COMMON))lab[k]=l;
- for(const [k,l,kind] of TYPES[TYPE].fields)if(["text","area","bigarea",undefined].includes(kind)&&typeof D[k]==="string"&&k!=="sec")out.push({label:l,get:()=>D[k]||"",set:v=>{D[k]=v;}});
+ for(const [k,l,kind] of TYPES[TYPE].fields)if(["text","area","bigarea",undefined].includes(kind)&&typeof D[k]==="string"&&k!=="sec")out.push({label:l,get:()=>D[k]||"",set:v=>{D[k]=v;},names:NAMEK.includes(k)});
  for(const k of ["endp"])if(D[k])out.push({label:lab[k]||k,get:()=>D[k],set:v=>{D[k]=v;}});
  (D.refList||[]).forEach((it,i)=>["org","no","free"].forEach(f=>{if(it[f])out.push({label:`อ้างถึง ${i+1}`,get:()=>it[f]||"",set:v=>{it[f]=v;}});}));
  (D.enclList||[]).forEach((it,i)=>{if(it.text)out.push({label:`สิ่งที่ส่งมาด้วย ${i+1}`,get:()=>it.text||"",set:v=>{it.text=v;}});});
@@ -1263,11 +1264,14 @@ const arab=t=>t.replace(/[๐-๙]/g,d=>"๐๑๒๓๔๕๖๗๘๙".indexOf
 // ---------- R-76: พจนานุกรมเต็ม (LibreOffice th_TH / NECTEC LEXiTRON + libthai, LGPL) ----------
 // ไฟล์ dict-th.txt โหลดครั้งแรกแล้วเบราว์เซอร์เก็บไว้ · ไม่มีไฟล์ (เปิดแบบออฟไลน์) → ใช้รายการคำผิดในตัวอย่างเดียว
 let DICT=null;
+// ชื่อเฉพาะในพื้นที่ที่พจนานุกรมทั่วไปไม่มี (อำเภอ/ตำบล/ถนนในจังหวัดยะลา และหน่วยงานที่ใช้บ่อย) — เพิ่มได้ที่นี่
+const LOCALW=["ยะลา","เบตง","บันนังสตา","ธารโต","ยะหา","รามัน","กาบัง","กรงปินัง","สะเตง","สะเตงนอก","บุดี","ยุโป","ลิดล","ท่าสาป","ลำใหม่","หน้าถ้ำ","ลำพะยา","เปาะเส้ง","พร่อน","บันนังสาเรง","ตาเซะ","สุขยางค์","สิโรรส","ผังเมือง","พิพิธภักดี","รวมมิตร","ศรียะลา","ศาลากลาง","ปัตตานี","นราธิวาส","สงขลา","สตูล","ปินัง","อัยเยอร์เวง","ตลิ่งชัน","บาเจาะ","กาตอง","ยะรม","อาซ่อง","บาโงย","จะกว๊ะ","บาละ","ตาชี","ปะแต","ลาแล","สะแอ","กาลอ","กอตอตือร๊ะ","โกตาบารู","วังพญา","บาลอ","บาโร๊ะ","บือมัง","ยะต๊ะ","คอกช้าง","บาเระเหนือ","บาเระใต้","ตาเนาะแมเราะ","อัยเยอร์เวง","แม่หวาด","บ้านแหร","ธารน้ำทิพย์","เขื่อนบางลาง","ฉก","กอรมน"];
 const UDK="thdoc_userdict", udGet=()=>store.get(UDK)||[];
 function dictLoad(text){const W=new Set(),T=new Map(),A=new Map();let sec="";
  for(const l of text.split("\n")){if(l.startsWith("#")){sec=l.slice(1);continue;}if(!l)continue;
   if(sec==="W")W.add(l);else{const [w,c]=l.split("\t");(sec==="T"?T:A).set(w,c);}}
  for(const w of udGet())W.add(w);
+ for(const w of LOCALW)W.add(w);
  let maxL=0;for(const w of W)if(w.length>maxL)maxL=w.length;for(const w of T.keys())if(w.length>maxL)maxL=w.length;
  DICT={W,T,A,maxL:Math.min(maxL,30),byLen:null};liveSpellSoon();}
 function dictFetch(){if(DICT||!/^https?:/.test(location.protocol))return;fetch("dict-th.txt").then(r=>r.ok?r.text():Promise.reject()).then(dictLoad).catch(()=>{});}
@@ -1285,15 +1289,29 @@ function dictIssues(t){if(!DICT)return [];const out=[],{W,T,A,maxL}=DICT;
    if(cost[i]+50<cost[i+1]){cost[i+1]=cost[i]+50;prev[i+1]=i;kind[i+1]="u";}}
   const segs=[];for(let j=n;j>0;j=prev[j])segs.unshift([prev[j],j,kind[j]]);
   let u=null,pw=null,pw2=null;const flushU=(nx)=>{if(!u)return;const [a,b]=u;u=null;const w=r.slice(a,b),i=o+a;
-   if([...w].filter(c=>/[ก-ฮ]/.test(c)).length<2)return;             // ตัวเดียว เช่น ว / พ (คำย่อ)
-   if(t[i-1]==="."||t[i+w.length]===".")return;                                 // คำย่อ เช่น สนจ.ยล.
+   if([...w].filter(c=>/[ก-ฮ]/.test(c)).length<2&&w===r)return;      // ตัวเดียวที่อยู่โดด ๆ เช่น "ว 123" (คำย่อ) — ถ้าติดคำอื่น เช่น "ข้อมูลฟ" ถือว่าพิมพ์เกิน
+   if(t[i-1]==="."||t[i+w.length]==="."||t[o-1]==="."||t[o+n]===".")return;   // คำย่อ เช่น สนจ.ยล. / (สวทช.) / จนท....
    if(ign.some(([s,e])=>i>=s&&i<e))return;                                        // ชื่อคนหลังคำนำหน้า
    out.push({lv:"unk",w,fix:null,i,note:"ไม่พบในพจนานุกรม",ctx:{pre:pw?r.slice(pw[0],pw[1]):"",pre2:pw2?r.slice(pw2[0],pw[1]):"",nxt:nx?r.slice(nx[0],nx[1]):""}});};
   for(const [a,b,k] of segs){if(k==="u"){u=u?[u[0],b]:[a,b];continue;}flushU([a,b]);pw2=pw?[pw[0],b]:null;pw=[a,b];const w=r.slice(a,b);
    if(k==="t")out.push({lv:"err",w,fix:T.get(w),i:o+a,note:""});
    else if(k==="a")out.push({lv:"sug",w,fix:A.get(w),i:o+a,note:"ราชบัณฑิตยสภาเขียน "+A.get(w)});}
-  flushU(null);}
+  flushU(null);
+  // คำที่พิมพ์เกิน/สลับ/สะกดใกล้เคียงจนถูกตัดเป็นคำสั้น ๆ ที่มีอยู่จริง เช่น "หน่วยงาสนใด" = หน่วย+งา+สน+ใด → "หน่วยงาน"
+  const ws=segs.filter(x=>x[2]!=="u");
+  for(let a=0;a<ws.length;a++)for(let len=2;len<=3&&a+len<=ws.length;len++){const g=ws.slice(a,a+len);if(g.some((x,k)=>k&&x[0]!==g[k-1][1]))break;
+   const s0=g[0][0],s1=g[len-1][1],c=r.slice(s0,s1);if(c.length<5||c.length>16||W.has(c))continue;
+   if(!g.some(x=>x[1]-x[0]<=2))continue;if(ign.some(([x,y])=>o+s0<y&&x<o+s1))continue;
+   const fx=nearWord(c,W);if(fx)out.push({lv:"unk",w:c,fix:fx,i:o+s0,note:"อาจพิมพ์ผิด"});}
+ }
  return out;}
+const THC="กขฃคฅฆงจฉชซฌญฎฏฐฑฒณดตถทธนบปผฝพฟภมยรลวศษสหฬอฮะัาำิีึืุูเแโใไ็่้๊๋์";
+function nearWord(c,W){   // ตัด/สลับ/แทน 1 ตัว แล้วตรงคำในพจนานุกรมที่ยาว ≥ 4 และครอบคลุมเกือบทั้งช่วง
+ const ok=x=>x.length>=4&&W.has(x);
+ for(let i=0;i<c.length;i++){const x=c.slice(0,i)+c.slice(i+1);if(ok(x))return x;}
+ for(let i=0;i+1<c.length;i++){const x=c.slice(0,i)+c[i+1]+c[i]+c.slice(i+2);if(ok(x))return x;}
+ for(let i=0;i<c.length;i++){const q=REPX.get(c[i]);if(q){const x=c.slice(0,i)+q+c.slice(i+1);if(ok(x))return x;}}
+ return null;}
 const REPX=new Map([["ณ","น"],["น","ณ"],["ท","ธ"],["ธ","ท"],["ศ","ส"],["ส","ศ"],["ษ","ส"],["ร","ล"],["ล","ร"],["ใ","ไ"],["ไ","ใ"],["ฎ","ฏ"],["ฏ","ฎ"],["พ","ภ"],["ภ","พ"],["ฑ","ท"],["ฒ","ธ"],["ค","ฆ"],["ฆ","ค"],["ซ","ส"],["ญ","ย"],["ย","ญ"]]);
 function dictSuggest(w){if(!DICT)return [];if(!DICT.byLen){DICT.byLen={};for(const x of DICT.W)(DICT.byLen[x.length]=DICT.byLen[x.length]||[]).push(x);}
  const d=(a,b)=>{const m=a.length,n=b.length;let p=Array.from({length:n+1},(_,j)=>j);for(let i=1;i<=m;i++){const c=[i];for(let j=1;j<=n;j++){const sc=a[i-1]===b[j-1]?0:REPX.get(a[i-1])===b[j-1]?0.4:1;c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+sc);}p=c;}return p[n];};
@@ -1303,7 +1321,10 @@ function unkSuggest(r){const c=r.ctx||{pre:"",nxt:""},V=[[r.w,0,0]];if(c.pre)V.p
  const out=[],seen=new Set();for(const [v,pl,nl] of V.sort((a,b)=>b[0].length-a[0].length))for(const x of dictSuggest(v)){if(seen.has(x))continue;seen.add(x);out.push({x,pl,nl,from:v});}
  return out.slice(0,5);}
 function dictAddUser(w){const a=udGet();if(!a.includes(w)){a.push(w);store.set(UDK,a);}if(DICT)DICT.W.add(w);}
-function findIssues(t){const res=dictIssues(t);   // หาจุดผิดในข้อความเดียว → [{lv,w,fix,i,note}]
+const ORTHO=[[/[A-Za-z][\u0E31\u0E34-\u0E3A\u0E47-\u0E4E]+/g,"สระ/วรรณยุกต์ไทยอยู่บนตัวอักษรอังกฤษ"],[/[\u0E01-\u0E4E][A-Za-z]{1,3}(?=[\u0E01-\u0E4E])/g,"มีตัวอักษรอังกฤษปนในคำไทย (ลืมเปลี่ยนภาษาแป้นพิมพ์)"],
+ [/[เแโใไ][ะาำิีึืุู่้๊๋็์ั]/g,"สระหน้าไม่มีพยัญชนะตามหลัง"],[/(^|[^ก-ฮ\u0E31\u0E34-\u0E3A\u0E47-\u0E4E])[\u0E31\u0E34-\u0E3A\u0E47-\u0E4E]+/g,"สระบน/ล่าง/วรรณยุกต์ไม่มีพยัญชนะ"],[/[\u0E34-\u0E37\u0E31][\u0E34-\u0E37\u0E31]/g,"สระบนซ้อนกัน"],[/[\u0E38\u0E39][\u0E38\u0E39]/g,"สระล่างซ้อนกัน"],[/[0-9๐-๙][A-Za-z]*[ก-ฮ]{2,}[A-Za-z]+|[0-9๐-๙][A-Za-z]{4,}/g,"ตัวเลขติดกับตัวอักษร (พิมพ์เกิน?)"]];
+function orthoIssues(t){const out=[];for(const [re,note] of ORTHO){re.lastIndex=0;let m;while((m=re.exec(t))){let w=m[0],i=m.index;if(/^[^\u0E01-\u0E4EA-Za-z0-9๐-๙]/.test(w)){w=w.slice(1);i++;}if(!w)continue;out.push({lv:"err",w,fix:null,i,note});if(!m[0].length)re.lastIndex++;}}return out;}
+function findIssues(t){const res=dictIssues(t).concat(orthoIssues(t));   // หาจุดผิดในข้อความเดียว → [{lv,w,fix,i,note}]
  for(const [re,rp,lv] of SPELL){re.lastIndex=0;let m;
   while((m=re.exec(t))){const tail=t.slice(m.index),r2=tail.replace(new RegExp(re.source),rp),fix=r2.slice(0,r2.length-(tail.length-m[0].length));
    if(fix!==m[0])res.push({lv,w:m[0],fix,i:m.index,note:SP_NOTE[rp]||""});if(m[0].length===0)re.lastIndex++;}}
@@ -1315,7 +1336,7 @@ function findIssues(t){const res=dictIssues(t);   // หาจุดผิดใ
  const r1=res.filter(r=>!(r.lv==="unk"&&res.some(o=>o.lv!=="unk"&&o.i<r.i+r.w.length&&r.i<o.i+o.w.length)));   // คำผิดที่รู้คำถูก มาก่อน "ไม่รู้จัก"
  const r2=r1.filter(r=>!r1.some(o=>o!==r&&o.i<=r.i&&o.i+o.w.length>=r.i+r.w.length&&o.w.length>r.w.length));       // ซ้อนกัน เก็บอันยาวกว่า
  const seen=new Set();return r2.filter(r=>{const k=r.i+"|"+r.w+"|"+r.lv;if(seen.has(k))return false;seen.add(k);return true;});}   // พจนานุกรม+รายการในตัว เจอคำเดียวกัน แสดงครั้งเดียว
-function spellScan(){const res=[];for(const f of spellFields())for(const r of findIssues(f.get()))res.push(Object.assign({f},r));return res;}
+function spellScan(){const res=[];for(const f of spellFields())for(const r of findIssues(f.get()))if(!(f.names&&r.lv==="unk"))res.push(Object.assign({f},r));return res;}
 // แสดงเฉพาะตัวอักษรที่ต่างกัน พร้อมชื่อตัวอักษร — ตัวที่หน้าตาคล้ายกัน (ฎ/ฏ, เเ/แ) จะเห็นชัดว่าต่างตรงไหน
 const CHNAME={"ฎ":"ฎ ชฎา","ฏ":"ฏ ปฏัก","เเ":"สระเอ 2 ตัว","แ":"สระแอ","ํา":"นิคหิต + สระอา","ำ":"สระอำ"," ":"เว้นวรรค","ณ":"ณ เณร","น":"น หนู","ศ":"ศ ศาลา","ส":"ส เสือ","ษ":"ษ ฤๅษี","ต":"ต เต่า","ท":"ท ทหาร","ใ":"ไม้ม้วน ใ","ไ":"ไม้มลาย ไ","ค":"ค ควาย","ก":"ก ไก่","บ":"บ ใบไม้","พ":"พ พาน","ย":"ย ยักษ์","ร":"ร เรือ","ร์":"ร์ (ร การันต์)","ส์":"ส์ (ส การันต์)","ค์":"ค์ (ค การันต์)","ห์":"ห์","ิ":"สระอิ","ี":"สระอี","ั":"ไม้หันอากาศ","็":"ไม้ไต่คู้","่":"ไม้เอก","้":"ไม้โท","า":"สระอา","์":"ทัณฑฆาต (การันต์)","ณ์":"ณ์ (ณ การันต์)"};
 function spDiff(a,b){let p=0;while(p<a.length&&p<b.length&&a[p]===b[p])p++;let q=0;while(q<a.length-p&&q<b.length-p&&a[a.length-1-q]===b[b.length-1-q])q++;

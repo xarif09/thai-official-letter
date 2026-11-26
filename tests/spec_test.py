@@ -141,7 +141,7 @@ with sync_playwright() as p:
     check("R-71b", ev("""()=>{document.querySelectorAll('#tabs button')[1].click();D.secs=[{h:MSEC[0],text:'ต่าง ๆ'+String.fromCharCode(10)+'กรณี'}];save();renderForm();update();liveSpell();const H=CSS.highlights.get('sp-sug');return !H||H.size===0}"""), "ไม่ทักไม้ยมกตรงรอยต่อย่อหน้า และไม่ทักช่องว่างจัดหน้าในพรีวิว")
     pg.evaluate("t=>dictLoad(t)", open(os.path.join(os.path.dirname(os.path.abspath(__file__)),"..","dict-th.txt"),encoding="utf-8").read())
     r76 = pg.evaluate("""()=>{const lv=t=>findIssues(t).map(r=>r.lv+':'+r.w+(r.fix?'>'+r.fix:''));
-      const samples=Object.keys(SAMPLE).every(k=>{const d=SAMPLE[k];return [...Object.values(d).filter(v=>typeof v==='string'),...(d.secs||[]).map(s=>s.text||'')].every(t=>!findIssues(t).some(r=>r.lv==='err'||r.lv==='unk'))});
+      const samples=Object.keys(SAMPLE).every(k=>{const d=SAMPLE[k];return [...Object.entries(d).filter(([kk,v])=>typeof v==='string'&&kk!=='qr'&&!NAMEK.includes(kk)).map(([kk,v])=>v),...(d.secs||[]).map(s=>s.text||'')].every(t=>!findIssues(t).some(r=>r.lv==='err'||r.lv==='unk'))});
       const typo=lv('ขอให้ทรมาณ และกบฎ').some(x=>x.startsWith('err:กบฎ>กบฏ'))&&unkSuggest(findIssues('ทรมาณ').find(r=>r.lv==='unk')).some(g=>g.x==='ทรมาน');
       const names=!findIssues('(นายวีรพัฒน์ บุณฑริก) สนจ.ยล. ว 123').some(r=>r.lv==='unk');
       const w='ซอเรมาลอ';const before=findIssues(w).some(r=>r.lv==='unk');dictAddUser(w);const after=!findIssues(w).some(r=>r.lv==='unk');localStorage.removeItem('thdoc_userdict');DICT.W.delete(w);
@@ -150,6 +150,11 @@ with sync_playwright() as p:
       const r=findIssues(t).filter(x=>x.lv==='err').map(x=>x.w);const need=['ปฎิ','กฏ','สังเกตุ','ภัณท์','สัมนา','งบประมาน','คอมพิวเตอ','ปรากฎ','เเ','อนุญาติ'];
       return need.filter(w=>!r.includes(w)).concat(r.length!==new Set(r).size?['ซ้ำ']:[])}""")
     check("R-76", not r76c, "มีพจนานุกรมแล้วต้องยังจับคำผิดในตัวครบ ไม่ซ้ำ: ขาด "+",".join(r76c))
+    r76d = pg.evaluate("""()=>{const t='ส่วนราชการ/หน่วยงาสนใดได้รับ ขอให้นำแจ้งล่nวงหน้า **พร้อมไฟล์ข้อมูลฟ** วันที่ 20 พฤศจิกายน 2569hfwofhgกธฯ หัวหน้ฟาส่วงนราชการ ตามแบ้บฟรอร์ม QR Cัode สิ่งที่ส่งมไาด้วย';
+      const r=findIssues(t).map(x=>x.w);return ['หน่วยงาสน','ฟ','กธ','บฟร','Cั','่n','ไา','9hfwofhg'].filter(w=>!r.includes(w)).concat(r.length<10?['พบ '+r.length]:[])}""")
+    check("R-76", not r76d, "จับคำพิมพ์พลาดแบบที่ผู้ใช้ทดสอบ (พิมพ์เกิน/อักษรอังกฤษปน/สระลอย): ขาด "+",".join(r76d))
+    r76e = pg.evaluate("""()=>['(สวทช.) โดยสถาบัน','จนท.....','ถนนสุขยางค์ ตำบลสะเตง อำเภอเมืองยะลา','อำเภอธารโต อำเภอเบตง','ขนาด A4 จำนวน 2 TB','ห้องประชุมศรียะลา'].flatMap(t=>findIssues(t).filter(x=>x.lv!=='sug').map(x=>x.w))""")
+    check("R-76", not r76e, "ไม่ทักคำย่อ/ชื่อพื้นที่ยะลา: "+",".join(r76e))
     check("R-76", all([r76["samples"],r76["typo"],r76["names"],r76["user"]]) and r76["size"]>50000, str(r76))
     # R-76b: เปิดผ่านเว็บแล้วพจนานุกรมต้องโหลดเองทันที (ไม่ต้องคลิกอะไร)
     import http.server, threading, functools
