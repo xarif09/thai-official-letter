@@ -179,7 +179,7 @@ const store = { get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){r
 const SAL = ["เรียน","กราบเรียน","นมัสการ","เจริญพร"];
 const BPROP=["โปรดทราบ","โปรดอนุมัติ","โปรดลงนาม","โปรดพิจารณา"], BCMD=["ทราบ","อนุมัติ","เห็นชอบ","ลงนามแล้ว","อนุญาต","ลงนัด"];
 // ผังตารางบันทึกย่อ (มม.) — ใช้ร่วมกันทั้งพรีวิว/PDF และ Word
-const BT={ind:20,x0:-2.5,wL:107.5,wR:67.5,hh:16,cb1:18,cbH:8,line1:34,headB:43,bodyTop:46,txtW:102,rLine1:58,rLine2:67,rcb:69,cbx1:22,cbx2:60,rcbx1:8,rcbx2:40,bottom:288,staffY:262};
+const BT={ind:20,x0:-2.5,wL:107.5,wR:67.5,hh:16.3,cbY:[17.2,28.3],cbH:8,line1:35.6,headY:43.5,headB:49.1,bodyTop:59.5,txtW:102,rLine1:57.9,rLine2:67.6,rcbY:[71.6,82.6,93.6],cbx1:26.8,cbx2:60.6,rcbx1:7.4,rcbx2:38.8,bottom:290,staffY:265.7};   // R-102 วัดจากไฟล์บันทึกย่อจริงของผู้ใช้
 const STPP = ["— ไม่ใช้ (พิมพ์ในข้อความเอง) —","จึงแจ้งมาเพื่อทราบ","จึงแจ้งมาเพื่อโปรดทราบและถือปฏิบัติ","จึงแจ้งมาเพื่อโปรดทราบและแจ้งผู้เกี่ยวข้องทราบด้วย","จึงแจ้งมาเพื่อโปรดพิจารณาดำเนินการต่อไป","อื่น ๆ (พิมพ์เอง)"];
 const ORDP = ["— ไม่ใช้ (พิมพ์ในข้อความเอง) —","ทั้งนี้ ตั้งแต่บัดนี้เป็นต้นไป","ทั้งนี้ ให้ผู้ที่เกี่ยวข้องทราบและถือปฏิบัติ","จึงประกาศให้ทราบโดยทั่วกัน","ประกาศมาเพื่อทราบโดยทั่วกัน","อื่น ๆ (พิมพ์เอง)"];
 const ENDP = ["— ไม่ใช้ (พิมพ์ในข้อความเอง) —","จึงเรียนมาเพื่อโปรดทราบ","จึงเรียนมาเพื่อโปรดพิจารณา","จึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ","จึงเรียนมาเพื่อโปรดทราบและพิจารณาดำเนินการต่อไป","จึงเรียนมาเพื่อโปรดทราบและถือปฏิบัติ","จึงเรียนมาเพื่อโปรดทราบ และแจ้งผู้เกี่ยวข้องทราบด้วย","จึงเรียนมาเพื่อโปรดพิจารณาเข้าร่วมประชุมตามวัน เวลา และสถานที่ดังกล่าว","จึงเรียนมาเพื่อโปรดพิจารณาให้ความอนุเคราะห์ด้วย จะขอบคุณยิ่ง","จึงเรียนมาเพื่อโปรดทราบ และขอขอบคุณมา ณ โอกาสนี้","อื่น ๆ (พิมพ์เอง)"];
@@ -283,7 +283,7 @@ let TYPE = store.get("thdoc_type") || "ext";
 let D = {};
 function defaults(){return {v:DATA_VERSION,fit1:true,font:"TH SarabunIT๙",thai:true,ownerPos:"อัตโนมัติ",sal:"เรียน",kind:"คำสั่ง",date:new Date().toISOString().slice(0,10)}}
 // รุ่นของระบบ (แสดงบนหน้าจอ) และรุ่นโครงข้อมูลที่เก็บในเครื่อง — เพิ่มเลขทุกครั้งที่กฎเปลี่ยนจนค่าเก่าอาจขัดกับกฎใหม่
-const APP_VERSION="2026.11.25g", DATA_VERSION=4;
+const APP_VERSION="2026.11.26a", DATA_VERSION=4;
 function migrate(x){   // ปรับค่าที่เก็บไว้ในเครื่องให้เข้ากับกฎปัจจุบัน (ดู REQUIREMENTS.md)
  if(!x||typeof x!=="object")return {};
  const v=x.v||1;
@@ -831,21 +831,21 @@ function build(){
   sign(3);
  }
  if(TYPE==="brief"){   // R-100 บันทึกย่อ
-  const h=15,w=h*GARUDA_RATIO;F.push({kind:"img",x:30,y:15,w,h});
-  F.push({kind:"text",x:55,y:16,w:100,h:14,text:"บันทึกข้อความ",pt:29,b:true,align:"center"});
-  const tw=measure("บันทึกข้อความ",29,true), xd=105-tw/2+measure("บันทึก",29,true)-30;
-  { const H=measure("ส่วนราชการ",20,true)+measure("  ");
-    para({runs:[R("ส่วนราชการ",{sz:20,b:true}),TAB,R(normTel(D.org||""))],indL:H,hang:H,tabAt:H,kind:"label",before:mm2pt(6)}); }
-  para({runs:[R("ที่",{sz:20,b:true}),R("  "+normNo(D.no)),TAB,R("วันที่",{sz:20,b:true}),R("  "+thaiDate(D.date))],tabAt:xd,kind:"abs"});
-  labelList("เรื่อง",[D.subject||""],0,false,20,true);
+  // R-102 หัวบันทึกย่อแบบกระชับตามแบบฟอร์มจริง: ครุฑ 1.66 ซม. ชื่อ 24 pt หัวข้อ 16 pt ตัวหนา
+  const h=16.6,w=h*GARUDA_RATIO;F.push({kind:"img",x:28.3,y:7.9,w,h});
+  F.push({kind:"text",x:64.2,y:15.3,w:100,h:11,text:"บันทึกข้อความ",pt:24,b:true,align:"center"});
+  { const H=measure("ส่วนราชการ",16,true)+measure("  ");
+    para({runs:[R("ส่วนราชการ",{b:true}),TAB,R(normTel(D.org||""))],indL:H,hang:H,tabAt:H,kind:"label",before:0}); }
+  para({runs:[R("ที่",{b:true}),R("  "+normNo(D.no)),TAB,R("วันที่",{b:true}),R("  "+thaiDate(D.date))],tabAt:76.2,kind:"abs",before:mm2pt(0.2)});
+  labelList("เรื่อง",[D.subject||""],6,false,16,true);
   labelList(D.sal||"เรียน",[D.to||""],6,false);
   const tb={kind:"btab",prop:Array.isArray(D.propose)?D.propose:[]};F.push(tb);
   tb.at=P.length;para({runs:[],kind:"btab",btab:tb,before:6});
   const b0=P.length;body(D.body||"",true,BT.ind);   // R-101 ย่อหน้าบันทึกย่อ 2.0 ซม.
   for(let i=b0;i<P.length;i++){P[i].indR=CW-BT.txtW;P[i].cell=true;}
   if(P[b0])P[b0].before=mm2pt(BT.bodyTop);
-  const dots="...........................................................", nm=x=>(x||"").trim()?`(${x.trim()})`:"(.......................................................)";
-  F.push({kind:"stext",x:70,y:BT.staffY,w:70,h:26,pt:10,lines:["จนท."+dots,nm(D.staff),"พิมพ์/ทาน"+dots,nm(D.typist2),(D.bdate||"").trim()||briefToday()]});
+  const dots=pre=>{let t=pre;while(measure(t+".",10)<47)t+=".";return t;}, nm=x=>(x||"").trim()?`(${x.trim()})`:"(.......................................................)";
+  F.push({kind:"stext",x:72.8,y:BT.staffY,w:70,h:26,pt:10,lh:4.0,gaps:[0,0,2.1,0,0],lines:[dots("จนท."),nm(D.staff),dots("พิมพ์/ทาน"),nm(D.typist2),(D.bdate||"").trim()||briefToday()]});
  }
  if(TYPE==="stamp"){
   head3();
@@ -974,11 +974,11 @@ function btabHTML(t){const L=(x,y,w)=>`<div style="position:absolute;left:${x}mm
  const p=t.prop||[];let h=`<div class="btab" style="position:absolute;left:${BT.x0}mm;top:0;width:${BT.wL+BT.wR}mm;height:200mm;border:1px solid #000;box-sizing:border-box;text-indent:0;white-space:nowrap;line-height:${lineH()}">`;
  h+=`<div style="position:absolute;left:${BT.wL}mm;top:0;bottom:0;border-left:1px solid #000"></div>`+L(0,BT.hh,BT.wL+BT.wR);
  h+=T(0,0,BT.wL,BT.hh,"เสนอเพื่อ","justify-content:center;font-weight:bold");
- h+=T(BT.wL,0,BT.wR,BT.hh,"ข้อพิจารณา/คำสั่งเพิ่มเติม<br>(ผู้ผ่านเรื่อง)","justify-content:center;text-align:center;font-weight:bold;white-space:normal");
- BPROP.forEach((o,i)=>{h+=cb(i%2?BT.cbx2:BT.cbx1,BT.cb1+Math.floor(i/2)*BT.cbH,o,p.includes(o),true);});
- h+=L(0,BT.line1,BT.wL)+T(0,BT.line1+1,BT.wL,BT.headB-BT.line1-1,"ความเห็นเจ้าหน้าที่โดยสรุป","justify-content:center;font-weight:bold")+L(0,BT.headB,BT.wL);
+ h+=T(BT.wL,-0.7,BT.wR,BT.hh,"ข้อพิจารณา/คำสั่งเพิ่มเติม<br>(ผู้ผ่านเรื่อง)","align-items:flex-start;padding-top:0.3mm;box-sizing:border-box;line-height:7.4mm;justify-content:center;text-align:center;font-weight:bold;white-space:normal");
+ BPROP.forEach((o,i)=>{h+=cb(i%2?BT.cbx2:BT.cbx1,BT.cbY[Math.floor(i/2)],o,p.includes(o),true);});
+ h+=L(0,BT.line1,BT.wL)+T(0,BT.headY,BT.wL,8,"ความเห็นเจ้าหน้าที่โดยสรุป","justify-content:center;font-weight:bold")+L(0,BT.headB,BT.wL);
  h+=L(BT.wL,BT.rLine1,BT.wR)+T(BT.wL,BT.rLine1,BT.wR,BT.rLine2-BT.rLine1,"ผู้มีอำนาจสั่งการ","justify-content:center;font-weight:bold")+L(BT.wL,BT.rLine2,BT.wR);
- BCMD.forEach((o,i)=>{h+=cb(BT.wL+(i%2?BT.rcbx2:BT.rcbx1),BT.rcb+Math.floor(i/2)*BT.cbH,o,false,true);});
+ BCMD.forEach((o,i)=>{h+=cb(BT.wL+(i%2?BT.rcbx2:BT.rcbx1),BT.rcbY[Math.floor(i/2)],o,false,true);});
  return h+"</div>";}
 function parasHTML(P,F){let h="",grp="",side=sideHTML(F);
  const sf=(F||[]).find(x=>x.kind==="block"&&x.mode==="side"), at=sf&&sf.at!=null?sf.at:-1;   // QR ข้างลายมือชื่อ: ยึดใต้ย่อหน้าบรรทัดตำแหน่ง (at)
@@ -995,7 +995,7 @@ function floatHTML(f,dx=0,dy=0){
  if(f.kind==="img")return `<img class="fl" src="${GARUDA}" style="${box}">`;
  if(f.kind==="initials")return `<div class="fl doc" style="left:${150-dx}mm;width:40mm;top:${f.by-dy-INIH-3}mm;font-size:14pt;white-space:pre;text-align:left">${f.lines.map(esc).join("<br>")}</div>`;
  if(f.kind==="btab")return "";
- if(f.kind==="stext")return `<div class="fl doc" style="left:${f.x-dx}mm;top:${f.y-dy}mm;width:${f.w}mm;font-size:${f.pt}pt;line-height:1.3;text-align:center;white-space:pre">${f.lines.map(x=>esc(x)).join("<br>")}</div>`;
+ if(f.kind==="stext")return `<div class="fl doc" style="left:${f.x-dx}mm;top:${f.y-dy}mm;width:${f.w}mm;font-size:${f.pt}pt;text-align:center;white-space:pre">${f.lines.map((x,i)=>`<div style="height:${f.lh||4.6}mm;line-height:${f.lh||4.6}mm;margin-top:${(f.gaps||[])[i]||0}mm">${esc(x)}</div>`).join("")}</div>`;
  if(f.kind==="block")return `<div class="fl doc" style="left:${30-dx}mm;top:${f.by-dy-blockH(f)-1.5}mm;white-space:pre">${f.qr?`<img src="${f.qr}" style="width:${QR}mm;height:${QR}mm;display:block;margin-bottom:1mm">`:""}${f.lines.map(x=>esc(x)||"&nbsp;").join("<br>")}</div>`;
  return `<div class="fl doc" style="${box};text-align:${f.align};font-size:${f.pt}pt;${f.b?"font-weight:bold;":""}${f.color?`color:#${f.color}`:""}">${esc(f.text)}</div>`;
 }
@@ -1109,7 +1109,7 @@ function anchorXML(f,id,img){
   const ps=f.lines.map(x=>`<w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="${Math.round(240*lspF())}" w:lineRule="auto"/></w:pPr><w:r>${rPr({})}<w:t xml:space="preserve">${xe(x)}</w:t></w:r></w:p>`).join("");
   return `<w:r><mc:AlternateContent><mc:Choice Requires="wps"><w:drawing><wp:anchor distT="0" distB="0" distL="0" distR="0" simplePos="0" relativeHeight="${251658240+id}" behindDoc="0" locked="0" layoutInCell="1" allowOverlap="1"><wp:simplePos x="0" y="0"/><wp:positionH relativeFrom="margin"><wp:posOffset>0</wp:posOffset></wp:positionH>${vpos}<wp:extent cx="${EMU(w)}" cy="${EMU(h)}"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:wrapNone/><wp:docPr id="${id}" name="owner${id}"/><wp:cNvGraphicFramePr/><a:graphic><a:graphicData uri="http://schemas.microsoft.com/office/word/2010/wordprocessingShape"><wps:wsp><wps:cNvSpPr txBox="1"/><wps:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${EMU(w)}" cy="${EMU(h)}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/><a:ln><a:noFill/></a:ln></wps:spPr><wps:txbx><w:txbxContent>${ps}</w:txbxContent></wps:txbx><wps:bodyPr rot="0" vert="horz" wrap="square" lIns="0" tIns="0" rIns="0" bIns="0" anchor="b" anchorCtr="0"><a:noAutofit/></wps:bodyPr></wps:wsp></a:graphicData></a:graphic></wp:anchor></w:drawing></mc:Choice></mc:AlternateContent></w:r>`+qx;}
  const head=`<wp:anchor distT="0" distB="0" distL="0" distR="0" simplePos="0" relativeHeight="${251658240+id}" behindDoc="0" locked="0" layoutInCell="1" allowOverlap="1"><wp:simplePos x="0" y="0"/><wp:positionH relativeFrom="page"><wp:posOffset>${EMU(f.x)}</wp:posOffset></wp:positionH><wp:positionV relativeFrom="page"><wp:posOffset>${EMU(f.y)}</wp:posOffset></wp:positionV><wp:extent cx="${EMU(f.w)}" cy="${EMU(f.h)}"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:wrapNone/><wp:docPr id="${id}" name="obj${id}"/><wp:cNvGraphicFramePr/>`;
- if(f.kind==="stext"){const tp=f.lines.map(x=>`<w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="${Math.round(f.pt*1.3*20)}" w:lineRule="exact"/><w:jc w:val="center"/></w:pPr><w:r>${rPr({sz:f.pt})}<w:t xml:space="preserve">${xe(x)}</w:t></w:r></w:p>`).join("");
+ if(f.kind==="stext"){const tp=f.lines.map((x,i)=>`<w:p><w:pPr><w:spacing w:before="${Math.round(((f.gaps||[])[i]||0)*72/25.4*20)}" w:after="0" w:line="${TW(f.lh||4.6)}" w:lineRule="exact"/><w:jc w:val="center"/></w:pPr><w:r>${rPr({sz:f.pt})}<w:t xml:space="preserve">${xe(x)}</w:t></w:r></w:p>`).join("");
   return `<w:r><mc:AlternateContent><mc:Choice Requires="wps"><w:drawing>${head}<a:graphic><a:graphicData uri="http://schemas.microsoft.com/office/word/2010/wordprocessingShape"><wps:wsp><wps:cNvSpPr txBox="1"/><wps:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${EMU(f.w)}" cy="${EMU(f.h)}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/><a:ln><a:noFill/></a:ln></wps:spPr><wps:txbx><w:txbxContent>${tp}</w:txbxContent></wps:txbx><wps:bodyPr rot="0" vert="horz" wrap="square" lIns="0" tIns="0" rIns="0" bIns="0" anchor="t" anchorCtr="0"><a:noAutofit/></wps:bodyPr></wps:wsp></a:graphicData></a:graphic></wp:anchor></w:drawing></mc:Choice></mc:AlternateContent></w:r>`;}
  if(f.kind==="img")return `<w:r><w:drawing>${head}<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="${id}" name="garuda.${img.ext}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="rIdImg"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${EMU(f.w)}" cy="${EMU(f.h)}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:anchor></w:drawing></w:r>`;
  const jc={left:"left",center:"center"}[f.align]||"left";
@@ -1122,18 +1122,18 @@ function briefXML(P,F,fl){const A=P.findIndex(p=>p.kind==="btab"), t=P[A].btab, 
  const RR=(t,o={})=>`<w:r>${rPr(o)}<w:t xml:space="preserve">${xe(t)}</w:t></w:r>`;
  const BOX=on=>`<w:r>${rPr({})}<w:sym w:font="Wingdings" w:char="${on?"F0FE":"F0A8"}"/></w:r>`+RR("  ");
  const PP=(runs,{before=0,h=8,jc="left",ind=0,tab=null,bdr=""}={})=>`<w:p><w:pPr>${bdr?BDR(bdr):""}${tab!=null?`<w:tabs>${[].concat(tab).map(x=>`<w:tab w:val="left" w:pos="${X(x)}"/>`).join("")}</w:tabs>`:""}<w:spacing w:before="${Math.round(before*72/25.4*20)}" w:after="0" ${ex(h)}/><w:ind w:left="${X(ind)}" w:right="0"/><w:jc w:val="${jc}"/></w:pPr>${runs}</w:p>`;
- const cbRow=(a,b,ind,tab,before,ons,bdr="")=>PP(`<w:r>${rPr({})}<w:tab/></w:r>`+BOX(ons[0])+RR(a,{b:true})+`<w:r>${rPr({})}<w:tab/></w:r>`+BOX(ons[1])+RR(b,{b:true}),{before,ind:0,tab:[ind,tab],bdr});
+ const cbRow=(a,b,ind,tab,before,ons,bdr="",h=BT.cbH)=>PP(`<w:r>${rPr({})}<w:tab/></w:r>`+BOX(ons[0])+RR(a,{b:true})+`<w:r>${rPr({})}<w:tab/></w:r>`+BOX(ons[1])+RR(b,{b:true}),{before,h,ind:0,tab:[ind,tab],bdr});
  const head=P.slice(0,A).map((p,i)=>pXML(p,i===0?fl:"",P[i+1])).join("");
  // ช่องซ้าย: เสนอเพื่อ (2 แถว) — เส้น — หัวข้อ — เส้น — ความเห็น
- let L=cbRow(BPROP[0],BPROP[1],BT.cbx1,BT.cbx2,BT.cb1-BT.hh,[prop.includes(BPROP[0]),prop.includes(BPROP[1])])+cbRow(BPROP[2],BPROP[3],BT.cbx1,BT.cbx2,0,[prop.includes(BPROP[2]),prop.includes(BPROP[3])]);
+ let L=cbRow(BPROP[0],BPROP[1],BT.cbx1,BT.cbx2,BT.cbY[0]-BT.hh,[prop.includes(BPROP[0]),prop.includes(BPROP[1])])+cbRow(BPROP[2],BPROP[3],BT.cbx1,BT.cbx2,BT.cbY[1]-BT.cbY[0]-BT.cbH,[prop.includes(BPROP[2]),prop.includes(BPROP[3])],"",BT.line1-BT.cbY[1]);
  L+=PP(RR("ความเห็นเจ้าหน้าที่โดยสรุป",{b:true}),{before:0,h:BT.headB-BT.line1,jc:"center",bdr:"top,bottom"});
  const cell=P.slice(A+1).filter(p=>p.cell).map((p,i,a)=>pXML(Object.assign({},p,{lw:CW-p.indL-p.indR,indL:p.indL-BT.x0,indR:BT.wL+BT.x0-BT.txtW-p.indL,before:i===0?(BT.bodyTop-BT.headB)*72/25.4:p.before}),"",a[i+1])).join("");
  L+=cell||PP("",{});
  // ช่องขวา: ว่างสำหรับข้อพิจารณา — เส้น — ผู้มีอำนาจสั่งการ — เส้น — ช่องเลือก 3 แถว
  let Rc=PP("",{h:BT.rLine1-BT.hh})+PP(RR("ผู้มีอำนาจสั่งการ",{b:true}),{h:BT.rLine2-BT.rLine1,jc:"center",bdr:"top,bottom"});
- for(let i=0;i<3;i++)Rc+=cbRow(BCMD[2*i],BCMD[2*i+1],BT.rcbx1,BT.rcbx2,i===0?BT.rcb-BT.rLine2:0,[false,false]);
+ for(let i=0;i<3;i++)Rc+=cbRow(BCMD[2*i],BCMD[2*i+1],BT.rcbx1,BT.rcbx2,i===0?BT.rcbY[0]-BT.rLine2:BT.rcbY[i]-BT.rcbY[i-1]-BT.cbH,[false,false]);
  const bt=document.querySelector("#page .btab");let top=78;if(bt){const pg=document.getElementById("page"),z=pg.getBoundingClientRect().height/pg.offsetHeight||1;top=(bt.getBoundingClientRect().top-pg.getBoundingClientRect().top)/z*25.4/96;}
- const h2=Math.max(60,BT.bottom-top-BT.hh-5);   // เผื่อ 5 มม. — Word วางหัวบันทึกต่ำกว่าพรีวิวเล็กน้อย ถ้าแถวสูงเกินพื้นที่ Word จะย้ายทั้งแถวไปหน้าใหม่ (ตารางขาด)
+ const h2=Math.max(60,BT.bottom-top-BT.hh-2);   // เผื่อ 5 มม. — Word วางหัวบันทึกต่ำกว่าพรีวิวเล็กน้อย ถ้าแถวสูงเกินพื้นที่ Word จะย้ายทั้งแถวไปหน้าใหม่ (ตารางขาด)
  const tc=(w,inner,b,va="top")=>`<w:tc><w:tcPr><w:tcW w:w="${X(w)}" w:type="dxa"/><w:tcBorders>${b}</w:tcBorders><w:vAlign w:val="${va}"/></w:tcPr>${inner}</w:tc>`;
  const S=(s,v="single")=>`<w:${s} w:val="${v}" w:sz="4" w:space="0" w:color="auto"/>`;
  const hdL=PP(RR("เสนอเพื่อ",{b:true}),{h:8,jc:"center"}), hdR=PP(RR("ข้อพิจารณา/คำสั่งเพิ่มเติม",{b:true}),{h:7,jc:"center"})+PP(RR("(ผู้ผ่านเรื่อง)",{b:true}),{h:7,jc:"center"});
@@ -1150,7 +1150,7 @@ function makeDocx(){
  const fbAt=i=>F.map((f,j)=>((f.kind==="block"||f.kind==="initials")&&(f.at!==undefined?f.at:P.length-1)===i)?anchorXML(f,j+1,img):"").join("");
  const body=TYPE==="brief"?briefXML(P,F,fl):P.map((p,i)=>pXML(p,(i===0?fl:"")+fbAt(i),P[i+1])).join("");
  const NS=`xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"`;
- const doc=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ${NS}><w:body>${body}<w:sectPr><w:headerReference w:type="default" r:id="rIdHdr"/><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="${TW(25)}" w:right="${TW(20)}" w:bottom="${TW(TYPE==="brief"?5:20)}" w:left="${TW(30)}" w:header="${TW(12)}" w:footer="${TW(10)}" w:gutter="0"/><w:pgNumType w:fmt="${D.thai?"thaiNumbers":"decimal"}"/><w:titlePg/></w:sectPr></w:body></w:document>`;
+ const doc=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ${NS}><w:body>${body}<w:sectPr><w:headerReference w:type="default" r:id="rIdHdr"/><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="${TW(25)}" w:right="${TW(20)}" w:bottom="${TW(TYPE==="brief"?4:20)}" w:left="${TW(30)}" w:header="${TW(12)}" w:footer="${TW(10)}" w:gutter="0"/><w:pgNumType w:fmt="${D.thai?"thaiNumbers":"decimal"}"/><w:titlePg/></w:sectPr></w:body></w:document>`;
  const fmt=D.thai?"ThaiArabic":"Arabic";
  const hdr=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:hdr ${NS}><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r>${rPr({})}<w:t xml:space="preserve">- </w:t></w:r><w:r>${rPr({})}<w:fldChar w:fldCharType="begin"/></w:r><w:r>${rPr({})}<w:instrText xml:space="preserve"> PAGE </w:instrText></w:r><w:r>${rPr({})}<w:fldChar w:fldCharType="separate"/></w:r><w:r>${rPr({})}<w:t>2</w:t></w:r><w:r>${rPr({})}<w:fldChar w:fldCharType="end"/></w:r><w:r>${rPr({})}<w:t xml:space="preserve"> -</w:t></w:r></w:p></w:hdr>`;
  const styles=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="${xe(D.font)}" w:hAnsi="${xe(D.font)}" w:eastAsia="${xe(D.font)}" w:cs="${xe(D.font)}"/><w:sz w:val="32"/><w:szCs w:val="32"/><w:lang w:val="en-US" w:eastAsia="en-US" w:bidi="th-TH"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style></w:styles>`;
