@@ -1,0 +1,11 @@
+dict-th.txt — รายการคำภาษาไทยและคำที่มักสะกดผิด สำหรับระบบตรวจคำผิดของระบบจัดหน้าหนังสือราชการ
+
+ที่มา (ไม่ได้แก้ไขเนื้อหาคำ เพียงรวมและจัดรูปแบบไฟล์):
+1. LibreOffice dictionaries — th_TH (th_TH.dic, typos-*.txt)
+   https://github.com/LibreOffice/dictionaries/tree/master/th_TH
+   รวบรวมจาก LEXiTRON (NECTEC) และ libthai — License: LGPL
+2. libthai — data/tdict-*.txt (ยกเว้น tdict-spell.txt)
+   https://github.com/tlwg/libthai — License: GNU LGPL v2.1
+
+ไฟล์นี้เผยแพร่ภายใต้ GNU Lesser General Public License v2.1 ตามต้นฉบับ
+https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html

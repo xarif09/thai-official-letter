@@ -139,6 +139,14 @@ with sync_playwright() as p:
       const bad=[["ครุภัณท์","ครุภัณฑ์"],["ยุทธศาสตร ","ยุทธศาสตร์"],["ทรัพยากรณ์","ทรัพยากร"],["ผู้บังคับบันชา","บัญชา"],["มาตราฐาน","มาตรฐาน"],["เอกสารแนป","แนบ"],["สัมนา","สัมมนา"],["ลิขสิทธ์","สิทธิ์"]];
       return ok.every(t=>!findIssues(t).some(r=>r.lv==='err'))&&bad.every(([w,f])=>findIssues(w).some(r=>r.lv==='err'&&(w.slice(0,r.i)+r.fix+w.slice(r.i+r.w.length)).includes(f.trim())))}"""), "ไม่ทักคำถูก (สัญญานี้ ทะนุบำรุง เผอิญ ศาสตราจารย์) และจับคำผิดที่เพิ่ม")
     check("R-71b", ev("""()=>{document.querySelectorAll('#tabs button')[1].click();D.secs=[{h:MSEC[0],text:'ต่าง ๆ'+String.fromCharCode(10)+'กรณี'}];save();renderForm();update();liveSpell();const H=CSS.highlights.get('sp-sug');return !H||H.size===0}"""), "ไม่ทักไม้ยมกตรงรอยต่อย่อหน้า และไม่ทักช่องว่างจัดหน้าในพรีวิว")
+    pg.evaluate("t=>dictLoad(t)", open(os.path.join(os.path.dirname(os.path.abspath(__file__)),"..","dict-th.txt"),encoding="utf-8").read())
+    r76 = pg.evaluate("""()=>{const lv=t=>findIssues(t).map(r=>r.lv+':'+r.w+(r.fix?'>'+r.fix:''));
+      const samples=Object.keys(SAMPLE).every(k=>{const d=SAMPLE[k];return [...Object.values(d).filter(v=>typeof v==='string'),...(d.secs||[]).map(s=>s.text||'')].every(t=>!findIssues(t).some(r=>r.lv==='err'||r.lv==='unk'))});
+      const typo=lv('ขอให้ทรมาณ และกบฎ').some(x=>x.startsWith('err:กบฎ>กบฏ'))&&unkSuggest(findIssues('ทรมาณ').find(r=>r.lv==='unk')).some(g=>g.x==='ทรมาน');
+      const names=!findIssues('(นายวีรพัฒน์ บุณฑริก) สนจ.ยล. ว 123').some(r=>r.lv==='unk');
+      const w='ซอเรมาลอ';const before=findIssues(w).some(r=>r.lv==='unk');dictAddUser(w);const after=!findIssues(w).some(r=>r.lv==='unk');localStorage.removeItem('thdoc_userdict');DICT.W.delete(w);
+      return {samples,typo,names,user:before&&after,size:DICT.W.size}}""")
+    check("R-76", all([r76["samples"],r76["typo"],r76["names"],r76["user"]]) and r76["size"]>50000, str(r76))
     check("ERR", not errs, "; ".join(errs[:3]))
     b.close()
 

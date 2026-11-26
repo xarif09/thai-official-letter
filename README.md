@@ -43,3 +43,7 @@
 - `CLAUDE.md` — ขั้นตอนทำงานสำหรับผู้พัฒนา/Claude
 - `tests/spec_test.py` — ชุดทดสอบตามข้อกำหนด ต้องผ่านทั้งหมดก่อน push
 - `CHANGELOG.md` — บันทึกการเปลี่ยนแปลง
+
+
+## พจนานุกรมตรวจคำผิด
+`dict-th.txt` รวมจาก LibreOffice th_TH (NECTEC/LEXiTRON) และ libthai — สัญญาอนุญาต LGPL ดู `dict-th.LICENSE.txt` · สร้างใหม่: รวม `th_TH.dic` + `libthai/data/tdict-*.txt` (ยกเว้น spell) เป็นหัวข้อ `#W`, คู่จาก `typos-*.txt` (คำผิด→คำถูก) เป็น `#T` และคู่ที่คำผิดเป็นคำในพจนานุกรมด้วยเป็น `#A`
