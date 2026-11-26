@@ -142,7 +142,7 @@ with sync_playwright() as p:
     pg.evaluate("t=>dictLoad(t)", open(os.path.join(os.path.dirname(os.path.abspath(__file__)),"..","dict-th.txt"),encoding="utf-8").read())
     r76 = pg.evaluate("""()=>{const lv=t=>findIssues(t).map(r=>r.lv+':'+r.w+(r.fix?'>'+r.fix:''));
       const samples=Object.keys(SAMPLE).every(k=>{const d=SAMPLE[k];return [...Object.entries(d).filter(([kk,v])=>typeof v==='string'&&kk!=='qr'&&!NAMEK.includes(kk)).map(([kk,v])=>v),...(d.secs||[]).map(s=>s.text||'')].every(t=>!findIssues(t).some(r=>r.lv==='err'||r.lv==='unk'))});
-      const typo=lv('ขอให้ทรมาณ และกบฎ').some(x=>x.startsWith('err:กบฎ>กบฏ'))&&unkSuggest(findIssues('ทรมาณ').find(r=>r.lv==='unk')).some(g=>g.x==='ทรมาน');
+      const typo=lv('ขอให้ทรมาณ และกบฎ').some(x=>x.startsWith('err:กบฎ>กบฏ'))&&findIssues('ทรมาณ').some(r=>r.fix==='ทรมาน'||(r.lv==='unk'&&unkSuggest(r).some(g=>g.x==='ทรมาน')));
       const names=!findIssues('(นายวีรพัฒน์ บุณฑริก) สนจ.ยล. ว 123').some(r=>r.lv==='unk');
       const w='ซอเรมาลอ';const before=findIssues(w).some(r=>r.lv==='unk');dictAddUser(w);const after=!findIssues(w).some(r=>r.lv==='unk');localStorage.removeItem('thdoc_userdict');DICT.W.delete(w);
       return {samples,typo,names,user:before&&after,size:DICT.W.size}}""")
@@ -151,7 +151,7 @@ with sync_playwright() as p:
       return need.filter(w=>!r.includes(w)).concat(r.length!==new Set(r).size?['ซ้ำ']:[])}""")
     check("R-76", not r76c, "มีพจนานุกรมแล้วต้องยังจับคำผิดในตัวครบ ไม่ซ้ำ: ขาด "+",".join(r76c))
     r76d = pg.evaluate("""()=>{const t='ส่วนราชการ/หน่วยงาสนใดได้รับ ขอให้นำแจ้งล่nวงหน้า **พร้อมไฟล์ข้อมูลฟ** วันที่ 20 พฤศจิกายน 2569hfwofhgกธฯ หัวหน้ฟาส่วงนราชการ ตามแบ้บฟรอร์ม QR Cัode สิ่งที่ส่งมไาด้วย';
-      const r=findIssues(t).map(x=>x.w);return ['หน่วยงาสน','ฟ','กธ','บฟร','Cั','่n','ไา','9hfwofhg'].filter(w=>!r.includes(w)).concat(r.length<10?['พบ '+r.length]:[])}""")
+      const r=findIssues(t).map(x=>x.w);return ['หน่วยงาสน','ข้อมูลฟ','กธ','บฟร','Cั','่n','ไา','9hfwofhg'].filter(w=>!r.includes(w)).concat(r.length<10?['พบ '+r.length]:[])}""")
     check("R-76", not r76d, "จับคำพิมพ์พลาดแบบที่ผู้ใช้ทดสอบ (พิมพ์เกิน/อักษรอังกฤษปน/สระลอย): ขาด "+",".join(r76d))
     r76e = pg.evaluate("""()=>['(สวทช.) โดยสถาบัน','จนท.....','ถนนสุขยางค์ ตำบลสะเตง อำเภอเมืองยะลา','อำเภอธารโต อำเภอเบตง','ขนาด A4 จำนวน 2 TB','ห้องประชุมศรียะลา'].flatMap(t=>findIssues(t).filter(x=>x.lv!=='sug').map(x=>x.w))""")
     check("R-76", not r76e, "ไม่ทักคำย่อ/ชื่อพื้นที่ยะลา: "+",".join(r76e))
@@ -180,19 +180,24 @@ with sync_playwright() as p:
       const inList=spellScan().some(r=>r.f.label==='ที่');const hl=[...CSS.highlights.get('sp-unk')||[],...CSS.highlights.get('sp-err')||[]].some(rg=>/ยล|กขค/.test(rg.toString()));
       D.no=o;renderForm();update();return [!b,!inList,!hl]}""")
     check("R-85", all(r85), "ไม่ตรวจเลขที่หนังสือ (ช่อง/รายการ/พรีวิว) "+str(r85))
-    r86 = pg.evaluate("""()=>{typoSample();const bt=document.getElementById('bSpell');const noBtn=!document.getElementById('bTypo')&&bt.textContent==='รายการคำผิด';bt.click();
+    r86 = pg.evaluate("""()=>{typoSample();const bt=document.getElementById('bSpell');const noBtn=!document.getElementById('bTypo')&&bt.textContent.startsWith('รายการคำผิด')&&+bt.querySelector('.spn-b').textContent>0;bt.click();
       const L=document.getElementById('spList');const gh=[...L.querySelectorAll('.gh')].map(g=>g.className);const it=L.querySelector('.it.err');
       const ctx=it&&it.querySelector('.ctx').textContent.length>it.querySelector('.ctx mark').textContent.length+6;
       const n0=spellScan().filter(r=>r.lv==='err').length;it.querySelector('.ch button.pri').click();const n1=spellScan().filter(r=>r.lv==='err').length;
       const it2=document.querySelector('#spList .it.err');const inp=it2.querySelector('.ed input');const r=spellScan().find(x=>x.lv==='err');const seg=inp.value;
       inp.value=seg.replace(r.w,r.fix||'');it2.querySelector('.ed button').click();const n2=spellScan().filter(r=>r.lv==='err').length;
-      document.getElementById('spClose').click();return [noBtn,gh.length>=2&&gh[0].includes('err'),ctx,n1===n0-1,n2===n1-1]}""")
+      document.getElementById('spClose').click();return [noBtn,gh.length>=1&&gh[0].includes('err'),ctx,n1===n0-1,n2===n1-1]}""")
     check("R-86", all(r86), "ปุ่มรายการคำผิด แยกกลุ่ม แสดงข้อความก่อน-หลัง เลือกคำถูก/แก้เอง "+str(r86))
     r87 = pg.evaluate("""()=>{typoSample();document.getElementById('bSpell').click();const ok=[...document.querySelectorAll('#spList .it')].every(it=>{const v=it.querySelector('.ed input').value;return [...v].length<=40});
       const r=spellScan()[0];const v=document.querySelector('#spList .it .ed input').value;document.getElementById('spClose').click();
       return [ok, v.length<=r.w.length+24, !!document.querySelector('#side h1 #bFb'), !document.querySelector('.btns #bFb')]}""")
     check("R-87", all(r87), "แก้เองแสดงคำ ±1 คำ · ปุ่มแจ้งปัญหาอยู่หัวระบบ "+str(r87))
     check("R-87", pg.evaluate("()=>{const t='ช่วยเหลือทางกฏหมายและบังคับคดี';const [a,b]=spWord1(t,12,14);return t.slice(a,b)}")=="ทางกฏหมาย", "แก้เอง: คำผิด + คำถูกหน้า/หลัง 1 คำ")
+    r88 = pg.evaluate("""()=>{const c=[['ได้กำพหนดประชุม','กำหนด'],['ดำเนินกาารตาม','า'],['ผู้ว่าราขการจังหวัด','ราชการ']];
+      const bad=c.filter(([t,f])=>{const r=findIssues(t);return !(r.length===1&&r[0].fix===f)}).map(x=>x[0]);
+      return bad.concat(['คราวละสามปี โดย','(นายชารีฟ เจ๊ะแอ)'].filter(t=>findIssues(t).some(x=>x.lv==='sug')).map(t=>'ทักผิด:'+t))}""")
+    check("R-89", pg.evaluate("()=>{const o=D;D=defaults();renderForm();update();liveSpell();const ok=!document.querySelector('#bSpell .spn-b');D=o;renderForm();update();liveSpell();return ok&&!!document.querySelector('#bSpell .spn-b')}"), "ไม่มีคำผิดไม่แสดงตัวเลข / มีแสดง")
+    check("R-88", not r88, "คำพิมพ์พลาดที่แตกเป็นหลายท่อน: "+",".join(r88))
     check("ERR", not errs, "; ".join(errs[:3]))
     b.close()
 

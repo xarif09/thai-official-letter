@@ -117,6 +117,7 @@ select.hist{font-size:11.5px;padding:0 2px;margin-left:6px;border:1px solid #d5d
 #spell .ctx mark.err{background:#fdd5d5;box-shadow:inset 0 -2px #e02424}#spell .ctx mark.sug{background:#fde1c2}#spell .ctx mark.unk{background:#fff3b0}
 #spell .df{margin:2px 0}#spell .df .spw{font-size:19px}#spell .ch,#spell .ed{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:4px}#spell .ch small,#spell .ed small{color:#6b7684}
 #spell .ed input{flex:1;min-width:200px;font-family:var(--docfont);font-size:18px;padding:2px 6px;border:1px solid #c5cfdb;border-radius:5px}
+#bSpell .spn-b{display:inline-block;min-width:20px;padding:0 6px;margin-left:4px;border-radius:10px;background:#e02424;color:#fff;font-size:12px;line-height:18px;text-align:center}#bSpell .spn-b.s{background:#d97706}
 #spell{position:fixed;inset:0;background:rgba(20,30,45,.45);display:none;align-items:center;justify-content:center;z-index:50}
 #spell .box{background:#fff;width:min(760px,94vw);max-height:86vh;border-radius:10px;display:flex;flex-direction:column;box-shadow:0 8px 30px rgba(0,0,0,.3)}
 #spell .hd{padding:12px 16px;border-bottom:1px solid #e1e6ec;display:flex;justify-content:space-between;align-items:center}
@@ -292,7 +293,7 @@ let TYPE = store.get("thdoc_type") || "ext";
 let D = {};
 function defaults(){return {v:DATA_VERSION,fit1:true,font:"TH SarabunIT๙",thai:true,ownerPos:"อัตโนมัติ",sal:"เรียน",kind:"คำสั่ง",date:new Date().toISOString().slice(0,10)}}
 // รุ่นของระบบ (แสดงบนหน้าจอ) และรุ่นโครงข้อมูลที่เก็บในเครื่อง — เพิ่มเลขทุกครั้งที่กฎเปลี่ยนจนค่าเก่าอาจขัดกับกฎใหม่
-const APP_VERSION="2026.11.26m", DATA_VERSION=4;
+const APP_VERSION="2026.11.26o", DATA_VERSION=4;
 function migrate(x){   // ปรับค่าที่เก็บไว้ในเครื่องให้เข้ากับกฎปัจจุบัน (ดู REQUIREMENTS.md)
  if(!x||typeof x!=="object")return {};
  const v=x.v||1;
@@ -1311,22 +1312,33 @@ function dictIssues(t){if(!DICT)return [];const out=[],{W,T,A,maxL}=DICT;
    if(k==="t")out.push({lv:"err",w,fix:T.get(w),i:o+a,note:""});
    else if(k==="a")out.push({lv:"sug",w,fix:A.get(w),i:o+a,note:"ราชบัณฑิตยสภาเขียน "+A.get(w)});}
   flushU(null);
+  // R-88 คำที่พิมพ์เกิน/ตก/สลับ 1 ตัวจนแตกเป็นหลายท่อนที่ไม่รู้จัก เช่น "กำพหนด" = กำ+[พ]+หน+[ด] → "กำหนด" (รวมเป็นรายการเดียว พร้อมคำที่ถูก)
+  {const U=segs.map((x,k)=>x[2]==="u"?k:-1).filter(k=>k>=0),G=[];for(const k of U){const g=G[G.length-1];if(g&&k-g[1]<=2)g[1]=k;else G.push([k,k]);}
+   for(const [p,q] of G){let best=null;
+    for(let e1=0;e1<=2&&p-e1>=0;e1++)for(let e2=0;e2<=2&&q+e2<segs.length;e2++){const x=segs[p-e1][0],y=segs[q+e2][1],c=r.slice(x,y);if(c.length>14)continue;
+     const nw=nearWord(c,W);if(!nw||(best&&e1+e2>=best.e))continue;
+     let pf=0;while(pf<c.length&&c[pf]===nw[pf])pf++;let sf=0;while(sf<c.length-pf&&sf<nw.length-pf&&c[c.length-1-sf]===nw[nw.length-1-sf])sf++;
+     const ea=x+pf,eb=Math.max(ea+1,y-sf);if(!segs.some(([sa,sb,k])=>k==="u"&&sa<eb&&ea<sb))continue;   // ตัวที่แก้ต้องอยู่ในท่อนที่ไม่รู้จัก
+     best={e:e1+e2,x,c,nw};}
+    if(best&&ign.some(([s0,e0])=>o+best.x>=s0&&o+best.x<e0))best=null;   // ชื่อคนหลังคำนำหน้า
+    if(best)out.push({lv:"sug",w:best.c,fix:best.nw,i:o+best.x,note:"ต้องสงสัยว่าพิมพ์ผิด"});}}
   // คำที่พิมพ์เกิน/สลับ/สะกดใกล้เคียงจนถูกตัดเป็นคำสั้น ๆ ที่มีอยู่จริง เช่น "หน่วยงาสนใด" = หน่วย+งา+สน+ใด → "หน่วยงาน"
   const ws=segs.filter(x=>x[2]!=="u");
   for(let a=0;a<ws.length;a++)for(let len=2;len<=3&&a+len<=ws.length;len++){const g=ws.slice(a,a+len);if(g.some((x,k)=>k&&x[0]!==g[k-1][1]))break;
    const s0=g[0][0],s1=g[len-1][1],c=r.slice(s0,s1);if(c.length<5||c.length>16||W.has(c))continue;
-   if(!g.some(x=>x[1]-x[0]<=2))continue;if(ign.some(([x,y])=>o+s0<y&&x<o+s1))continue;
+   if(!g.some(x=>x[1]-x[0]<=2))continue;if(g.some(x=>NUMW.has(r.slice(x[0],x[1]))))continue;if(ign.some(([x,y])=>o+s0<y&&x<o+s1))continue;
    const fx=nearWord(c,W);if(fx)out.push({lv:"sug",w:c,fix:fx,i:o+s0,note:"ต้องสงสัยว่าพิมพ์ผิด"});}
  }
  return out;}
 const THC="กขฃคฅฆงจฉชซฌญฎฏฐฑฒณดตถทธนบปผฝพฟภมยรลวศษสหฬอฮะัาำิีึืุูเแโใไ็่้๊๋์";
+const NUMW=new Set("หนึ่ง สอง สาม สี่ ห้า หก เจ็ด แปด เก้า สิบ ยี่ ร้อย พัน หมื่น แสน ล้าน ปี เดือน วัน คน ครั้ง ราย ชุด หลัง ฉบับ เล่ม เครื่อง ชั่วโมง นาที บาท แห่ง".split(" "));   // ตัวเลข/ลักษณนาม: "สามปี" ไม่ใช่ "สามี" พิมพ์เกิน
 function nearWord(c,W){   // ตัด/สลับ/แทน 1 ตัว แล้วตรงคำในพจนานุกรมที่ยาว ≥ 4 และครอบคลุมเกือบทั้งช่วง
  const ok=x=>x.length>=4&&W.has(x);
  for(let i=0;i<c.length;i++){const x=c.slice(0,i)+c.slice(i+1);if(ok(x))return x;}
  for(let i=0;i+1<c.length;i++){const x=c.slice(0,i)+c[i+1]+c[i]+c.slice(i+2);if(ok(x))return x;}
  for(let i=0;i<c.length;i++){const q=REPX.get(c[i]);if(q){const x=c.slice(0,i)+q+c.slice(i+1);if(ok(x))return x;}}
  return null;}
-const REPX=new Map([["ณ","น"],["น","ณ"],["ท","ธ"],["ธ","ท"],["ศ","ส"],["ส","ศ"],["ษ","ส"],["ร","ล"],["ล","ร"],["ใ","ไ"],["ไ","ใ"],["ฎ","ฏ"],["ฏ","ฎ"],["พ","ภ"],["ภ","พ"],["ฑ","ท"],["ฒ","ธ"],["ค","ฆ"],["ฆ","ค"],["ซ","ส"],["ญ","ย"],["ย","ญ"]]);
+const REPX=new Map([["ข","ช"],["ช","ข"],["ณ","น"],["น","ณ"],["ท","ธ"],["ธ","ท"],["ศ","ส"],["ส","ศ"],["ษ","ส"],["ร","ล"],["ล","ร"],["ใ","ไ"],["ไ","ใ"],["ฎ","ฏ"],["ฏ","ฎ"],["พ","ภ"],["ภ","พ"],["ฑ","ท"],["ฒ","ธ"],["ค","ฆ"],["ฆ","ค"],["ซ","ส"],["ญ","ย"],["ย","ญ"]]);
 function dictSuggest(w){if(!DICT)return [];if(!DICT.byLen){DICT.byLen={};for(const x of DICT.W)(DICT.byLen[x.length]=DICT.byLen[x.length]||[]).push(x);}
  const d=(a,b)=>{const m=a.length,n=b.length;let p=Array.from({length:n+1},(_,j)=>j);for(let i=1;i<=m;i++){const c=[i];for(let j=1;j<=n;j++){const sc=a[i-1]===b[j-1]?0:REPX.get(a[i-1])===b[j-1]?0.4:1;c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+sc);}p=c;}return p[n];};
  const res=[];for(let L=Math.max(1,w.length-2);L<=w.length+2;L++)for(const x of DICT.byLen[L]||[]){const k=d(w,x);if(k<=2)res.push([k,x]);}
@@ -1381,7 +1393,9 @@ function findIssues(t){const res=dictIssues(t).concat(orthoIssues(t),moneyIssues
  while((m=wre.exec(t))){const d=+arab(m[2]),mo=TMON.indexOf(m[3]),y=+arab(m[4])-543;const dt=new Date(y,mo,d);
   if(dt.getMonth()!==mo)res.push({lv:"err",w:m[0],fix:null,i:m.index,note:`ไม่มีวันที่ ${m[2]} ${m[3]}`});
   else if(WDAY[dt.getDay()]!==m[1])res.push({lv:"err",w:m[0],fix:m[0].replace(m[1]+"ที่",WDAY[dt.getDay()]+"ที่"),i:m.index,note:`วันที่ ${m[2]} ${m[3]} ${m[4]} ตรงกับวัน${WDAY[dt.getDay()]}`});}
- const r1=res.filter(r=>!(r.lv==="unk"&&res.some(o=>o.lv!=="unk"&&o.i<r.i+r.w.length&&r.i<o.i+o.w.length)));   // คำผิดที่รู้คำถูก มาก่อน "ไม่รู้จัก"
+ const ov=(r,o)=>o.i<r.i+r.w.length&&r.i<o.i+o.w.length;
+ const r0=res.filter(r=>!(r.lv==="sug"&&/ต้องสงสัยว่าพิมพ์ผิด/.test(r.note)&&res.some(o=>o.lv==="err"&&ov(r,o))));   // R-88 มีคำผิดที่รู้วิธีแก้อยู่แล้ว ไม่ต้องเดาซ้ำ
+ const r1=r0.filter(r=>!(r.lv==="unk"&&r0.some(o=>o.lv!=="unk"&&ov(r,o))));   // คำผิดที่รู้คำถูก มาก่อน "ไม่รู้จัก"
  const r2=r1.filter(r=>!r1.some(o=>o!==r&&o.i<=r.i&&o.i+o.w.length>=r.i+r.w.length&&o.w.length>r.w.length));       // ซ้อนกัน เก็บอันยาวกว่า
  const seen=new Set();return r2.filter(r=>{const k=r.i+"|"+r.w+"|"+r.lv;if(seen.has(k))return false;seen.add(k);return true;});}   // พจนานุกรม+รายการในตัว เจอคำเดียวกัน แสดงครั้งเดียว
 const SPIGN=new Set();
@@ -1422,7 +1436,7 @@ function liveSpell(){if(!(window.CSS&&CSS.highlights&&window.Highlight))return;
   const iss=findIssues(f.value||"").filter(r=>!(r.lv==="sug"&&/^ +$/.test(r.w)));const bad=iss.filter(r=>r.lv==="err");f.classList.toggle("sperr",bad.length>0);
   f.title=iss.length?iss.map(r=>(r.lv==="err"?"ผิด: ":r.lv==="sug"?"ต้องสงสัย: ":"ไม่แน่ใจ: ")+r.w+(r.fix?" → "+r.fix:"")+(r.note?" ("+r.note+")":"")).join("\n"):"";nErr+=bad.length;nUnk+=iss.length-bad.length;hlPaint(f,iss);}
  CSS.highlights.set("sp-err",H.err);CSS.highlights.set("sp-sug",H.sug);CSS.highlights.set("sp-unk",H.unk);
- const b=document.getElementById("bSpell");if(b){b.dataset.n=nErr+nUnk;b.classList.toggle("has",nErr+nUnk>0);}}
+ const b=document.getElementById("bSpell");if(b){const n=nErr+nUnk;b.dataset.n=n;b.classList.toggle("has",n>0);b.innerHTML="รายการคำผิด"+(n?` <span class="spn-b${nErr?"":" s"}" title="ผิด ${nErr} · ต้องสงสัย/ไม่แน่ใจ ${nUnk}">${n}</span>`:"");}}   // R-89 ตัวเลขจำนวนจุดที่ผิดบนปุ่ม
 // R-86 รายการคำผิดแยกกลุ่ม: แต่ละรายการแสดงข้อความก่อน-หลัง ให้เลือกคำที่ถูก หรือแก้เองในช่องตรงนั้น
 function spCtx(t,i,n){let a=Math.max(0,i-30),b=Math.min(t.length,i+n+30);const sa=t.lastIndexOf(" ",i-1),sb=t.indexOf(" ",i+n);
  if(sa>=0&&i-sa<=45)a=Math.min(a,sa+1);else{const nl=t.lastIndexOf("\n",i-1);if(nl+1>a)a=nl+1;}
