@@ -284,7 +284,7 @@ let TYPE = store.get("thdoc_type") || "ext";
 let D = {};
 function defaults(){return {v:DATA_VERSION,fit1:true,font:"TH SarabunIT๙",thai:true,ownerPos:"อัตโนมัติ",sal:"เรียน",kind:"คำสั่ง",date:new Date().toISOString().slice(0,10)}}
 // รุ่นของระบบ (แสดงบนหน้าจอ) และรุ่นโครงข้อมูลที่เก็บในเครื่อง — เพิ่มเลขทุกครั้งที่กฎเปลี่ยนจนค่าเก่าอาจขัดกับกฎใหม่
-const APP_VERSION="2026.11.26e", DATA_VERSION=4;
+const APP_VERSION="2026.11.26f", DATA_VERSION=4;
 function migrate(x){   // ปรับค่าที่เก็บไว้ในเครื่องให้เข้ากับกฎปัจจุบัน (ดู REQUIREMENTS.md)
  if(!x||typeof x!=="object")return {};
  const v=x.v||1;
@@ -1346,7 +1346,7 @@ function spDiff(a,b){let p=0;while(p<a.length&&p<b.length&&a[p]===b[p])p++;let q
 // ขีดเส้นใต้หยักสีแดงทันทีที่พิมพ์ ทั้งในช่องกรอกและพรีวิว (CSS Highlight API — ไม่แก้ DOM, ไม่ติดไปตอนพิมพ์/Word)
 let LS_T=0;function liveSpellSoon(){clearTimeout(LS_T);LS_T=setTimeout(liveSpell,250);}
 function liveSpell(){if(!(window.CSS&&CSS.highlights&&window.Highlight))return;
- const H={err:new Highlight(),sug:new Highlight(),unk:new Highlight()};let nErr=0;
+ const H={err:new Highlight(),sug:new Highlight(),unk:new Highlight()};let nErr=0,nUnk=0;
  const scope=[...document.querySelectorAll("#form .pbox:not(.single), #form .pbox.single > div, #page .jt, #page p, #page .fl")];   // ทีละย่อหน้า/บรรทัด ไม่ต่อข้อความข้ามย่อหน้า (กันทักผิดตรงรอยต่อ)
  for(const c of scope){const nodes=[],tw=document.createTreeWalker(c,NodeFilter.SHOW_TEXT);let n,txt="";
   while((n=tw.nextNode())){nodes.push([n,txt.length]);txt+=n.nodeValue;}
@@ -1355,11 +1355,11 @@ function liveSpell(){if(!(window.CSS&&CSS.highlights&&window.Highlight))return;
   const inPage=!!c.closest("#page");
   for(const r of findIssues(txt)){if(inPage&&r.lv==="sug"&&/^ +$/.test(r.w))continue;   // ช่องว่างในพรีวิวเป็นการจัดหน้า (เช่น เว้นวันที่) ไม่ใช่คำผิด
    const [sn,so]=at(r.i),[en,eo]=at(r.i+r.w.length-1);const rg=document.createRange();
-   try{rg.setStart(sn,so);rg.setEnd(en,eo+1);}catch(e){continue;}H[r.lv].add(rg);if(r.lv==="err"&&c.closest("#form"))nErr++;}}
+   try{rg.setStart(sn,so);rg.setEnd(en,eo+1);}catch(e){continue;}H[r.lv].add(rg);if(c.closest("#form")){if(r.lv==="err")nErr++;else if(r.lv==="unk")nUnk++;}}}
  for(const f of document.querySelectorAll("#form .f input[type=text], #form .lrow .li, #form textarea")){
   const bad=findIssues(f.value||"").filter(r=>r.lv==="err");f.classList.toggle("sperr",bad.length>0);f.title=bad.length?"คำที่อาจผิด: "+bad.map(r=>r.w+" → "+(r.fix||"?")).join(", "):"";nErr+=bad.length;}
  CSS.highlights.set("sp-err",H.err);CSS.highlights.set("sp-sug",H.sug);CSS.highlights.set("sp-unk",H.unk);
- const b=document.getElementById("bSpell");if(b)b.textContent=nErr?`ตรวจคำผิด (${nErr})`:"ตรวจคำผิด";}
+ const b=document.getElementById("bSpell");if(b)b.textContent=(nErr||nUnk)?`ตรวจคำผิด (${nErr}${nUnk?` · อาจผิด ${nUnk}`:""})`:"ตรวจคำผิด";}
 function spellShow(){const res=spellScan().sort((a,b)=>({err:0,sug:1,unk:2}[a.lv]-{err:0,sug:1,unk:2}[b.lv])),L=document.getElementById("spList");L.innerHTML="";
  if(!res.length)L.innerHTML=`<div style="padding:18px;text-align:center;color:#18794e">✓ ไม่พบคำที่มักเขียนผิด<br><small style="color:#6b7684">${DICT?"ตรวจกับพจนานุกรม "+DICT.W.size.toLocaleString()+" คำ + ":"(ยังไม่ได้โหลดพจนานุกรม — ตรวจเฉพาะ"}รายการคำผิดที่พบบ่อยในหนังสือราชการ และวันในสัปดาห์กับวันที่${DICT?"":")"} · คำที่ไม่อยู่ในรายการให้ดูเส้นใต้สีแดงในช่องกรอก (ตัวตรวจของเบราว์เซอร์ ถ้าเครื่องมีพจนานุกรมไทย)</small></div>`;
  res.forEach(r=>{const t=r.f.get(),a=Math.max(0,r.i-25),b=Math.min(t.length,r.i+r.w.length+25);
