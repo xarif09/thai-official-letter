@@ -168,6 +168,13 @@ with sync_playwright() as p:
       const r=findIssues(t);return [bahtText(117800)==='หนึ่งแสนหนึ่งหมื่นเจ็ดพันแปดร้อยบาทถ้วน', bahtText(21)==='ยี่สิบเอ็ดบาทถ้วน', r.some(x=>/ผลรวม 2 รายการ/.test(x.note)), r.some(x=>x.fix==='เก้าหมื่นสองพันแปดร้อยบาทถ้วน'),
         findIssues('ขอเชิญเข้ารวมประชุม ลงวันที 15 ใด้รับ').length===3, findIssues('รวมทั้งสิ้น รวมกลุ่ม เข้าร่วมประชุม').length===0]}""")
     check("R-79", all(r79), "จำนวนเงิน/ตัวหนังสือ/ยอดรวม และคำที่ใช้สลับกัน "+str(r79))
+    r84 = pg.evaluate("""()=>{const bad=['มากาา','ก่่อน','ก้่อน','กิีน','กุิ','ก่ิน','นำ้','เก็่บ','กัาร','เแก','ขอบคุณๆๆ','ทำำงาน','กิา','ประชุมฯฯ'];const ok=['น้ำท่วม','ทั่ว','สิทธิ์','พันธุ์','ศักดิ์','ใหญ่ๆ','เก็บ','ก่อน'];
+      return bad.filter(w=>!orthoIssues(w).length).concat(ok.filter(w=>orthoIssues(w).length).map(w=>'ทักผิด:'+w))}""")
+    check("R-84", not r84, "ผิดหลักการเขียนภาษาไทย: "+",".join(r84))
+    r83 = pg.evaluate("""()=>{const i=document.querySelector('#form input');i.value='ครุภัณท์ หน่วยงาสน ทรมาณ';i.dispatchEvent(new Event('input'));hlPaint(i.closest('.f')||i.parentNode,findIssues(i.value));
+      const b=i.closest('.hlw')&&i.closest('.hlw').querySelector('.hlb');const css=[...document.styleSheets].flatMap(s=>{try{return [...s.cssRules].map(r=>r.cssText)}catch(e){return []}}).join(' ');
+      return [!!b&&b.querySelectorAll('mark.err').length>0, /fdd5d5|253, 213, 213/.test(css), /fde1c2|253, 225, 194/.test(css), /fff3b0|255, 243, 176/.test(css)]}""")
+    check("R-83", all(r83), "ไฮไลต์แดง/ส้ม/เหลืองอ่อนในช่องพิมพ์ "+str(r83))
     check("ERR", not errs, "; ".join(errs[:3]))
     b.close()
 

@@ -22,7 +22,7 @@ body{margin:0;font-family:var(--ui);background:#e9edf2;color:#1d2530}
 .f input[type=text],.f input[type=date],.f select,.f textarea{width:100%;font:inherit;font-size:14px;padding:6px 8px;border:1px solid #c5cfdb;border-radius:6px;background:#fff}
 .f textarea{resize:vertical;min-height:54px}
 .f textarea.big{min-height:0}
-.frow{display:flex;gap:10px;align-items:flex-end}.frow>.f{flex:1 1 0;min-width:0}.frow>.f[data-k="date"]{flex:1.4 1 0}.frow>.f[data-k="speed"],.frow>.f[data-k="sal"],.frow>.f[data-k="kind"]{flex:0 0 auto;min-width:110px}.frow>.f[data-k="to"],.frow>.f[data-k="org"]{flex:3 1 0}.frow label small{display:none}.frow>.f[data-k="date"] select:last-child{min-width:112px;flex:0 0 auto!important}.f.inl{display:flex;align-items:center;gap:10px}.f.inl>label{margin:0;white-space:nowrap}.f.inl>input{flex:1}
+.frow{display:flex;gap:10px;align-items:flex-end}.frow>.f{flex:1 1 0;min-width:0}.frow>.f[data-k="date"]{flex:1.4 1 0}.frow>.f[data-k="speed"],.frow>.f[data-k="sal"],.frow>.f[data-k="kind"]{flex:0 0 auto;min-width:110px}.frow>.f[data-k="to"],.frow>.f[data-k="org"]{flex:3 1 0}.frow label small{display:none}.frow>.f[data-k="date"] select:last-child{min-width:112px;flex:0 0 auto!important}.f.inl{display:flex;align-items:center;gap:10px}.f.inl>label{margin:0;white-space:nowrap}.f.inl>input,.f.inl>.hlw{flex:1}
 details.secbox{border-bottom:1px solid #e6ebf1;padding-bottom:4px;margin-bottom:4px}
 details.secbox>summary{cursor:pointer;list-style:none;user-select:none}
 details.secbox>summary::before{content:"▸ ";color:#1f5fbf}details.secbox[open]>summary::before{content:"▾ "}
@@ -49,10 +49,14 @@ details.secbox>summary::before{content:"▸ ";color:#1f5fbf}details.secbox[open]
 .pbox:empty::before{content:attr(data-ph);color:#9aa4b1;font-family:var(--ui);font-size:13px}
 .pbadd{align-self:flex-start;margin:3px 0 0 0;font:inherit;font-size:12.5px;padding:3px 9px;border:1px dashed #1f5fbf;color:#1f5fbf;background:#f3f7fd;border-radius:6px;cursor:pointer}
 .fmhint{font-size:11.5px;color:#6b7684;align-self:center;margin-left:4px;flex:1 1 200px}
-::highlight(sp-err){text-decoration:underline wavy #e02424;text-decoration-thickness:1.5px;text-underline-offset:3px}
-::highlight(sp-sug){text-decoration:underline dotted #d97706;text-underline-offset:3px}
-@media print{::highlight(sp-err),::highlight(sp-sug),::highlight(sp-unk){text-decoration:none}}
-::highlight(sp-unk){text-decoration:underline wavy #c98a00 1px;text-underline-offset:3px}
+::highlight(sp-err){background-color:#fdd5d5;text-decoration:underline wavy #e02424;text-decoration-thickness:1.5px;text-underline-offset:3px}
+::highlight(sp-sug){background-color:#fde1c2;text-decoration:underline dotted #d97706;text-underline-offset:3px}
+@media print{::highlight(sp-err),::highlight(sp-sug),::highlight(sp-unk){text-decoration:none;background-color:transparent}}
+::highlight(sp-unk){background-color:#fff3b0;text-decoration:none}
+/* R-83 ไฮไลต์ในช่องพิมพ์ธรรมดา (input/textarea) ใช้ชั้นพื้นหลังเลียนข้อความ เพราะ Highlight API เข้าไปในช่อง input ไม่ได้ */
+.hlw{position:relative;display:block}.hlw>.hlb{position:absolute;inset:0;pointer-events:none;overflow:hidden;color:transparent;border:1px solid transparent;box-sizing:border-box;z-index:0}
+.hlw>input,.hlw>textarea{position:relative;z-index:1;background:transparent!important}.hlw{background:#fff;border-radius:6px}
+.hlb mark{color:transparent;border-radius:2px}.hlb mark.err{background:#fdd5d5;box-shadow:inset 0 -2px #e02424}.hlb mark.sug{background:#fde1c2}.hlb mark.unk{background:#fff3b0}
 .f input.sperr,.f .li.sperr,.f textarea.sperr{border-color:#e02424;box-shadow:inset 0 -2px 0 #e02424}
 #spell .spw{font-family:var(--docfont);font-size:22px}#spell .spw mark{background:#fde68a;border-radius:3px;padding:0 2px}
 #spell .spw.w{color:#b42318}#spell .spw.r{color:#18794e;font-weight:600}#spell .spn{color:#6b7684;margin-left:6px}
@@ -284,7 +288,7 @@ let TYPE = store.get("thdoc_type") || "ext";
 let D = {};
 function defaults(){return {v:DATA_VERSION,fit1:true,font:"TH SarabunIT๙",thai:true,ownerPos:"อัตโนมัติ",sal:"เรียน",kind:"คำสั่ง",date:new Date().toISOString().slice(0,10)}}
 // รุ่นของระบบ (แสดงบนหน้าจอ) และรุ่นโครงข้อมูลที่เก็บในเครื่อง — เพิ่มเลขทุกครั้งที่กฎเปลี่ยนจนค่าเก่าอาจขัดกับกฎใหม่
-const APP_VERSION="2026.11.26g", DATA_VERSION=4;
+const APP_VERSION="2026.11.26h", DATA_VERSION=4;
 function migrate(x){   // ปรับค่าที่เก็บไว้ในเครื่องให้เข้ากับกฎปัจจุบัน (ดู REQUIREMENTS.md)
  if(!x||typeof x!=="object")return {};
  const v=x.v||1;
@@ -1250,7 +1254,7 @@ const SPELL=[
  [/ร่วมทั้งสิ้น/g,"รวมทั้งสิ้น","err"],[/รวมกันจัด|รวมจัดงาน/g,m=>m.replace("รวม","ร่วม"),"sug"],[/ใด้/g,"ได้","err"],
  [/(ลงวัน|ครั้ง|ข้อ|ฉบับ|ลำดับ|ชั้น|อาคาร|หมู่)ที(?=\s?[0-9๐-๙])/g,"$1ที่","err"],[/วันที(?=\s?[0-9๐-๙])/g,"วันที่","err"],
  [/เรียนมาเพื่อโปรดทราบและพิจรณา/g,"เรียนมาเพื่อโปรดทราบและพิจารณา","err"],[/ปฏิบัติราชการแทนผู้ว่า/g,"ปฏิบัติราชการแทน ผู้ว่า","sug"],
- [/เเ/g,"แ","err"],[/ํา/g,"ำ","err"],[/([่-๋])\1+/g,"$1","err"],
+ [/เเ/g,"แ","err"],[/ํา/g,"ำ","err"],
  [/อีเมล์/g,"อีเมล","sug"],[/อินเตอร์เน็ต/g,"อินเทอร์เน็ต","sug"],[/แอปพลิเคชั่น/g,"แอปพลิเคชัน","sug"],[/ซอฟท์แวร์/g,"ซอฟต์แวร์","sug"],
  [/สวิทช์/g,"สวิตช์","sug"],[/นัยยะ/g,"นัย","sug"],[/([^\s])ๆ/g,"$1 ๆ","sug"],[/ๆ(?=[^\s.,)ฯ”"])/g,"ๆ ","sug"],[/ {2,}/g," ","sug"]];
 const SP_NOTE={"$1 ๆ":"เว้นวรรคหน้าไม้ยมก (ราชบัณฑิตยสภา)","ๆ ":"เว้นวรรคหลังไม้ยมก"," ":"เว้นวรรคซ้อนเกิน 1 ช่อง"};
@@ -1307,7 +1311,7 @@ function dictIssues(t){if(!DICT)return [];const out=[],{W,T,A,maxL}=DICT;
   for(let a=0;a<ws.length;a++)for(let len=2;len<=3&&a+len<=ws.length;len++){const g=ws.slice(a,a+len);if(g.some((x,k)=>k&&x[0]!==g[k-1][1]))break;
    const s0=g[0][0],s1=g[len-1][1],c=r.slice(s0,s1);if(c.length<5||c.length>16||W.has(c))continue;
    if(!g.some(x=>x[1]-x[0]<=2))continue;if(ign.some(([x,y])=>o+s0<y&&x<o+s1))continue;
-   const fx=nearWord(c,W);if(fx)out.push({lv:"unk",w:c,fix:fx,i:o+s0,note:"อาจพิมพ์ผิด"});}
+   const fx=nearWord(c,W);if(fx)out.push({lv:"sug",w:c,fix:fx,i:o+s0,note:"ต้องสงสัยว่าพิมพ์ผิด"});}
  }
  return out;}
 const THC="กขฃคฅฆงจฉชซฌญฎฏฐฑฒณดตถทธนบปผฝพฟภมยรลวศษสหฬอฮะัาำิีึืุูเแโใไ็่้๊๋์";
@@ -1326,9 +1330,28 @@ function unkSuggest(r){const c=r.ctx||{pre:"",nxt:""},V=[[r.w,0,0]];if(c.pre)V.p
  const out=[],seen=new Set();for(const [v,pl,nl] of V.sort((a,b)=>b[0].length-a[0].length))for(const x of dictSuggest(v)){if(seen.has(x))continue;seen.add(x);out.push({x,pl,nl,from:v});}
  return out.slice(0,5);}
 function dictAddUser(w){const a=udGet();if(!a.includes(w)){a.push(w);store.set(UDK,a);}if(DICT)DICT.W.add(w);}
-const ORTHO=[[/[A-Za-z][\u0E31\u0E34-\u0E3A\u0E47-\u0E4E]+/g,"สระ/วรรณยุกต์ไทยอยู่บนตัวอักษรอังกฤษ"],[/[\u0E01-\u0E4E][A-Za-z]{1,3}(?=[\u0E01-\u0E4E])/g,"มีตัวอักษรอังกฤษปนในคำไทย (ลืมเปลี่ยนภาษาแป้นพิมพ์)"],
- [/[เแโใไ][ะาำิีึืุู่้๊๋็์ั]/g,"สระหน้าไม่มีพยัญชนะตามหลัง"],[/(^|[^ก-ฮ\u0E31\u0E34-\u0E3A\u0E47-\u0E4E])[\u0E31\u0E34-\u0E3A\u0E47-\u0E4E]+/g,"สระบน/ล่าง/วรรณยุกต์ไม่มีพยัญชนะ"],[/[\u0E34-\u0E37\u0E31][\u0E34-\u0E37\u0E31]/g,"สระบนซ้อนกัน"],[/[\u0E38\u0E39][\u0E38\u0E39]/g,"สระล่างซ้อนกัน"],[/[0-9๐-๙][A-Za-z]*[ก-ฮ]{2,}[A-Za-z]+|[0-9๐-๙][A-Za-z]{4,}/g,"ตัวเลขติดกับตัวอักษร (พิมพ์เกิน?)"]];
-function orthoIssues(t){const out=[];for(const [re,note] of ORTHO){re.lastIndex=0;let m;while((m=re.exec(t))){let w=m[0],i=m.index;if(/^[^\u0E01-\u0E4EA-Za-z0-9๐-๙]/.test(w)){w=w.slice(1);i++;}if(!w)continue;out.push({lv:"err",w,fix:null,i,note});if(!m[0].length)re.lastIndex++;}}return out;}
+// R-84 ตัวสะกดที่ผิดหลักการเขียนภาษาไทย (เกิดจากพิมพ์พลาด) — [รูปแบบ, คำอธิบาย, วิธีแก้ (ถ้ารู้)]
+const UPV="ัิีึื็",LOV="ฺุู",TON="่-๋",ABOVE="ัิ-ื็่-๎";
+const ORTHO=[
+ [/[A-Za-z][ัิ-ฺ็-๎]+/g,"สระ/วรรณยุกต์ไทยอยู่บนตัวอักษรอังกฤษ"],
+ [/[ก-๎][A-Za-z]{1,3}(?=[ก-๎])/g,"มีตัวอักษรอังกฤษปนในคำไทย (ลืมเปลี่ยนภาษาแป้นพิมพ์)"],
+ [/[0-9๐-๙][A-Za-z]{4,}(?=[ก-๎])/g,"ตัวเลขติดตัวอักษรอังกฤษก่อนคำไทย (ลืมเปลี่ยนภาษาแป้นพิมพ์?)"],
+ [/[เแโใไ](?=[เแโใไ])/g,"สระหน้าซ้อนกัน",m=>""],
+ [/[เแโใไ][ะาำัิ-ฺ็-๎]/g,"สระหน้าไม่มีพยัญชนะตามหลัง"],
+ [/(^|[^ก-ฮัิ-ฺ็-๎])[ัิ-ฺ็-๎]+/g,"สระบน/ล่าง/วรรณยุกต์ไม่มีพยัญชนะ"],
+ [/า{2,}/g,"สระอา ซ้ำกัน",m=>"า"],[/ะ{2,}/g,"สระอะ ซ้ำกัน",m=>"ะ"],[/ำ{2,}|ำา|าำ/g,"สระอำ/อา ซ้อนกัน",m=>"ำ"],[/ๆ{2,}/g,"ไม้ยมกซ้ำ",m=>"ๆ"],[/ฯ{2,}/g,"ไปยาลน้อยซ้ำ",m=>"ฯ"],
+ [/([่-๋])\1+/g,"วรรณยุกต์ซ้ำ",m=>m[0]],[/[่-๋]{2,}/g,"วรรณยุกต์ซ้อนกัน 2 ตัว (ใช้ได้ตัวเดียว)"],
+ [/([ัิ-ื็])\1+/g,"สระบนซ้ำ",m=>m[0]],[/[ัิ-ื็]{2,}/g,"สระบนซ้อนกัน 2 ตัว (พยัญชนะตัวเดียวมีสระบนได้ตัวเดียว)"],
+ [/([ุู])\1+/g,"สระล่างซ้ำ",m=>m[0]],[/[ุู]{2,}/g,"สระล่างซ้อนกัน"],
+ [/[ัิ-ื็][ุู]|[ุู][ัิ-ื็]/g,"สระบนกับสระล่างอยู่บนพยัญชนะตัวเดียวกัน"],
+ [/[่-๋][ัิ-ืุู]/g,"พิมพ์วรรณยุกต์ก่อนสระ (ลำดับผิด — ดูเหมือนถูกแต่ค้นหา/ตัดคำไม่ได้)",m=>m[1]+m[0]],
+ [/ำ[่-๋]/g,"พิมพ์สระอำก่อนวรรณยุกต์ (ลำดับผิด)",m=>m[1]+"ำ"],[/์ำ/g,"การันต์ตามด้วยสระอำไม่ได้"],
+ [/็[่-์]|[่-์]็/g,"ไม้ไต่คู้ใช้ร่วมกับวรรณยุกต์/การันต์ไม่ได้"],
+ [/์[่-๋ัิ-ู]/g,"การันต์ต้องอยู่ท้ายสุด",m=>m.slice(1)+"์"],[/[่-๋]์|์[่-๋]/g,"วรรณยุกต์กับการันต์บนตัวเดียวกัน"],
+ [/[ั][ะาำั]/g,"ไม้หันอากาศตามด้วยสระอา/อะ/อำ ไม่ได้"],[/[ะ][ัิ-ฺ็-๎]/g,"สระอะ ตามด้วยสระบน/ล่าง/วรรณยุกต์ ไม่ได้"],
+ [/[ิ-ู][ะาำ]/g,"สระบน/ล่าง ตามด้วยสระอะ/อา/อำ ไม่ได้"]];
+function orthoIssues(t){const out=[];for(const [re,note,fx] of ORTHO){re.lastIndex=0;let m;while((m=re.exec(t))){let w=m[0],i=m.index;if(/^[^ก-๎A-Za-z0-9๐-๙]/.test(w)){w=w.slice(1);i++;}if(!w){if(!m[0].length)re.lastIndex++;continue;}
+  out.push({lv:"err",w,fix:fx?fx(w):null,i,note});if(!m[0].length)re.lastIndex++;}}return out;}
 // R-79 จำนวนเงินกับตัวหนังสือในวงเล็บ และยอดรวม
 function bahtText(n){const D=["","หนึ่ง","สอง","สาม","สี่","ห้า","หก","เจ็ด","แปด","เก้า"],U=["","สิบ","ร้อย","พัน","หมื่น","แสน"];
  const part=x=>{if(!+x)return "";let o="";const s=String(+x);if(s.length>6)return part(s.slice(0,-6))+"ล้าน"+part(s.slice(-6));
@@ -1364,6 +1387,16 @@ function spDiff(a,b){let p=0;while(p<a.length&&p<b.length&&a[p]===b[p])p++;let q
  const show=(s,m,cls)=>`<span class="spw ${cls}">${esc(s.slice(0,p))}<mark>${esc(m.replace(/ /g,"␣"))||"∅"}</mark>${esc(s.slice(s.length-q))}</span>`;
  return `${show(a,A,"w")} → ${show(b,B,"r")} <small class="spn">เปลี่ยน ${esc(nm(A))} เป็น ${esc(nm(B))}</small>`;}
 // ขีดเส้นใต้หยักสีแดงทันทีที่พิมพ์ ทั้งในช่องกรอกและพรีวิว (CSS Highlight API — ไม่แก้ DOM, ไม่ติดไปตอนพิมพ์/Word)
+// R-83 ระบายสีคำในช่อง input/textarea: ชั้นพื้นหลังที่จัดตัวอักษรตรงกับช่อง (สีแดงอ่อน=ผิด ส้มอ่อน=ต้องสงสัย เหลืองอ่อน=ไม่แน่ใจ)
+function hlPaint(f,iss){let w=f.parentElement;
+ if(!w.classList.contains("hlw")){if(!iss.length)return;w=document.createElement("span");w.className="hlw";f.before(w);w.appendChild(f);const b=document.createElement("div");b.className="hlb";w.insertBefore(b,f);
+  const sync=()=>{b.scrollTop=f.scrollTop;b.scrollLeft=f.scrollLeft;};f.addEventListener("scroll",sync);f.addEventListener("input",sync);}
+ const b=w.querySelector(".hlb"),cs=getComputedStyle(f),ta=f.tagName==="TEXTAREA";
+ for(const k of ["fontFamily","fontSize","fontWeight","lineHeight","letterSpacing","textIndent","paddingTop","paddingRight","paddingBottom","paddingLeft","borderTopWidth","borderRightWidth","borderBottomWidth","borderLeftWidth","wordSpacing","tabSize"])b.style[k]=cs[k];
+ b.style.whiteSpace=ta?"pre-wrap":"pre";b.style.wordBreak=ta?"break-word":"normal";b.style.width=f.offsetWidth+"px";b.style.height=f.offsetHeight+"px";
+ const v=f.value||"",rs=iss.slice().sort((a,c)=>a.i-c.i);let h="",p=0;
+ for(const r of rs){if(r.i<p)continue;h+=esc(v.slice(p,r.i))+`<mark class="${r.lv}">${esc(v.substr(r.i,r.w.length))}</mark>`;p=r.i+r.w.length;}
+ b.innerHTML=h+esc(v.slice(p))+(ta?"\n ":"");b.scrollTop=f.scrollTop;b.scrollLeft=f.scrollLeft;}
 let LS_T=0;function liveSpellSoon(){clearTimeout(LS_T);LS_T=setTimeout(liveSpell,250);}
 function liveSpell(){if(!(window.CSS&&CSS.highlights&&window.Highlight))return;
  const H={err:new Highlight(),sug:new Highlight(),unk:new Highlight()};let nErr=0,nUnk=0;
@@ -1375,9 +1408,10 @@ function liveSpell(){if(!(window.CSS&&CSS.highlights&&window.Highlight))return;
   const inPage=!!c.closest("#page");
   for(const r of findIssues(txt)){if(inPage&&r.lv==="sug"&&/^ +$/.test(r.w))continue;   // ช่องว่างในพรีวิวเป็นการจัดหน้า (เช่น เว้นวันที่) ไม่ใช่คำผิด
    const [sn,so]=at(r.i),[en,eo]=at(r.i+r.w.length-1);const rg=document.createRange();
-   try{rg.setStart(sn,so);rg.setEnd(en,eo+1);}catch(e){continue;}H[r.lv].add(rg);if(c.closest("#form")){if(r.lv==="err")nErr++;else if(r.lv==="unk")nUnk++;}}}
+   try{rg.setStart(sn,so);rg.setEnd(en,eo+1);}catch(e){continue;}H[r.lv].add(rg);if(c.closest("#form")){if(r.lv==="err")nErr++;else if(!/^ +$/.test(r.w))nUnk++;}}}
  for(const f of document.querySelectorAll("#form .f input[type=text], #form .lrow .li, #form textarea")){
-  const bad=findIssues(f.value||"").filter(r=>r.lv==="err");f.classList.toggle("sperr",bad.length>0);f.title=bad.length?"คำที่อาจผิด: "+bad.map(r=>r.w+" → "+(r.fix||"?")).join(", "):"";nErr+=bad.length;}
+  const iss=findIssues(f.value||"").filter(r=>!(r.lv==="sug"&&/^ +$/.test(r.w)));const bad=iss.filter(r=>r.lv==="err");f.classList.toggle("sperr",bad.length>0);
+  f.title=iss.length?iss.map(r=>(r.lv==="err"?"ผิด: ":r.lv==="sug"?"ต้องสงสัย: ":"ไม่แน่ใจ: ")+r.w+(r.fix?" → "+r.fix:"")+(r.note?" ("+r.note+")":"")).join("\n"):"";nErr+=bad.length;nUnk+=iss.length-bad.length;hlPaint(f,iss);}
  CSS.highlights.set("sp-err",H.err);CSS.highlights.set("sp-sug",H.sug);CSS.highlights.set("sp-unk",H.unk);
  const b=document.getElementById("bSpell");if(b)b.textContent=(nErr||nUnk)?`ตรวจคำผิด (${nErr}${nUnk?` · อาจผิด ${nUnk}`:""})`:"ตรวจคำผิด";}
 function spellShow(){const res=spellScan().sort((a,b)=>({err:0,sug:1,unk:2}[a.lv]-{err:0,sug:1,unk:2}[b.lv])),L=document.getElementById("spList");L.innerHTML="";
