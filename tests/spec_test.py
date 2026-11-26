@@ -175,6 +175,11 @@ with sync_playwright() as p:
       const b=i.closest('.hlw')&&i.closest('.hlw').querySelector('.hlb');const css=[...document.styleSheets].flatMap(s=>{try{return [...s.cssRules].map(r=>r.cssText)}catch(e){return []}}).join(' ');
       return [!!b&&b.querySelectorAll('mark.err').length>0, /fdd5d5|253, 213, 213/.test(css), /fde1c2|253, 225, 194/.test(css), /fff3b0|255, 243, 176/.test(css)]}""")
     check("R-83", all(r83), "ไฮไลต์แดง/ส้ม/เหลืองอ่อนในช่องพิมพ์ "+str(r83))
+    r85 = pg.evaluate("""()=>{const o=D.no;D.no='ยลกขค 0017.3/ว 13301';renderForm();update();liveSpell();
+      const f=document.querySelector('#form [data-k="no"] input');const b=f.closest('.hlw')&&f.closest('.hlw').querySelector('mark');
+      const inList=spellScan().some(r=>r.f.label==='ที่');const hl=[...CSS.highlights.get('sp-unk')||[],...CSS.highlights.get('sp-err')||[]].some(rg=>/ยล|กขค/.test(rg.toString()));
+      D.no=o;renderForm();update();return [!b,!inList,!hl]}""")
+    check("R-85", all(r85), "ไม่ตรวจเลขที่หนังสือ (ช่อง/รายการ/พรีวิว) "+str(r85))
     check("ERR", not errs, "; ".join(errs[:3]))
     b.close()
 

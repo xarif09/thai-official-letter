@@ -288,7 +288,7 @@ let TYPE = store.get("thdoc_type") || "ext";
 let D = {};
 function defaults(){return {v:DATA_VERSION,fit1:true,font:"TH SarabunIT๙",thai:true,ownerPos:"อัตโนมัติ",sal:"เรียน",kind:"คำสั่ง",date:new Date().toISOString().slice(0,10)}}
 // รุ่นของระบบ (แสดงบนหน้าจอ) และรุ่นโครงข้อมูลที่เก็บในเครื่อง — เพิ่มเลขทุกครั้งที่กฎเปลี่ยนจนค่าเก่าอาจขัดกับกฎใหม่
-const APP_VERSION="2026.11.26h", DATA_VERSION=4;
+const APP_VERSION="2026.11.26i", DATA_VERSION=4;
 function migrate(x){   // ปรับค่าที่เก็บไว้ในเครื่องให้เข้ากับกฎปัจจุบัน (ดู REQUIREMENTS.md)
  if(!x||typeof x!=="object")return {};
  const v=x.v||1;
@@ -1259,9 +1259,10 @@ const SPELL=[
  [/สวิทช์/g,"สวิตช์","sug"],[/นัยยะ/g,"นัย","sug"],[/([^\s])ๆ/g,"$1 ๆ","sug"],[/ๆ(?=[^\s.,)ฯ”"])/g,"ๆ ","sug"],[/ {2,}/g," ","sug"]];
 const SP_NOTE={"$1 ๆ":"เว้นวรรคหน้าไม้ยมก (ราชบัณฑิตยสภา)","ๆ ":"เว้นวรรคหลังไม้ยมก"," ":"เว้นวรรคซ้อนเกิน 1 ช่อง"};
 const WDAY=["อาทิตย์","จันทร์","อังคาร","พุธ","พฤหัสบดี","ศุกร์","เสาร์"];
+const SKIPK=["no"];   // R-85 เลขที่หนังสือ (ตัวย่อส่วนราชการ+ตัวเลข) ไม่ต้องตรวจคำผิด
 const NAMEK=["name","drafter","typist","checker","staff","typist2"];   // ช่องชื่อคน: ไม่ทัก "ไม่พบในพจนานุกรม"
 function spellFields(){const out=[];const lab={};for(const [k,l] of TYPES[TYPE].fields.concat(COMMON))lab[k]=l;
- for(const [k,l,kind] of TYPES[TYPE].fields)if(["text","area","bigarea",undefined].includes(kind)&&typeof D[k]==="string"&&k!=="sec")out.push({label:l,get:()=>D[k]||"",set:v=>{D[k]=v;},names:NAMEK.includes(k)});
+ for(const [k,l,kind] of TYPES[TYPE].fields)if(["text","area","bigarea",undefined].includes(kind)&&typeof D[k]==="string"&&k!=="sec"&&!SKIPK.includes(k))out.push({label:l,get:()=>D[k]||"",set:v=>{D[k]=v;},names:NAMEK.includes(k)});
  for(const k of ["endp"])if(D[k])out.push({label:lab[k]||k,get:()=>D[k],set:v=>{D[k]=v;}});
  (D.refList||[]).forEach((it,i)=>["org","no","free"].forEach(f=>{if(it[f])out.push({label:`อ้างถึง ${i+1}`,get:()=>it[f]||"",set:v=>{it[f]=v;}});}));
  (D.enclList||[]).forEach((it,i)=>{if(it.text)out.push({label:`สิ่งที่ส่งมาด้วย ${i+1}`,get:()=>it.text||"",set:v=>{it.text=v;}});});
@@ -1400,16 +1401,19 @@ function hlPaint(f,iss){let w=f.parentElement;
 let LS_T=0;function liveSpellSoon(){clearTimeout(LS_T);LS_T=setTimeout(liveSpell,250);}
 function liveSpell(){if(!(window.CSS&&CSS.highlights&&window.Highlight))return;
  const H={err:new Highlight(),sug:new Highlight(),unk:new Highlight()};let nErr=0,nUnk=0;
+ const noS=(D&&D.no)?normNo(D.no).trim():"";
  const scope=[...document.querySelectorAll("#form .pbox:not(.single), #form .pbox.single > div, #page .jt, #page p, #page .fl")];   // ทีละย่อหน้า/บรรทัด ไม่ต่อข้อความข้ามย่อหน้า (กันทักผิดตรงรอยต่อ)
  for(const c of scope){const nodes=[],tw=document.createTreeWalker(c,NodeFilter.SHOW_TEXT);let n,txt="";
   while((n=tw.nextNode())){nodes.push([n,txt.length]);txt+=n.nodeValue;}
   if(!txt.trim())continue;
   const at=k=>{for(let x=nodes.length-1;x>=0;x--)if(nodes[x][1]<=k)return [nodes[x][0],k-nodes[x][1]];return [nodes[0][0],0];};
-  const inPage=!!c.closest("#page");
-  for(const r of findIssues(txt)){if(inPage&&r.lv==="sug"&&/^ +$/.test(r.w))continue;   // ช่องว่างในพรีวิวเป็นการจัดหน้า (เช่น เว้นวันที่) ไม่ใช่คำผิด
+  const inPage=!!c.closest("#page");const nx=inPage&&noS?txt.indexOf(noS):-1;
+  for(const r of findIssues(txt)){if(nx>=0&&r.i<nx+noS.length&&r.i+r.w.length>nx)continue;   // R-85 ข้ามเลขที่หนังสือในพรีวิว
+   if(inPage&&r.lv==="sug"&&/^ +$/.test(r.w))continue;   // ช่องว่างในพรีวิวเป็นการจัดหน้า (เช่น เว้นวันที่) ไม่ใช่คำผิด
    const [sn,so]=at(r.i),[en,eo]=at(r.i+r.w.length-1);const rg=document.createRange();
    try{rg.setStart(sn,so);rg.setEnd(en,eo+1);}catch(e){continue;}H[r.lv].add(rg);if(c.closest("#form")){if(r.lv==="err")nErr++;else if(!/^ +$/.test(r.w))nUnk++;}}}
  for(const f of document.querySelectorAll("#form .f input[type=text], #form .lrow .li, #form textarea")){
+  if(SKIPK.some(k=>f.closest(`[data-k="${k}"]`))){f.classList.remove("sperr");f.title="";hlPaint(f,[]);continue;}
   const iss=findIssues(f.value||"").filter(r=>!(r.lv==="sug"&&/^ +$/.test(r.w)));const bad=iss.filter(r=>r.lv==="err");f.classList.toggle("sperr",bad.length>0);
   f.title=iss.length?iss.map(r=>(r.lv==="err"?"ผิด: ":r.lv==="sug"?"ต้องสงสัย: ":"ไม่แน่ใจ: ")+r.w+(r.fix?" → "+r.fix:"")+(r.note?" ("+r.note+")":"")).join("\n"):"";nErr+=bad.length;nUnk+=iss.length-bad.length;hlPaint(f,iss);}
  CSS.highlights.set("sp-err",H.err);CSS.highlights.set("sp-sug",H.sug);CSS.highlights.set("sp-unk",H.unk);
