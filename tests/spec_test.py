@@ -190,8 +190,9 @@ with sync_playwright() as p:
     check("R-86", all(r86), "ปุ่มรายการคำผิด แยกกลุ่ม แสดงข้อความก่อน-หลัง เลือกคำถูก/แก้เอง "+str(r86))
     r87 = pg.evaluate("""()=>{typoSample();document.getElementById('bSpell').click();const ok=[...document.querySelectorAll('#spList .it')].every(it=>{const v=it.querySelector('.ed input').value;return [...v].length<=40});
       const r=spellScan()[0];const v=document.querySelector('#spList .it .ed input').value;document.getElementById('spClose').click();
-      return [ok, v.length<=r.w.length+14, !!document.querySelector('#side h1 #bFb'), !document.querySelector('.btns #bFb')]}""")
-    check("R-87", all(r87), "แก้เองแสดงคำ ±5 ตัวอักษร · ปุ่มแจ้งปัญหาอยู่หัวระบบ "+str(r87))
+      return [ok, v.length<=r.w.length+24, !!document.querySelector('#side h1 #bFb'), !document.querySelector('.btns #bFb')]}""")
+    check("R-87", all(r87), "แก้เองแสดงคำ ±1 คำ · ปุ่มแจ้งปัญหาอยู่หัวระบบ "+str(r87))
+    check("R-87", pg.evaluate("()=>{const t='ช่วยเหลือทางกฏหมายและบังคับคดี';const [a,b]=spWord1(t,12,14);return t.slice(a,b)}")=="ทางกฏหมาย", "แก้เอง: คำผิด + คำถูกหน้า/หลัง 1 คำ")
     check("ERR", not errs, "; ".join(errs[:3]))
     b.close()
 

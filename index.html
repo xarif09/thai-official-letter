@@ -292,7 +292,7 @@ let TYPE = store.get("thdoc_type") || "ext";
 let D = {};
 function defaults(){return {v:DATA_VERSION,fit1:true,font:"TH SarabunIT๙",thai:true,ownerPos:"อัตโนมัติ",sal:"เรียน",kind:"คำสั่ง",date:new Date().toISOString().slice(0,10)}}
 // รุ่นของระบบ (แสดงบนหน้าจอ) และรุ่นโครงข้อมูลที่เก็บในเครื่อง — เพิ่มเลขทุกครั้งที่กฎเปลี่ยนจนค่าเก่าอาจขัดกับกฎใหม่
-const APP_VERSION="2026.11.26l", DATA_VERSION=4;
+const APP_VERSION="2026.11.26m", DATA_VERSION=4;
 function migrate(x){   // ปรับค่าที่เก็บไว้ในเครื่องให้เข้ากับกฎปัจจุบัน (ดู REQUIREMENTS.md)
  if(!x||typeof x!=="object")return {};
  const v=x.v||1;
@@ -1431,6 +1431,15 @@ function spCtx(t,i,n){let a=Math.max(0,i-30),b=Math.min(t.length,i+n+30);const s
  if(b<t.length){const s4=t.lastIndexOf(" ",b);if(s4>i+n&&b-s4<16)b=s4;}return [a,b];}
 function spTok(v,i,j){if(DICT){let best="";for(let st=Math.max(0,i-14);st<=i;st++)for(let en=Math.min(v.length,j+14);en>=Math.max(j,st+1);en--){const w=v.slice(st,en);if(w.length>best.length&&DICT.W.has(w)){best=w;break;}}if(best)return best;}
  let a=i,b=j;while(a>0&&!/\s/.test(v[a-1])&&i-a<6)a--;while(b<v.length&&!/\s/.test(v[b])&&b-j<6)b++;return (a>0&&!/\s/.test(v[a-1])?"…":"")+v.slice(a,b).replace(/\*\*|__/g,"").trim()+(b<v.length&&!/\s/.test(v[b])?"…":"");}
+// คำที่ถูก 1 คำก่อนตำแหน่ง i และ 1 คำหลังตำแหน่ง j (ตัดคำด้วยพจนานุกรม · ตัวเลข/อักษรอังกฤษนับเป็น 1 คำ · ไม่ข้ามบรรทัด)
+function spWord1(t,i,j){const CM=/[ัิ-ฺ็-๎ะาำๆ]/,isW=w=>DICT&&DICT.W.has(w);
+ let a=i;while(a>0&&t[a-1]===" ")a--;if(a>0&&t[a-1]!=="\n"){let m=/[0-9๐-๙A-Za-z.,/:-]+$/.exec(t.slice(Math.max(0,a-20),a));
+  if(m)a-=m[0].length;else{let best=0;for(let st=Math.max(0,a-10);st<a;st++)if(isW(t.slice(st,a))&&!CM.test(t[st])){best=a-st;break;}a-=best||Math.min(3,a);}}
+ while(a>0&&CM.test(t[a]))a--;
+ let b=j;while(b<t.length&&t[b]===" ")b++;if(b<t.length&&t[b]!=="\n"){let m=/^[0-9๐-๙A-Za-z.,/:-]+/.exec(t.slice(b,b+20));
+  if(m)b+=m[0].length;else{let best=0;for(let en=Math.min(t.length,b+10);en>b;en--)if(isW(t.slice(b,en))&&!CM.test(t[en]||"")){best=en-b;break;}b+=best||Math.min(3,t.length-b);}}
+ while(b<t.length&&CM.test(t[b]))b++;
+ const nl=t.lastIndexOf("\n",i-1);if(nl+1>a)a=nl+1;const nl2=t.indexOf("\n",j);if(nl2>=0&&nl2<b)b=nl2;return [a,b];}
 function spApply(r,from,to,x){const v=r.f.get();if(v.slice(from,from+x.length)!==x){spellShow();return;}r.f.set(v.slice(0,from)+to+v.slice(from+x.length));save();renderForm();update();spellShow();}
 function spellShow(){const res=spellScan(),L=document.getElementById("spList");L.innerHTML="";
  if(!res.length)L.innerHTML=`<div style="padding:18px;text-align:center;color:#18794e">✓ ไม่พบคำผิด<br><small style="color:#6b7684">${DICT?"ตรวจกับพจนานุกรม "+DICT.W.size.toLocaleString()+" คำ":"(ยังไม่ได้โหลดพจนานุกรม)"} · ไม่ตรวจเลขที่หนังสือ</small></div>`;
@@ -1450,7 +1459,7 @@ function spellShow(){const res=spellScan(),L=document.getElementById("spList");L
     const bt=el("button",{type:"button",class:"pri",title:"ผลหลังแก้: "+pv},esc(o.lab||wd||o.x));bt.onclick=()=>spApply(r,o.from,o.x,o.orig);row.appendChild(bt);}
    if(lv!=="err"){const ad=el("button",{type:"button",title:"คำนี้ถูกแล้ว — จำไว้ในเครื่องนี้ ไม่ทักอีก"},"✓ ถูกแล้ว");ad.onclick=()=>{if(lv==="unk")dictAddUser(r.w);else SPIGN.add(r.f.label+"|"+r.i+"|"+r.w);liveSpellSoon();spellShow();};row.appendChild(ad);}
    it.appendChild(row);
-   const ea=Math.max(0,r.i-5,t.lastIndexOf("\n",r.i-1)+1);let eb=Math.min(t.length,r.i+r.w.length+5);const nl=t.indexOf("\n",r.i+r.w.length);if(nl>=0&&nl<eb)eb=nl;const CM=/[ัิ-ฺ็-๎ะาำ]/;let ea2=ea;while(ea2>0&&CM.test(t[ea2]))ea2--;const ea_=ea2;while(eb<t.length&&CM.test(t[eb]))eb++;   // R-87 แก้เอง: คำนั้น ± 5 ตัวอักษร
+   const [ea_,eb]=spWord1(t,r.i,r.i+r.w.length);   // R-87 แก้เอง: คำนั้น + คำที่ถูกข้างหน้า/ข้างหลังอย่างละไม่เกิน 1 คำ
    const ed=el("div",{class:"ed"});const inp=el("input",{type:"text",value:t.slice(ea_,eb),title:"แก้ข้อความช่วงนี้เอง แล้วกด ใช้ (หรือ Enter)"});const sg2=t.slice(ea_,eb);inp.value=sg2;
    const ok=el("button",{type:"button"},"ใช้");ok.onclick=()=>{if(inp.value!==sg2)spApply(r,ea_,inp.value,sg2);};inp.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();ok.click();}};
    ed.appendChild(el("small",{},"แก้เอง:"));ed.appendChild(inp);ed.appendChild(ok);it.appendChild(ed);
