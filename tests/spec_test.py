@@ -198,6 +198,10 @@ with sync_playwright() as p:
       return bad.concat(['คราวละสามปี โดย','(นายชารีฟ เจ๊ะแอ)'].filter(t=>findIssues(t).some(x=>x.lv==='sug')).map(t=>'ทักผิด:'+t))}""")
     check("R-89", pg.evaluate("()=>{const o=D;D=defaults();renderForm();update();liveSpell();const ok=!document.querySelector('#bSpell .spn-b');D=o;renderForm();update();liveSpell();return ok&&!!document.querySelector('#bSpell .spn-b')}"), "ไม่มีคำผิดไม่แสดงตัวเลข / มีแสดง")
     check("R-88", not r88, "คำพิมพ์พลาดที่แตกเป็นหลายท่อน: "+",".join(r88))
+    r89 = pg.evaluate("""async()=>{document.querySelectorAll('#tabs button')[0].click();document.getElementById('bSample').click();D.subject+=' ได้กำพหนดประชุม';renderForm();update();
+      await new Promise(r=>setTimeout(r,500));const b=document.getElementById('bSpell'),n1=b.dataset.n;b.click();document.querySelector('#spList .it .ch button.pri').click();
+      await new Promise(r=>setTimeout(r,500));const n2=b.dataset.n;document.getElementById('spClose').click();return [n1,n2,/กำหนด/.test(D.subject)]}""")
+    check("R-89", r89==["1","0",True], "ตัวอย่างมีคำผิด 1 จุด → ป้าย 1, แก้แล้ว → 0 (ช่องชื่อคนไม่นับ) "+str(r89))
     check("ERR", not errs, "; ".join(errs[:3]))
     b.close()
 

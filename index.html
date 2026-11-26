@@ -293,7 +293,7 @@ let TYPE = store.get("thdoc_type") || "ext";
 let D = {};
 function defaults(){return {v:DATA_VERSION,fit1:true,font:"TH SarabunIT๙",thai:true,ownerPos:"อัตโนมัติ",sal:"เรียน",kind:"คำสั่ง",date:new Date().toISOString().slice(0,10)}}
 // รุ่นของระบบ (แสดงบนหน้าจอ) และรุ่นโครงข้อมูลที่เก็บในเครื่อง — เพิ่มเลขทุกครั้งที่กฎเปลี่ยนจนค่าเก่าอาจขัดกับกฎใหม่
-const APP_VERSION="2026.11.26o", DATA_VERSION=4;
+const APP_VERSION="2026.11.26p", DATA_VERSION=4;
 function migrate(x){   // ปรับค่าที่เก็บไว้ในเครื่องให้เข้ากับกฎปัจจุบัน (ดู REQUIREMENTS.md)
  if(!x||typeof x!=="object")return {};
  const v=x.v||1;
@@ -1399,7 +1399,8 @@ function findIssues(t){const res=dictIssues(t).concat(orthoIssues(t),moneyIssues
  const r2=r1.filter(r=>!r1.some(o=>o!==r&&o.i<=r.i&&o.i+o.w.length>=r.i+r.w.length&&o.w.length>r.w.length));       // ซ้อนกัน เก็บอันยาวกว่า
  const seen=new Set();return r2.filter(r=>{const k=r.i+"|"+r.w+"|"+r.lv;if(seen.has(k))return false;seen.add(k);return true;});}   // พจนานุกรม+รายการในตัว เจอคำเดียวกัน แสดงครั้งเดียว
 const SPIGN=new Set();
-function spellScan(){const res=[];for(const f of spellFields())for(const r of findIssues(f.get()))if(!(f.names&&r.lv==="unk")&&!SPIGN.has(f.label+"|"+r.i+"|"+r.w))res.push(Object.assign({f},r));return res;}
+const nameSkip=r=>r.lv==="unk"||/ต้องสงสัยว่าพิมพ์ผิด/.test(r.note||"");   // ช่องชื่อคน: ไม่เดาจากพจนานุกรม
+function spellScan(){const res=[];for(const f of spellFields())for(const r of findIssues(f.get()))if(!(f.names&&nameSkip(r))&&!SPIGN.has(f.label+"|"+r.i+"|"+r.w))res.push(Object.assign({f},r));return res;}
 // แสดงเฉพาะตัวอักษรที่ต่างกัน พร้อมชื่อตัวอักษร — ตัวที่หน้าตาคล้ายกัน (ฎ/ฏ, เเ/แ) จะเห็นชัดว่าต่างตรงไหน
 const CHNAME={"ฎ":"ฎ ชฎา","ฏ":"ฏ ปฏัก","เเ":"สระเอ 2 ตัว","แ":"สระแอ","ํา":"นิคหิต + สระอา","ำ":"สระอำ"," ":"เว้นวรรค","ณ":"ณ เณร","น":"น หนู","ศ":"ศ ศาลา","ส":"ส เสือ","ษ":"ษ ฤๅษี","ต":"ต เต่า","ท":"ท ทหาร","ใ":"ไม้ม้วน ใ","ไ":"ไม้มลาย ไ","ค":"ค ควาย","ก":"ก ไก่","บ":"บ ใบไม้","พ":"พ พาน","ย":"ย ยักษ์","ร":"ร เรือ","ร์":"ร์ (ร การันต์)","ส์":"ส์ (ส การันต์)","ค์":"ค์ (ค การันต์)","ห์":"ห์","ิ":"สระอิ","ี":"สระอี","ั":"ไม้หันอากาศ","็":"ไม้ไต่คู้","่":"ไม้เอก","้":"ไม้โท","า":"สระอา","์":"ทัณฑฆาต (การันต์)","ณ์":"ณ์ (ณ การันต์)"};
 function spDiff(a,b){let p=0;while(p<a.length&&p<b.length&&a[p]===b[p])p++;let q=0;while(q<a.length-p&&q<b.length-p&&a[a.length-1-q]===b[b.length-1-q])q++;
@@ -1433,9 +1434,10 @@ function liveSpell(){if(!(window.CSS&&CSS.highlights&&window.Highlight))return;
    try{rg.setStart(sn,so);rg.setEnd(en,eo+1);}catch(e){continue;}H[r.lv].add(rg);if(c.closest("#form")){if(r.lv==="err")nErr++;else if(!/^ +$/.test(r.w))nUnk++;}}}
  for(const f of document.querySelectorAll("#form .f input[type=text], #form .lrow .li, #form textarea")){
   if(SKIPK.some(k=>f.closest(`[data-k="${k}"]`))){f.classList.remove("sperr");f.title="";hlPaint(f,[]);continue;}
-  const iss=findIssues(f.value||"").filter(r=>!(r.lv==="sug"&&/^ +$/.test(r.w)));const bad=iss.filter(r=>r.lv==="err");f.classList.toggle("sperr",bad.length>0);
+  const fk=f.closest("[data-k]")?.dataset.k;const iss=findIssues(f.value||"").filter(r=>!(r.lv==="sug"&&/^ +$/.test(r.w))&&!(NAMEK.includes(fk)&&nameSkip(r)));const bad=iss.filter(r=>r.lv==="err");f.classList.toggle("sperr",bad.length>0);
   f.title=iss.length?iss.map(r=>(r.lv==="err"?"ผิด: ":r.lv==="sug"?"ต้องสงสัย: ":"ไม่แน่ใจ: ")+r.w+(r.fix?" → "+r.fix:"")+(r.note?" ("+r.note+")":"")).join("\n"):"";nErr+=bad.length;nUnk+=iss.length-bad.length;hlPaint(f,iss);}
  CSS.highlights.set("sp-err",H.err);CSS.highlights.set("sp-sug",H.sug);CSS.highlights.set("sp-unk",H.unk);
+ {const sc=spellScan();nErr=sc.filter(r=>r.lv==="err").length;nUnk=sc.length-nErr;}   // R-89 ตัวเลขบนปุ่มนับจากชุดเดียวกับรายการคำผิด (ตรงกันเสมอ)
  const b=document.getElementById("bSpell");if(b){const n=nErr+nUnk;b.dataset.n=n;b.classList.toggle("has",n>0);b.innerHTML="รายการคำผิด"+(n?` <span class="spn-b${nErr?"":" s"}" title="ผิด ${nErr} · ต้องสงสัย/ไม่แน่ใจ ${nUnk}">${n}</span>`:"");}}   // R-89 ตัวเลขจำนวนจุดที่ผิดบนปุ่ม
 // R-86 รายการคำผิดแยกกลุ่ม: แต่ละรายการแสดงข้อความก่อน-หลัง ให้เลือกคำที่ถูก หรือแก้เองในช่องตรงนั้น
 function spCtx(t,i,n){let a=Math.max(0,i-30),b=Math.min(t.length,i+n+30);const sa=t.lastIndexOf(" ",i-1),sb=t.indexOf(" ",i+n);
