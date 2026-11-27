@@ -293,7 +293,7 @@ let TYPE = store.get("thdoc_type") || "ext";
 let D = {};
 function defaults(){return {v:DATA_VERSION,fit1:true,font:"TH SarabunIT๙",thai:true,ownerPos:"อัตโนมัติ",sal:"เรียน",kind:"คำสั่ง",date:new Date().toISOString().slice(0,10)}}
 // รุ่นของระบบ (แสดงบนหน้าจอ) และรุ่นโครงข้อมูลที่เก็บในเครื่อง — เพิ่มเลขทุกครั้งที่กฎเปลี่ยนจนค่าเก่าอาจขัดกับกฎใหม่
-const APP_VERSION="2026.11.27a", DATA_VERSION=4;
+const APP_VERSION="2026.11.27b", DATA_VERSION=4;
 function migrate(x){   // ปรับค่าที่เก็บไว้ในเครื่องให้เข้ากับกฎปัจจุบัน (ดู REQUIREMENTS.md)
  if(!x||typeof x!=="object")return {};
  const v=x.v||1;
@@ -1511,7 +1511,7 @@ function histAttach(w,inp,key){
   inp.value=L[+v];D[key]=inp.value;histAdd(key,inp.value);save();update();if(inp.tagName==="TEXTAREA")fitTA&&fitTA();};
  const lb=w.querySelector("label");if(lb)lb.appendChild(sel);}
 // ---------- R-74: แจ้งปัญหา / ข้อเสนอแนะ → GitHub Issues (เว็บนิ่ง ไม่มีเครื่องแม่ข่าย) ----------
-const FB_REPO="https://github.com/zoomyyala/thai-official-letter/issues/new";
+const FB_REPO="https://github.com/zoomyala-ux/thai-official-letter/issues/new";
 function fbText(){const k=(document.querySelector('input[name=fbk]:checked')||{}).value||"bug",KN={bug:"ปัญหาการใช้งาน",enhancement:"ข้อเสนอแนะ",question:"สอบถาม"}[k];
  const v=id=>document.getElementById(id).value.trim();
  let b=`**ประเภท:** ${KN}\n**หนังสือ:** ${TYPES[TYPE].name} (${VIEW==="copy"?"สำเนาคู่ฉบับ":"ฉบับจริง"})\n\n### รายละเอียด\n${v("fbBody")||"-"}\n`;
