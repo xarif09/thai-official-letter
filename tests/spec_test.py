@@ -119,7 +119,7 @@ with sync_playwright() as p:
     t = pg.locator('#form [data-k=to] input'); t.fill('ทดสอบผู้รับซ้ำ'); t.blur(); pg.wait_for_timeout(100)
     ev("()=>document.getElementById('bClear').click()"); pg.wait_for_timeout(200)
     check("R-67", ev("()=>{const s=document.querySelector('#form [data-k=to] select.hist');const ok=!!s&&!!document.querySelector('#form [data-k=to] datalist');if(!ok)return false;s.value='0';s.onchange();const r=D.to==='ทดสอบผู้รับซ้ำ';localStorage.removeItem('thdoc_hist');return r}"), "เลือกค่าที่เคยกรอกได้")
-    check("R-74", ev("()=>{window._u=[];const o=window.open;window.open=u=>{window._u.push(u)};document.getElementById('bFb').click();document.getElementById('fbTitle').value='t';document.getElementById('fbBody').value='x';document.getElementById('fbSend').click();window.open=o;const u=window._u[0]||'';return u.startsWith('https://github.com/xarif09/thai-official-letter/issues/new?labels=bug')&&decodeURIComponent(u).includes(APP_VERSION)&&document.getElementById('fb').style.display==='none'}"), "ส่งเป็น GitHub Issue พร้อมรุ่น")
+    check("R-74", ev("()=>{window._u=[];const o=window.open;window.open=u=>{window._u.push(u)};document.getElementById('bFb').click();document.getElementById('fbTitle').value='t';document.getElementById('fbBody').value='x';document.getElementById('fbSend').click();window.open=o;const u=window._u[0]||'';return u.startsWith('https://github.com/zoomyyala/thai-official-letter/issues/new?labels=bug')&&decodeURIComponent(u).includes(APP_VERSION)&&document.getElementById('fb').style.display==='none'}"), "ส่งเป็น GitHub Issue พร้อมรุ่น")
     ev("()=>{document.getElementById('spell').style.display='none';document.getElementById('drafts').style.display='none'}")
     tab(4)
     check("R-100", ev("()=>TYPE==='brief'&&!!document.querySelector('#page .btab')&&document.querySelectorAll('#page .sheet').length===0&&document.getElementById('vCopy').disabled&&/✓/.test(document.querySelector('#page .btab').textContent)&&document.getElementById('page').textContent.includes('ผู้มีอำนาจสั่งการ')&&document.getElementById('page').textContent.includes('(นางสาวณัฏฐณิชา แซ่โก)')"), "พรีวิวบันทึกย่อ 1 หน้า ตาราง + ช่องเลือก + ผู้จัดทำ")
@@ -202,6 +202,8 @@ with sync_playwright() as p:
       await new Promise(r=>setTimeout(r,500));const b=document.getElementById('bSpell'),n1=b.dataset.n;b.click();document.querySelector('#spList .it .ch button.pri').click();
       await new Promise(r=>setTimeout(r,500));const n2=b.dataset.n;document.getElementById('spClose').click();return [n1,n2,/กำหนด/.test(D.subject)]}""")
     check("R-89", r89==["1","0",True], "ตัวอย่างมีคำผิด 1 จุด → ป้าย 1, แก้แล้ว → 0 (ช่องชื่อคนไม่นับ) "+str(r89))
+    check("R-91", pg.evaluate("()=>{localStorage.setItem('thdoc_signers',JSON.stringify([{name:'ทดสอบ',pos:'ก'}]));const a=allStore();return !!a.thdoc_signers&&!('thdoc_drafts' in a)}"), "ส่งออกรวมรายชื่อผู้ลงนาม/ประวัติ/พจนานุกรมผู้ใช้")
+    check("R-92", pg.evaluate("()=>/github.com.zoomyyala.thai-official-letter.issues/.test(FB_REPO)"), "แจ้งปัญหาไปที่ repo zoomyyala")
     check("ERR", not errs, "; ".join(errs[:3]))
     b.close()
 

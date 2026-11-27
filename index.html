@@ -174,7 +174,7 @@ select.hist{font-size:11.5px;padding:0 2px;margin-left:6px;border:1px solid #d5d
  <div style="font-size:12.5px;color:#6b7684">ระบบแนบรุ่นโปรแกรม ประเภทหนังสือ และเบราว์เซอร์ให้อัตโนมัติ · กด "ส่ง" แล้วจะเปิดหน้า GitHub ให้ตรวจข้อความแล้วกด <b>Submit new issue</b> (ต้องเข้าสู่ระบบ GitHub)</div>
  <div style="display:flex;gap:8px;justify-content:flex-end"><button id="fbCopy">คัดลอกข้อความ</button><button id="fbSend" class="pri">ส่งไปที่ GitHub</button></div>
 </div></div></div>
-<div id="drafts" class="modal"><div class="box"><div class="hd"><b>งานที่ยังทำไม่เสร็จ</b><span><button id="drExp" title="บันทึกงานทั้งหมดเป็นไฟล์ ไว้ย้ายไปอีกเครื่อง">ส่งออกไฟล์</button> <button id="drImp" title="นำงานจากไฟล์ที่ส่งออกไว้เข้ามา">นำเข้าไฟล์</button> <button id="drClose">ปิด</button></span></div>
+<div id="drafts" class="modal"><div class="box"><div class="hd"><b>งานที่ยังทำไม่เสร็จ</b><span><button id="drExp" title="บันทึกงานทั้งหมด พร้อมรายชื่อผู้ลงนาม ประวัติที่เคยกรอก และคำที่เพิ่มในพจนานุกรม เป็นไฟล์ ไว้ย้ายไปอีกเครื่อง/เว็บใหม่">ส่งออกไฟล์</button> <button id="drImp" title="นำงานจากไฟล์ที่ส่งออกไว้เข้ามา">นำเข้าไฟล์</button> <button id="drClose">ปิด</button></span></div>
 <div class="bd"><div style="display:flex;gap:6px;margin-bottom:10px"><input id="drName" type="text" lang="th" placeholder="ชื่องาน" style="flex:1;font:inherit;padding:5px 8px;border:1px solid #c5cfdb;border-radius:6px"><button id="drSave" class="pri">บันทึกงานนี้</button></div><div id="drList"></div><input id="drFile" type="file" accept=".json,application/json" style="display:none"></div></div></div>
 <div id="spell"><div class="box"><div class="hd"><b>รายการคำผิด</b><span><button id="spAll" class="pri">แก้ทั้งหมดที่เป็นคำผิด</button> <button id="spClose">ปิด</button></span></div><div class="bd" id="spList"></div><div style="padding:6px 16px 10px;font-size:11.5px;color:#8a94a3;border-top:1px solid #eef1f4">พจนานุกรม: LibreOffice th_TH (NECTEC / LEXiTRON) และ libthai — สัญญาอนุญาต LGPL · คำที่กด "✓ เป็นคำที่ถูก" จำไว้ในเครื่องนี้</div></div></div>
 <script>
@@ -293,7 +293,7 @@ let TYPE = store.get("thdoc_type") || "ext";
 let D = {};
 function defaults(){return {v:DATA_VERSION,fit1:true,font:"TH SarabunIT๙",thai:true,ownerPos:"อัตโนมัติ",sal:"เรียน",kind:"คำสั่ง",date:new Date().toISOString().slice(0,10)}}
 // รุ่นของระบบ (แสดงบนหน้าจอ) และรุ่นโครงข้อมูลที่เก็บในเครื่อง — เพิ่มเลขทุกครั้งที่กฎเปลี่ยนจนค่าเก่าอาจขัดกับกฎใหม่
-const APP_VERSION="2026.11.26p", DATA_VERSION=4;
+const APP_VERSION="2026.11.27a", DATA_VERSION=4;
 function migrate(x){   // ปรับค่าที่เก็บไว้ในเครื่องให้เข้ากับกฎปัจจุบัน (ดู REQUIREMENTS.md)
  if(!x||typeof x!=="object")return {};
  const v=x.v||1;
@@ -1511,7 +1511,7 @@ function histAttach(w,inp,key){
   inp.value=L[+v];D[key]=inp.value;histAdd(key,inp.value);save();update();if(inp.tagName==="TEXTAREA")fitTA&&fitTA();};
  const lb=w.querySelector("label");if(lb)lb.appendChild(sel);}
 // ---------- R-74: แจ้งปัญหา / ข้อเสนอแนะ → GitHub Issues (เว็บนิ่ง ไม่มีเครื่องแม่ข่าย) ----------
-const FB_REPO="https://github.com/xarif09/thai-official-letter/issues/new";
+const FB_REPO="https://github.com/zoomyyala/thai-official-letter/issues/new";
 function fbText(){const k=(document.querySelector('input[name=fbk]:checked')||{}).value||"bug",KN={bug:"ปัญหาการใช้งาน",enhancement:"ข้อเสนอแนะ",question:"สอบถาม"}[k];
  const v=id=>document.getElementById(id).value.trim();
  let b=`**ประเภท:** ${KN}\n**หนังสือ:** ${TYPES[TYPE].name} (${VIEW==="copy"?"สำเนาคู่ฉบับ":"ฉบับจริง"})\n\n### รายละเอียด\n${v("fbBody")||"-"}\n`;
@@ -1552,10 +1552,16 @@ document.getElementById("drClose").onclick=()=>{document.getElementById("drafts"
 document.getElementById("drafts").onclick=e=>{if(e.target.id==="drafts")e.target.style.display="none";};
 document.getElementById("drSave").onclick=()=>{const r=drSaveCur(document.getElementById("drName").value);drRender();msgFlash(`บันทึกงาน "${r.name}" แล้ว`);};
 document.getElementById("drName").onkeydown=e=>{if(e.key==="Enter")document.getElementById("drSave").click();};
-document.getElementById("drExp").onclick=()=>{const b=new Blob([JSON.stringify({app:"thdoc",v:DATA_VERSION,drafts:drGet()},null,1)],{type:"application/json"});const a=el("a",{href:URL.createObjectURL(b),download:"งานหนังสือราชการ.json"});document.body.appendChild(a);a.click();a.remove();};
+// R-91 ส่งออกครบทุกอย่างที่เก็บในเครื่อง (งาน, ผู้ลงนาม, ประวัติที่เคยกรอก, คำที่เพิ่มในพจนานุกรม, หนังสือที่กรอกค้าง, รูปครุฑ) เพื่อย้ายเครื่อง/ย้ายเว็บ
+const allStore=()=>{const o={};try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith("thdoc_")&&k!=="thdoc_drafts")o[k]=localStorage.getItem(k);}}catch(e){}return o;};
+document.getElementById("drExp").onclick=()=>{const b=new Blob([JSON.stringify({app:"thdoc",v:DATA_VERSION,drafts:drGet(),all:allStore()},null,1)],{type:"application/json"});const a=el("a",{href:URL.createObjectURL(b),download:"งานหนังสือราชการ.json"});document.body.appendChild(a);a.click();a.remove();};
 document.getElementById("drImp").onclick=()=>document.getElementById("drFile").click();
 document.getElementById("drFile").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const j=JSON.parse(r.result);const inc=(j.drafts||[]).filter(x=>x&&x.type&&x.D);const a=drGet();let n=0;
-  for(const x of inc){if(!a.some(y=>y.id===x.id)){a.push(x);n++;}}drSet(a);drRender();msgFlash(`นำเข้า ${n} งาน`);}catch(err){msgFlash("ไฟล์ไม่ถูกต้อง");}e.target.value="";};r.readAsText(f);};
+  for(const x of inc){if(!a.some(y=>y.id===x.id)){a.push(x);n++;}}drSet(a);
+  let m=0;for(const [k,v] of Object.entries(j.all||{})){if(!k.startsWith("thdoc_"))continue;let cur=null;try{cur=localStorage.getItem(k);}catch(e){}
+   let nv=v;if(cur!==null){try{const A=JSON.parse(cur),B=JSON.parse(v);if(Array.isArray(A)&&Array.isArray(B)){const seen=new Set(A.map(x=>JSON.stringify(x)));nv=JSON.stringify(A.concat(B.filter(x=>!seen.has(JSON.stringify(x)))));}else continue;}catch(e){continue;}}
+   try{localStorage.setItem(k,nv);m++;}catch(e){}}
+  drRender();msgFlash(`นำเข้า ${n} งาน`+(m?` และข้อมูลอื่น ${m} รายการ — โหลดหน้าใหม่`:""));if(m)setTimeout(()=>location.reload(),1500);}catch(err){msgFlash("ไฟล์ไม่ถูกต้อง");}e.target.value="";};r.readAsText(f);};
 document.getElementById("bSample").onclick=()=>{D=Object.assign(defaults(),migrate(Object.assign({v:2},JSON.parse(JSON.stringify(SAMPLE[TYPE])))));save();renderForm();update();};
 document.getElementById("bClear").onclick=()=>{const f=D.font,t=D.thai;D=Object.assign(defaults(),{font:f,thai:t,refList:[],enclList:[]});save();renderForm();update();};
 document.getElementById("gOn").onchange=update;
